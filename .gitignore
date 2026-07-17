@@ -26,7 +26,19 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# SQLite database
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
+
+# User uploaded files (stored in cloud in production)
+/public/uploads/
 
 # vercel
 .vercel
