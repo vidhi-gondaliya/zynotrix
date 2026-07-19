@@ -86,7 +86,7 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
     notifySlackForTaskEvent(userId, "urgent", task, projectName, assigneeName).catch(() => {});
   }
   if (body.assigneeId && body.assigneeId !== existing.assigneeId) {
-    notifySlackForTaskEvent(body.assigneeId, "assigned", task, projectName, ctx.session.user.name ?? undefined).catch(() => {});
+    notifySlackForTaskEvent(body.assigneeId, "assigned", task, projectName, ctx.userName ?? undefined).catch(() => {});
   }
 
   const justCompleted = body.status === "DONE" && existing.status !== "DONE";

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
-async function getOrCreatePersonalProject(userId: string) {
+async function getOrCreatePersonalProject(userId: string, orgId: string) {
   let project = await prisma.project.findFirst({
-    where: { ownerId: userId, isPersonal: true },
+    where: { ownerId: userId, isPersonal: true, organizationId: orgId },
   });
   if (!project) {
     project = await prisma.project.create({
@@ -14,6 +14,7 @@ async function getOrCreatePersonalProject(userId: string) {
         color: "#7C3AED",
         isPersonal: true,
         ownerId: userId,
+        organizationId: orgId,
       },
     });
   }
@@ -21,10 +22,11 @@ async function getOrCreatePersonalProject(userId: string) {
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { userId, orgId } = ctx;
 
-  const project = await getOrCreatePersonalProject(session.user.id);
+  const project = await getOrCreatePersonalProject(userId, orgId);
 
   const tasks = await prisma.task.findMany({
     where: { projectId: project.id },
@@ -36,14 +38,15 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { userId, orgId } = ctx;
 
   const body = await req.json();
   const { title, priority = "MEDIUM", dueDate, status = "TODO" } = body;
   if (!title?.trim()) return NextResponse.json({ error: "Title required" }, { status: 400 });
 
-  const project = await getOrCreatePersonalProject(session.user.id);
+  const project = await getOrCreatePersonalProject(userId, orgId);
 
   const maxPos = await prisma.task.aggregate({
     where: { projectId: project.id },
@@ -58,8 +61,8 @@ export async function POST(req: NextRequest) {
       dueDate: dueDate ? new Date(dueDate) : null,
       position: (maxPos._max.position ?? 0) + 1,
       projectId: project.id,
-      assigneeId: session.user.id,
-      creatorId: session.user.id,
+      assigneeId: userId,
+      creatorId: userId,
     },
     include: { assignee: { select: { id: true, name: true, image: true } } },
   });

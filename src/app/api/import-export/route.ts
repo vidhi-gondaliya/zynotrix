@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 // GET /api/import-export?type=tasks|projects&format=csv|json&projectId=...
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const { searchParams } = new URL(req.url);
   const type      = searchParams.get("type") ?? "tasks";
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
 
   if (type === "projects") {
     const projects = await prisma.project.findMany({
-      where: { ownerId: session.user.id },
+      where: { organizationId: orgId },
       include: {
         tasks: { include: { assignee: { select: { name: true, email: true } } } },
       },
@@ -82,8 +83,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/import-export — import tasks/projects from CSV or JSON
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, userId } = ctx;
 
   const body = await req.json();
   const { type, format, data, projectId } = body;
@@ -182,7 +184,7 @@ export async function POST(req: NextRequest) {
             priority:    priority as any,
             dueDate:     row.dueDate ? new Date(row.dueDate) : null,
             projectId,
-            creatorId:   session.user.id,
+            creatorId:   userId,
             tags:        JSON.stringify(tagsArray),
           },
         });
@@ -226,7 +228,8 @@ export async function POST(req: NextRequest) {
             clientName:  row.clientName ?? null,
             deadline:    row.deadline   ? new Date(row.deadline) : null,
             color:       row.color?.match(/^#[0-9a-fA-F]{6}$/) ? row.color : "#4F52D9",
-            ownerId:     session.user.id,
+            ownerId:     userId,
+            organizationId: orgId,
           },
         });
         results.created++;

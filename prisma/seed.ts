@@ -16,12 +16,34 @@ async function main() {
   ]);
   console.log("✅ Users created");
 
+  // Organization
+  let org = await prisma.organization.findFirst({ where: { slug: "zynotrix-demo" } });
+  if (!org) {
+    org = await prisma.organization.create({
+      data: {
+        name: "ZYNOTRIX Demo",
+        slug: "zynotrix-demo",
+        members: {
+          create: [
+            { userId: admin.id, role: "ADMIN" },
+            { userId: alice.id, role: "MANAGER" },
+            { userId: bob.id, role: "MEMBER" },
+            { userId: charlie.id, role: "MEMBER" },
+          ],
+        },
+      },
+    });
+  }
+  const orgId = org.id;
+  console.log("✅ Organization created");
+
   // Channels
   const general = await prisma.channel.upsert({
     where: { id: "ch-general" },
     update: {},
     create: {
       id: "ch-general", name: "general", description: "Company-wide chat", isGeneral: true,
+      organizationId: orgId,
       members: { create: [{ userId: admin.id }, { userId: alice.id }, { userId: bob.id }, { userId: charlie.id }] },
     },
   });
@@ -31,6 +53,7 @@ async function main() {
     update: {},
     create: {
       id: "ch-design", name: "design", description: "Design team",
+      organizationId: orgId,
       members: { create: [{ userId: admin.id }, { userId: alice.id }] },
     },
   });
@@ -40,11 +63,11 @@ async function main() {
     update: {},
     create: {
       id: "ch-dev", name: "dev", description: "Engineering",
+      organizationId: orgId,
       members: { create: [{ userId: admin.id }, { userId: bob.id }, { userId: charlie.id }] },
     },
   });
 
-  // Messages (createMany without skipDuplicates for SQLite)
   const msgData = [
     { channelId: general.id, authorId: admin.id, content: "Hey team! Welcome to ZYNOTRIX 🚀 Let's ship some great products this quarter!" },
     { channelId: general.id, authorId: alice.id, content: "Excited to be here! The new dashboard looks amazing 🎨" },
@@ -53,7 +76,6 @@ async function main() {
     { channelId: dev.id, authorId: bob.id, content: "PR #42 is ready for review. Includes the authentication refactor." },
     { channelId: dev.id, authorId: charlie.id, content: "On it! Will review this afternoon 👍" },
   ];
-  // Use upsert-style logic: only create if channel has no messages
   const existingMsgs = await prisma.message.count();
   if (existingMsgs === 0) {
     await prisma.message.createMany({ data: msgData });
@@ -69,7 +91,7 @@ async function main() {
       description: "Complete overhaul of the company website with new brand identity",
       status: "ACTIVE", color: "#7C3AED",
       deadline: new Date(Date.now() + 45 * 86400000), budget: 25000, clientName: "Internal",
-      ownerId: admin.id, healthScore: 72,
+      ownerId: admin.id, healthScore: 72, organizationId: orgId,
       healthData: JSON.stringify({ score: 72, grade: "B", summary: "Project is on track with minor delays in design phase.", breakdown: { onTimeRate: 75, budgetStatus: "on_track", teamVelocity: 68, blockerCount: 1, completionRate: 40 }, risks: ["Design phase slightly behind schedule"], recommendations: ["Schedule design review ASAP"] }),
     },
   });
@@ -82,7 +104,7 @@ async function main() {
       description: "Major feature update with AI-powered recommendations",
       status: "ACTIVE", color: "#06B6D4",
       deadline: new Date(Date.now() + 60 * 86400000), budget: 80000, clientName: "Product Team",
-      ownerId: alice.id, healthScore: 88,
+      ownerId: alice.id, healthScore: 88, organizationId: orgId,
       healthData: JSON.stringify({ score: 88, grade: "A", summary: "Excellent progress! Team is ahead of schedule.", breakdown: { onTimeRate: 90, budgetStatus: "on_track", teamVelocity: 85, blockerCount: 0, completionRate: 60 }, risks: ["Feature creep risk"], recommendations: ["Maintain current velocity"] }),
     },
   });
@@ -95,7 +117,7 @@ async function main() {
       description: "End-of-year marketing push across all channels",
       status: "PLANNING", color: "#10B981",
       deadline: new Date(Date.now() + 30 * 86400000), budget: 15000, clientName: "Marketing Dept",
-      ownerId: admin.id,
+      ownerId: admin.id, organizationId: orgId,
     },
   });
   console.log("✅ Projects created");
@@ -119,7 +141,7 @@ async function main() {
     await prisma.task.upsert({
       where: { id },
       update: {},
-      create: { id, projectId: website.id, creatorId: admin.id, assigneeId: t.assigneeId || null, ...t },
+      create: { id, projectId: website.id, creatorId: admin.id, assigneeId: (t as any).assigneeId || null, ...t },
     });
   }
 
@@ -136,7 +158,7 @@ async function main() {
     await prisma.task.upsert({
       where: { id },
       update: {},
-      create: { id, projectId: app.id, creatorId: alice.id, assigneeId: t.assigneeId || null, ...t },
+      create: { id, projectId: app.id, creatorId: alice.id, assigneeId: (t as any).assigneeId || null, ...t },
     });
   }
   console.log("✅ Tasks created");
@@ -144,13 +166,13 @@ async function main() {
   // Meetings
   const existingMeetings = await prisma.meeting.count();
   if (existingMeetings === 0) {
-    const m1 = await prisma.meeting.create({
+    await prisma.meeting.create({
       data: {
         title: "Weekly Team Standup",
         description: "30-min team sync to discuss progress and blockers",
         startTime: new Date(Date.now() + 24 * 3600000),
         endTime: new Date(Date.now() + 24 * 3600000 + 30 * 60000),
-        status: "SCHEDULED", organizerId: admin.id, projectId: website.id,
+        status: "SCHEDULED", organizerId: admin.id, projectId: website.id, organizationId: orgId,
         attendees: { create: [{ userId: admin.id, rsvp: "ACCEPTED" }, { userId: alice.id, rsvp: "ACCEPTED" }, { userId: bob.id, rsvp: "PENDING" }] },
       },
     });
@@ -160,7 +182,7 @@ async function main() {
         description: "Review homepage designs with stakeholders",
         startTime: new Date(Date.now() + 48 * 3600000),
         endTime: new Date(Date.now() + 48 * 3600000 + 60 * 60000),
-        status: "SCHEDULED", organizerId: alice.id, projectId: website.id,
+        status: "SCHEDULED", organizerId: alice.id, projectId: website.id, organizationId: orgId,
         attendees: { create: [{ userId: alice.id, rsvp: "ACCEPTED" }, { userId: admin.id, rsvp: "PENDING" }] },
       },
     });
@@ -170,7 +192,7 @@ async function main() {
         description: "Plan sprint 8 tasks and story points",
         startTime: new Date(Date.now() + 72 * 3600000),
         endTime: new Date(Date.now() + 72 * 3600000 + 90 * 60000),
-        status: "SCHEDULED", organizerId: alice.id, projectId: app.id,
+        status: "SCHEDULED", organizerId: alice.id, projectId: app.id, organizationId: orgId,
         attendees: { create: [{ userId: alice.id, rsvp: "ACCEPTED" }, { userId: bob.id, rsvp: "ACCEPTED" }, { userId: charlie.id, rsvp: "PENDING" }] },
       },
     });
@@ -195,9 +217,9 @@ async function main() {
   if (existingSearch === 0) {
     await prisma.searchIndex.createMany({
       data: [
-        { sourceType: "TASK", sourceId: "web-design-new-homepage-wire", content: "Design new homepage wireframes design", projectId: website.id, authorId: admin.id },
-        { sourceType: "TASK", sourceId: "app-ai-recommendation-engine", content: "AI recommendation engine mobile app", projectId: app.id, authorId: alice.id },
-        { sourceType: "MEETING", sourceId: "meet-standup", content: "Weekly Team Standup sync progress blockers", projectId: website.id, authorId: admin.id },
+        { sourceType: "TASK", sourceId: "web-design-new-homepage-wire", content: "Design new homepage wireframes design", projectId: website.id, authorId: admin.id, organizationId: orgId },
+        { sourceType: "TASK", sourceId: "app-ai-recommendation-engine", content: "AI recommendation engine mobile app", projectId: app.id, authorId: alice.id, organizationId: orgId },
+        { sourceType: "MEETING", sourceId: "meet-standup", content: "Weekly Team Standup sync progress blockers", projectId: website.id, authorId: admin.id, organizationId: orgId },
       ],
     });
   }

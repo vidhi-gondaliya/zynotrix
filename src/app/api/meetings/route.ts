@@ -25,7 +25,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { orgId, userId, session } = ctx;
+  const { orgId, userId, userAccessToken } = ctx;
 
   const body = await req.json();
   const { title, description, startTime, endTime, attendeeIds = [], projectId, createMeet } = body;
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   let googleMeetUrl: string | undefined;
   let googleEventId: string | undefined;
 
-  if (createMeet && session.user.accessToken) {
+  if (createMeet && userAccessToken) {
     const attendees = await prisma.user.findMany({
       where: { id: { in: attendeeIds } },
       select: { email: true },
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const result = await createGoogleMeetEvent({
       title, startTime, endTime,
       attendeeEmails: attendees.map((u) => u.email),
-      accessToken: session.user.accessToken,
+      accessToken: userAccessToken,
     });
     if (result) { googleMeetUrl = result.meetUrl; googleEventId = result.eventId; }
   }

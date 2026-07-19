@@ -2,10 +2,14 @@ import { auth } from "./auth";
 import { NextResponse } from "next/server";
 
 export type OrgContext = {
-  session: NonNullable<Awaited<ReturnType<typeof auth>>>;
   orgId: string;
   userId: string;
   orgRole: string;
+  userName: string | null;
+  userAccessToken: string | undefined;
+  // Expose raw session only as escape hatch — prefer named fields above
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  session: any;
 };
 
 /**
@@ -24,8 +28,10 @@ export async function requireOrg(): Promise<OrgContext | NextResponse> {
   return {
     session,
     orgId,
-    userId: session.user.id,
-    orgRole: session.user.orgRole ?? "MEMBER",
+    userId:          session.user.id,
+    orgRole:         session.user.orgRole ?? "MEMBER",
+    userName:        session.user.name ?? null,
+    userAccessToken: (session.user as any).accessToken as string | undefined,
   };
 }
 

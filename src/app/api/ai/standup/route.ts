@@ -6,7 +6,7 @@ import { requireOrg, isOrgError } from "@/lib/org";
 export async function GET() {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { userId, session } = ctx;
+  const { userId, userName } = ctx;
 
   const yesterday = new Date(Date.now() - 86400000);
   const tomorrow  = new Date(Date.now() + 86400000);
@@ -44,7 +44,7 @@ export async function GET() {
   }>(
     [{
       role: "user",
-      content: `Generate standup for ${session.user.name ?? "the user"}:
+      content: `Generate standup for ${userName ?? "the user"}:
 Done yesterday: ${JSON.stringify(doneTasks.map((t) => `${t.title} (${t.project?.name})`))}
 Active now: ${JSON.stringify(activeTasks.map((t) => `${t.title} (${t.project?.name})`))}
 Due soon: ${JSON.stringify(dueSoon.map((t) => `${t.title} due ${t.dueDate}`))}
