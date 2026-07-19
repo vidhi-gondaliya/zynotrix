@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { generateJSON } from "@/lib/claude";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const { projectId } = await req.json();
 
   const project = await prisma.project.findUnique({
-    where: { id: projectId },
+    where: { id: projectId, organizationId: orgId },
     include: {
       tasks: {
         select: {
@@ -29,7 +30,6 @@ export async function POST(req: NextRequest) {
   const activeTasks = project.tasks.filter((t) => t.status === "IN_PROGRESS").length;
   const overdue     = project.tasks.filter((t) => t.dueDate && new Date(t.dueDate) < now && t.status !== "DONE").length;
 
-  // Velocity: tasks completed per week
   const twoWeeksAgo = new Date(Date.now() - 14 * 86400000);
   const recentDone  = project.tasks.filter((t) => t.status === "DONE" && t.updatedAt >= twoWeeksAgo).length;
   const weeklyVelocity = recentDone / 2;

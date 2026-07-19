@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET(_req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const project = await prisma.project.findUnique({
-    where: { id: params.projectId },
+    where: { id: params.projectId, organizationId: orgId },
     include: {
-      owner: { select: { id: true, name: true, email: true, image: true } },
+      owner:   { select: { id: true, name: true, email: true, image: true } },
       members: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
-      _count: { select: { tasks: true } },
+      _count:  { select: { tasks: true } },
     },
   });
 
@@ -20,25 +21,26 @@ export async function GET(_req: NextRequest, { params }: { params: { projectId: 
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const body = await req.json();
   const project = await prisma.project.update({
-    where: { id: params.projectId },
+    where:  { id: params.projectId, organizationId: orgId },
     data: {
-      name: body.name,
+      name:        body.name,
       description: body.description,
-      status: body.status,
-      color: body.color,
-      deadline: body.deadline ? new Date(body.deadline) : undefined,
-      budget: body.budget !== undefined ? parseFloat(body.budget) : undefined,
-      clientName: body.clientName,
+      status:      body.status,
+      color:       body.color,
+      deadline:    body.deadline ? new Date(body.deadline) : undefined,
+      budget:      body.budget !== undefined ? parseFloat(body.budget) : undefined,
+      clientName:  body.clientName,
       clientEmail: body.clientEmail,
       ...(body.boardConfig !== undefined && { boardConfig: body.boardConfig }),
     },
     include: {
-      owner: { select: { id: true, name: true, email: true, image: true } },
+      owner:  { select: { id: true, name: true, email: true, image: true } },
       _count: { select: { tasks: true } },
     },
   });
@@ -47,12 +49,13 @@ export async function PUT(req: NextRequest, { params }: { params: { projectId: s
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   await prisma.project.update({
-    where: { id: params.projectId },
-    data: { status: "ARCHIVED" },
+    where: { id: params.projectId, organizationId: orgId },
+    data:  { status: "ARCHIVED" },
   });
 
   return NextResponse.json({ success: true });

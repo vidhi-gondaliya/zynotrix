@@ -1,33 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 const USER_SELECT = { id: true, name: true, email: true, image: true, role: true, createdAt: true };
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const { searchParams } = new URL(req.url);
-  const filter    = searchParams.get("filter");    // overdue | today | tomorrow | upcoming | mine
-  const status    = searchParams.get("status");
-  const priority  = searchParams.get("priority");
-  const projectId = searchParams.get("projectId");
+  const filter     = searchParams.get("filter");
+  const status     = searchParams.get("status");
+  const priority   = searchParams.get("priority");
+  const projectId  = searchParams.get("projectId");
   const assigneeId = searchParams.get("assigneeId");
 
   const now = new Date();
-  const todayStart      = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrowStart   = new Date(todayStart.getTime() + 86_400_000);
+  const todayStart       = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart    = new Date(todayStart.getTime() + 86_400_000);
   const dayAfterTomorrow = new Date(todayStart.getTime() + 2 * 86_400_000);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {};
+  const where: any = {
+    project: { organizationId: orgId },
+  };
 
-  if (priority)  where.priority  = priority;
-  if (projectId) where.projectId = projectId;
+  if (priority)   where.priority   = priority;
+  if (projectId)  where.projectId  = projectId;
   if (assigneeId) where.assigneeId = assigneeId;
 
-  // Status: explicit param takes priority over filter's implied status
   if (status) {
     where.status = status;
   } else if (filter === "overdue" || filter === "upcoming") {
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
       where.dueDate = { gte: todayStart, lt: dayAfterTomorrow };
       break;
     case "mine":
-      where.assigneeId = session.user.id;
+      where.assigneeId = ctx.userId;
       break;
   }
 

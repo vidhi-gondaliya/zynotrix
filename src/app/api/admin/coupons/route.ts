@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasPermission } from "@/lib/permissions";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!hasPermission(session.user.role, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, orgRole } = ctx;
+
+  if (!["ADMIN", "MANAGER"].includes(orgRole)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const coupons = await prisma.coupon.findMany({
+    where: { organizationId: orgId },
     include: { _count: { select: { redemptions: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -17,25 +19,29 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!hasPermission(session.user.role, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, orgRole, userId } = ctx;
+
+  if (!["ADMIN", "MANAGER"].includes(orgRole)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { code, label, description, pointCost = 0, quantity, expiresAt } = await req.json();
   if (!code?.trim() || !label?.trim()) return NextResponse.json({ error: "Code and label required" }, { status: 400 });
 
-  const existing = await prisma.coupon.findUnique({ where: { code: code.trim().toUpperCase() } });
+  const normalizedCode = code.trim().toUpperCase();
+  const existing = await prisma.coupon.findUnique({ where: { organizationId_code: { organizationId: orgId, code: normalizedCode } } });
   if (existing) return NextResponse.json({ error: "Code already exists" }, { status: 409 });
 
   const coupon = await prisma.coupon.create({
     data: {
-      code: code.trim().toUpperCase(),
+      code: normalizedCode,
       label: label.trim(),
       description: description?.trim() || null,
       pointCost: Number(pointCost),
       quantity: quantity ? Number(quantity) : null,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
-      createdById: session.user.id,
+      createdById: userId,
+      organizationId: orgId,
     },
   });
 

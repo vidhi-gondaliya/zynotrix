@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { seedRewardDefaults } from "@/lib/rewards";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { userId, orgId } = ctx;
 
-  await seedRewardDefaults();
+  await seedRewardDefaults(orgId);
 
-  const userId = session.user.id;
-
-  const [userPoints, transactions, userBadges, coupons, redemptions, leaderboard] = await Promise.all([
+  const [userPoints, transactions, userBadges, redemptions, leaderboardRaw] = await Promise.all([
     prisma.userPoints.findUnique({ where: { userId } }),
 
     prisma.pointTransaction.findMany({
@@ -26,16 +25,15 @@ export async function GET() {
       orderBy: { earnedAt: "desc" },
     }),
 
-    Promise.resolve([]), // placeholder — computed below after redemptions
-
     prisma.couponRedemption.findMany({
       where: { userId },
       include: { coupon: { select: { label: true, code: true } } },
       orderBy: { redeemedAt: "desc" },
     }),
 
-    // Leaderboard: top 10 per role
+    // Leaderboard: org members only
     prisma.userPoints.findMany({
+      where: { user: { organizationMembers: { some: { organizationId: orgId } } } },
       include: { user: { select: { id: true, name: true, image: true, role: true } } },
       orderBy: { lifetime: "desc" },
       take: 50,
@@ -44,17 +42,18 @@ export async function GET() {
 
   // Group leaderboard by role
   const byRole: Record<string, { userId: string; name: string; image: string | null; role: string; lifetime: number; balance: number }[]> = {};
-  for (const up of leaderboard) {
+  for (const up of leaderboardRaw) {
     const r = up.user.role;
     if (!["MEMBER", "MANAGER", "ADMIN"].includes(r)) continue;
     if (!byRole[r]) byRole[r] = [];
     byRole[r].push({ userId: up.userId, name: up.user.name ?? "Unknown", image: up.user.image, role: r, lifetime: up.lifetime, balance: up.balance });
   }
 
-  // Available coupons (not yet redeemed by this user, still in stock)
+  // Available coupons for this org (not yet redeemed by this user, still in stock)
   const redeemedIds = new Set(redemptions.map((r) => r.couponId));
   const availableCoupons = (await prisma.coupon.findMany({
     where: {
+      organizationId: orgId,
       isActive: true,
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     },

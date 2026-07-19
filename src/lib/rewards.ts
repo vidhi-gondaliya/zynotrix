@@ -26,31 +26,33 @@ const SYSTEM_BADGES = [
   { name: "admin_master",    label: "Operations Master", description: "Reach 2000 lifetime points as Admin",   icon: "👑", roleScope: "ADMIN",   conditionType: "LIFETIME_POINTS", conditionValue: 2000, conditionAction: null },
 ];
 
-export async function seedRewardDefaults() {
-  // Seed RewardConfig for all roles
+export async function seedRewardDefaults(organizationId: string) {
+  // Seed RewardConfig for all roles scoped to this org
   for (const role of REWARDED_ROLES) {
     for (const [action, points] of Object.entries(DEFAULT_CONFIG[role])) {
-      await prisma.rewardConfig.upsert({
-        where: { role_action: { role, action } },
+      await (prisma as any).rewardConfig.upsert({
+        where: { organizationId_role_action: { organizationId, role, action } },
         update: {},
-        create: { role, action, points, isEnabled: true },
+        create: { organizationId, role, action, points, isEnabled: true },
       });
     }
   }
 
-  // Seed system badges
+  // Seed system badges scoped to this org
   for (const badge of SYSTEM_BADGES) {
-    await prisma.badge.upsert({
-      where: { name: badge.name },
+    await (prisma as any).badge.upsert({
+      where: { organizationId_name: { organizationId, name: badge.name } },
       update: {},
-      create: { ...badge, isSystem: true },
+      create: { ...badge, organizationId, isSystem: true },
     });
   }
 }
 
-async function getPointsForAction(role: string, action: RewardAction): Promise<number> {
-  const config = await prisma.rewardConfig.findUnique({
-    where: { role_action: { role, action } },
+async function getPointsForAction(role: string, action: RewardAction, organizationId?: string): Promise<number> {
+  const config = await (prisma as any).rewardConfig.findFirst({
+    where: organizationId
+      ? { organizationId, role, action }
+      : { role, action },
   });
   if (!config || !config.isEnabled) return 0;
   return config.points;

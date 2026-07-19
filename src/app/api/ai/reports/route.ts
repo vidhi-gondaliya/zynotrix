@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { streamToResponse, SYSTEM_PROMPTS } from "@/lib/claude";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const {
     reportType = "weekly",
@@ -18,9 +19,9 @@ export async function POST(req: NextRequest) {
   const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 86400000);
   const end   = endDate   ? new Date(endDate)   : new Date();
 
-  // Build task filter
   const taskWhere: Record<string, unknown> = {
     updatedAt: { gte: start, lte: end },
+    project: { organizationId: orgId },
     ...(projectIds.length > 0 ? { projectId: { in: projectIds } } : {}),
     ...(memberIds.length > 0  ? { assigneeId: { in: memberIds } } : {}),
     ...(statuses.length > 0   ? { status: { in: statuses } }     : {}),
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
     }),
     prisma.meeting.findMany({
       where: {
+        organizationId: orgId,
         startTime: { gte: start, lte: end },
         ...(projectIds.length > 0 ? { projectId: { in: projectIds } } : {}),
       },
@@ -46,11 +48,10 @@ export async function POST(req: NextRequest) {
       take: 30,
     }),
     projectIds.length > 0
-      ? prisma.project.findMany({ where: { id: { in: projectIds } }, select: { name: true, clientName: true } })
+      ? prisma.project.findMany({ where: { id: { in: projectIds }, organizationId: orgId }, select: { name: true, clientName: true } })
       : Promise.resolve([]),
   ]);
 
-  // Compute stats
   const byStatus  = tasks.reduce<Record<string, number>>((a, t) => { a[t.status] = (a[t.status] ?? 0) + 1; return a; }, {});
   const byPri     = tasks.reduce<Record<string, number>>((a, t) => { a[t.priority] = (a[t.priority] ?? 0) + 1; return a; }, {});
   const byMember  = tasks.reduce<Record<string, number>>((a, t) => { const n = t.assignee?.name ?? "Unassigned"; a[n] = (a[n] ?? 0) + 1; return a; }, {});

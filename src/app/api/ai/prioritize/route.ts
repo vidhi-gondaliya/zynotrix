@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { generateJSON } from "@/lib/claude";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function POST() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, userId } = ctx;
 
   const tasks = await prisma.task.findMany({
-    where: { assigneeId: session.user.id, status: { not: "DONE" } },
+    where: { assigneeId: userId, status: { not: "DONE" }, project: { organizationId: orgId } },
     include: { project: { select: { name: true, deadline: true } } },
     orderBy: { createdAt: "asc" },
   });
@@ -39,7 +40,6 @@ Return ONLY the JSON array sorted by urgency descending.`,
     true
   );
 
-  // Merge AI ranking with task data
   const ranked = result
     .map((r) => {
       const task = tasks.find((t) => t.id === r.id);

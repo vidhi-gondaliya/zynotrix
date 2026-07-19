@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 import { createGoogleMeetEvent } from "@/lib/google-meet";
 import { createNotification } from "@/lib/notifications";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const meetings = await prisma.meeting.findMany({
-    where: { status: { not: "CANCELLED" } },
+    where: { organizationId: orgId, status: { not: "CANCELLED" } },
     include: {
       organizer: { select: { id: true, name: true, email: true, image: true } },
-      project: { select: { id: true, name: true, color: true } },
-      attendees: {
-        include: { user: { select: { id: true, name: true, email: true, image: true } } },
-      },
+      project:   { select: { id: true, name: true, color: true } },
+      attendees: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
     },
     orderBy: { startTime: "asc" },
   });
@@ -24,8 +23,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, userId, session } = ctx;
 
   const body = await req.json();
   const { title, description, startTime, endTime, attendeeIds = [], projectId, createMeet } = body;
@@ -39,60 +39,45 @@ export async function POST(req: NextRequest) {
       select: { email: true },
     });
     const result = await createGoogleMeetEvent({
-      title,
-      startTime,
-      endTime,
+      title, startTime, endTime,
       attendeeEmails: attendees.map((u) => u.email),
       accessToken: session.user.accessToken,
     });
-    if (result) {
-      googleMeetUrl = result.meetUrl;
-      googleEventId = result.eventId;
-    }
+    if (result) { googleMeetUrl = result.meetUrl; googleEventId = result.eventId; }
   }
 
   const meeting = await prisma.meeting.create({
     data: {
-      title,
-      description,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
+      title, description,
+      startTime:      new Date(startTime),
+      endTime:        new Date(endTime),
       googleMeetUrl,
       googleEventId,
-      projectId: projectId || null,
-      organizerId: session.user.id,
+      projectId:      projectId || null,
+      organizerId:    userId,
+      organizationId: orgId,
       attendees: {
         create: [
-          { userId: session.user.id, rsvp: "ACCEPTED" },
-          ...attendeeIds
-            .filter((id: string) => id !== session.user.id)
-            .map((userId: string) => ({ userId, rsvp: "PENDING" })),
+          { userId, rsvp: "ACCEPTED" },
+          ...attendeeIds.filter((id: string) => id !== userId).map((id: string) => ({ userId: id, rsvp: "PENDING" })),
         ],
       },
     },
     include: {
       organizer: { select: { id: true, name: true, email: true, image: true } },
-      project: { select: { id: true, name: true, color: true } },
-      attendees: {
-        include: { user: { select: { id: true, name: true, email: true, image: true } } },
-      },
+      project:   { select: { id: true, name: true, color: true } },
+      attendees: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
     },
   });
 
-  // Index for search
-  await prisma.searchIndex.create({
-    data: {
-      sourceType: "MEETING",
-      sourceId: meeting.id,
-      content: `${title} ${description ?? ""} ${new Date(startTime).toDateString()}`,
-      projectId: projectId || null,
-      authorId: session.user.id,
-    },
+  await prisma.searchIndex.upsert({
+    where:  { sourceId: meeting.id },
+    update: { content: `${title} ${description ?? ""}`, organizationId: orgId },
+    create: { sourceType: "MEETING", sourceId: meeting.id, content: `${title} ${description ?? ""} ${new Date(startTime).toDateString()}`, projectId: projectId || null, authorId: userId, organizationId: orgId },
   });
 
-  // Notify attendees
   for (const id of attendeeIds) {
-    if (id !== session.user.id) {
+    if (id !== userId) {
       await createNotification(id, "MEETING_INVITE", `Meeting invite: ${title}`, `${new Date(startTime).toLocaleString()}`, { meetingId: meeting.id });
     }
   }

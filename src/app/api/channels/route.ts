@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, userId } = ctx;
 
   const channels = await (prisma as any).channel.findMany({
     where: {
-      members: { some: { userId: session.user.id } },
+      organizationId: orgId,
+      members: { some: { userId } },
     },
     include: {
-      _count: { select: { messages: true, members: true } },
+      _count:  { select: { messages: true, members: true } },
       members: { include: { user: { select: { id: true, name: true, image: true } } } },
     },
     orderBy: { createdAt: "asc" },
@@ -21,8 +23,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, userId } = ctx;
 
   const { name, description, isPrivate = false, memberIds = [] } = await req.json();
 
@@ -31,15 +34,16 @@ export async function POST(req: NextRequest) {
       name,
       description,
       isPrivate,
+      organizationId: orgId,
       members: {
         create: [
-          { userId: session.user.id },
-          ...memberIds.filter((id: string) => id !== session.user.id).map((id: string) => ({ userId: id })),
+          { userId },
+          ...memberIds.filter((id: string) => id !== userId).map((id: string) => ({ userId: id })),
         ],
       },
     },
     include: {
-      _count: { select: { messages: true, members: true } },
+      _count:  { select: { messages: true, members: true } },
       members: { include: { user: { select: { id: true, name: true, image: true } } } },
     },
   });

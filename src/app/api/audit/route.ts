@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const { searchParams } = req.nextUrl;
   const entityType = searchParams.get("entityType");
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const logs = await (prisma as any).auditLog.findMany({
     where: {
-      userId: session.user.id,
+      organizationId: orgId,
       ...(entityType && { entityType }),
       ...(entityId   && { entityId }),
     },

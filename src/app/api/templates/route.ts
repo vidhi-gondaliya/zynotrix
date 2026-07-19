@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
-// GET all templates (own + public)
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const { searchParams } = req.nextUrl;
   const category = searchParams.get("category");
 
   const templates = await (prisma as any).projectTemplate.findMany({
     where: {
-      OR: [{ createdById: session.user.id }, { isPublic: true }],
+      organizationId: orgId,
       ...(category && { category }),
     },
     include: { createdBy: { select: { id: true, name: true, image: true } } },
@@ -22,17 +22,17 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(templates);
 }
 
-// POST — create a template from a project or from scratch
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, userId } = ctx;
 
   const { name, description, category, color, emoji, isPublic, config, fromProjectId } = await req.json();
 
   let resolvedConfig = config;
   if (fromProjectId) {
-    const project = await (prisma as any).project.findUnique({
-      where: { id: fromProjectId },
+    const project = await prisma.project.findUnique({
+      where: { id: fromProjectId, organizationId: orgId },
       include: {
         tasks: {
           select: { title: true, description: true, priority: true, status: true, storyPoints: true, tags: true },
@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
       },
     });
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
-
     resolvedConfig = {
       tasks: project.tasks.map((t: any) => ({
         title: t.title, description: t.description, priority: t.priority,
@@ -61,7 +60,8 @@ export async function POST(req: NextRequest) {
       emoji: emoji ?? "📋",
       isPublic: isPublic ?? false,
       config: JSON.stringify(resolvedConfig),
-      createdById: session.user.id,
+      createdById: userId,
+      organizationId: orgId,
     },
     include: { createdBy: { select: { id: true, name: true, image: true } } },
   });

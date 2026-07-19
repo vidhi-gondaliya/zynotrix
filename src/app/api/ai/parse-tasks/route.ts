@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { generateJSON } from "@/lib/claude";
+import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, userId } = ctx;
 
   const { text, projectId } = await req.json();
   if (!text?.trim()) return NextResponse.json({ error: "Text required" }, { status: 400 });
@@ -33,14 +35,14 @@ Return ONLY the JSON array.`,
     true
   );
 
-  // Create tasks in DB
-  const { prisma } = await import("@/lib/prisma");
-
-  // Resolve projectId — Task.projectId is required; fall back to user's first project
+  // Verify the supplied projectId belongs to this org, or fall back to first org project
   let resolvedProjectId: string = projectId;
-  if (!resolvedProjectId) {
+  if (resolvedProjectId) {
+    const valid = await prisma.project.findFirst({ where: { id: resolvedProjectId, organizationId: orgId }, select: { id: true } });
+    if (!valid) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  } else {
     const fallback = await prisma.project.findFirst({
-      where: { OR: [{ ownerId: session.user.id }, { members: { some: { userId: session.user.id } } }] },
+      where: { organizationId: orgId },
       select: { id: true },
       orderBy: { createdAt: "asc" },
     });
@@ -59,8 +61,8 @@ Return ONLY the JSON array.`,
           dueDate: t.dueDate ? new Date(t.dueDate) : null,
           tags: JSON.stringify(t.tags || []),
           projectId: resolvedProjectId,
-          assigneeId: session.user.id,
-          creatorId: session.user.id,
+          assigneeId: userId,
+          creatorId: userId,
         },
         include: { project: { select: { id: true, name: true, color: true } } },
       })

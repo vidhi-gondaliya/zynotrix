@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasPermission } from "@/lib/permissions";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function PUT(req: NextRequest, { params }: { params: { couponId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!hasPermission(session.user.role, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, orgRole } = ctx;
+
+  if (!["ADMIN", "MANAGER"].includes(orgRole)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const existing = await prisma.coupon.findFirst({ where: { id: params.couponId, organizationId: orgId } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { label, description, pointCost, quantity, expiresAt, isActive } = await req.json();
 
@@ -26,9 +30,14 @@ export async function PUT(req: NextRequest, { params }: { params: { couponId: st
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { couponId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!hasPermission(session.user.role, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId, orgRole } = ctx;
+
+  if (!["ADMIN"].includes(orgRole)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const existing = await prisma.coupon.findFirst({ where: { id: params.couponId, organizationId: orgId } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.coupon.delete({ where: { id: params.couponId } });
   return NextResponse.json({ ok: true });

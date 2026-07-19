@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { generateJSON } from "@/lib/claude";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function POST() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
-  const [users, tasks] = await Promise.all([
-    prisma.user.findMany({ select: { id: true, name: true, email: true } }),
+  const [members, tasks] = await Promise.all([
+    prisma.organizationMember.findMany({
+      where: { organizationId: orgId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    }),
     prisma.task.findMany({
-      where: { status: { not: "DONE" }, project: { isPersonal: false } },
+      where: { status: { not: "DONE" }, project: { organizationId: orgId, isPersonal: false } },
       select: { id: true, title: true, priority: true, status: true, dueDate: true, assigneeId: true },
     }),
   ]);
+
+  const users = members.map((m) => m.user);
 
   const workloads = users.map((u) => ({
     userId: u.id,

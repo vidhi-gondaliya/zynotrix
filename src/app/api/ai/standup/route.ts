@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { generateJSON } from "@/lib/claude";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { userId, session } = ctx;
 
   const yesterday = new Date(Date.now() - 86400000);
   const tomorrow  = new Date(Date.now() + 86400000);
@@ -13,21 +14,21 @@ export async function GET() {
 
   const [doneTasks, activeTasks, dueSoon, comments] = await Promise.all([
     prisma.task.findMany({
-      where: { assigneeId: session.user.id, status: "DONE", updatedAt: { gte: yesterday } },
+      where: { assigneeId: userId, status: "DONE", updatedAt: { gte: yesterday }, project: { organizationId: ctx.orgId } },
       include: { project: { select: { name: true } } },
       orderBy: { updatedAt: "desc" }, take: 10,
     }),
     prisma.task.findMany({
-      where: { assigneeId: session.user.id, status: { in: ["IN_PROGRESS", "REVIEW"] } },
+      where: { assigneeId: userId, status: { in: ["IN_PROGRESS", "REVIEW"] }, project: { organizationId: ctx.orgId } },
       include: { project: { select: { name: true } } },
       orderBy: { updatedAt: "desc" }, take: 10,
     }),
     prisma.task.findMany({
-      where: { assigneeId: session.user.id, status: { not: "DONE" }, dueDate: { gte: now, lte: tomorrow } },
+      where: { assigneeId: userId, status: { not: "DONE" }, dueDate: { gte: now, lte: tomorrow }, project: { organizationId: ctx.orgId } },
       include: { project: { select: { name: true } } },
     }),
     prisma.comment.findMany({
-      where: { authorId: session.user.id, createdAt: { gte: yesterday } },
+      where: { authorId: userId, createdAt: { gte: yesterday } },
       include: { task: { select: { title: true } } },
       take: 5,
     }),

@@ -1,24 +1,30 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
-  const [projects, tasks, users, meetings, recentTasks] = await Promise.all([
-    prisma.project.findMany({ where: { status: { not: "ARCHIVED" } } }),
+  const [projects, tasks, members, meetings, recentTasks] = await Promise.all([
+    prisma.project.findMany({ where: { organizationId: orgId, status: { not: "ARCHIVED" } } }),
     prisma.task.findMany({
+      where: { project: { organizationId: orgId } },
       include: { assignee: { select: { id: true, name: true } } },
     }),
-    prisma.user.findMany({ select: { id: true, name: true } }),
+    prisma.organizationMember.findMany({
+      where: { organizationId: orgId },
+      include: { user: { select: { id: true, name: true } } },
+    }),
     prisma.meeting.findMany({
-      where: { startTime: { gte: new Date() }, status: { not: "CANCELLED" } },
+      where: { organizationId: orgId, startTime: { gte: new Date() }, status: { not: "CANCELLED" } },
       include: { organizer: { select: { id: true, name: true } } },
       orderBy: { startTime: "asc" },
       take: 5,
     }),
     prisma.task.findMany({
+      where: { project: { organizationId: orgId } },
       orderBy: { updatedAt: "desc" },
       take: 6,
       include: {
@@ -29,6 +35,7 @@ export async function GET() {
     }),
   ]);
 
+  const users = members.map((m) => m.user);
   const now = new Date();
   const completedTasks = tasks.filter((t) => t.status === "DONE");
   const overdueTasks   = tasks.filter((t) => t.dueDate && new Date(t.dueDate) < now && t.status !== "DONE");

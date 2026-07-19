@@ -7,6 +7,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ── ORGANIZATION (MULTI-TENANCY) ─────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  plan      String   @default("FREE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members          OrganizationMember[]
+  projects         Project[]
+  channels         Channel[]
+  roles            Role[]
+  rewardConfigs    RewardConfig[]
+  badges           Badge[]
+  coupons          Coupon[]
+  auditLogs        AuditLog[]
+  automations      Automation[]
+  integrations     Integration[]
+  searchIndices    SearchIndex[]
+  projectTemplates ProjectTemplate[]
+  meetings         Meeting[]
+  attendanceRecords AttendanceRecord[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  organizationId String
+  userId         String
+  role           String   @default("MEMBER")
+  joinedAt       DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
 // ── AUTH ────────────────────────────────────────────────────────────────────
 
 model User {
@@ -50,6 +93,7 @@ model User {
   auditLogs               AuditLog[]
   projectTemplates        ProjectTemplate[]
   integrations            Integration[]
+  organizationMembers     OrganizationMember[]
 
   @@map("users")
 }
@@ -97,26 +141,28 @@ model VerificationToken {
 // ── PROJECTS ────────────────────────────────────────────────────────────────
 
 model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  status      String   @default("ACTIVE")
-  color       String   @default("#7C3AED")
-  icon        String?
-  deadline    DateTime?
-  budget      Float?
-  budgetSpent Float?   @default(0)
-  clientName  String?
-  clientEmail String?
-  healthScore Float?
-  healthData  String?
-  boardConfig String?
-  isPersonal  Boolean  @default(false)
-  ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  status         String   @default("ACTIVE")
+  color          String   @default("#7C3AED")
+  icon           String?
+  deadline       DateTime?
+  budget         Float?
+  budgetSpent    Float?   @default(0)
+  clientName     String?
+  clientEmail    String?
+  healthScore    Float?
+  healthData     String?
+  boardConfig    String?
+  isPersonal     Boolean  @default(false)
+  ownerId        String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   owner        User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   tasks        Task[]
   documents    Document[]
   meetings     Meeting[]       @relation("ProjectMeetings")
@@ -246,16 +292,19 @@ model TaskActivity {
 // ── CHAT ────────────────────────────────────────────────────────────────────
 
 model Channel {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  isGeneral   Boolean  @default(false)
-  isPrivate   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  isGeneral      Boolean  @default(false)
+  isPrivate      Boolean  @default(false)
+  organizationId String
+  createdAt      DateTime @default(now())
 
-  members  ChannelMember[]
-  messages Message[]
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      ChannelMember[]
+  messages     Message[]
 
+  @@index([organizationId])
   @@map("channels")
 }
 
@@ -290,22 +339,24 @@ model Message {
 // ── MEETINGS ────────────────────────────────────────────────────────────────
 
 model Meeting {
-  id            String   @id @default(cuid())
-  title         String
-  description   String?
-  startTime     DateTime
-  endTime       DateTime
-  googleMeetUrl String?
-  googleEventId String?
-  status        String   @default("SCHEDULED")
-  notes         String?
-  actionItems   String?
-  projectId     String?
-  organizerId   String
-  createdAt     DateTime @default(now())
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  startTime      DateTime
+  endTime        DateTime
+  googleMeetUrl  String?
+  googleEventId  String?
+  status         String   @default("SCHEDULED")
+  notes          String?
+  actionItems    String?
+  projectId      String?
+  organizerId    String
+  organizationId String
+  createdAt      DateTime @default(now())
 
-  project   Project?      @relation("ProjectMeetings", fields: [projectId], references: [id])
-  organizer User          @relation("MeetingOrganizer", fields: [organizerId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project?      @relation("ProjectMeetings", fields: [projectId], references: [id])
+  organizer    User          @relation("MeetingOrganizer", fields: [organizerId], references: [id])
   attendees MeetingUser[]
 
   @@map("meetings")
@@ -378,20 +429,23 @@ model DocumentShare {
 // ── ATTENDANCE ───────────────────────────────────────────────────────────────
 
 model AttendanceRecord {
-  id        String    @id @default(cuid())
-  userId    String
-  date      DateTime
-  clockIn   DateTime?
-  clockOut  DateTime?
-  status    String    @default("PRESENT") // PRESENT | ABSENT | LATE | HALF_DAY | REMOTE
-  notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String
+  date           DateTime
+  clockIn        DateTime?
+  clockOut       DateTime?
+  status         String    @default("PRESENT")
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, date])
+  @@unique([userId, organizationId, date])
   @@index([userId])
+  @@index([organizationId])
   @@map("attendance_records")
 }
 
@@ -462,15 +516,19 @@ model NotificationPreference {
 // ── SEARCH INDEX ──────────────────────────────────────────────────────────────
 
 model SearchIndex {
-  id         String   @id @default(cuid())
-  sourceType String
-  sourceId   String   @unique
-  content    String
-  projectId  String?
-  authorId   String?
-  createdAt  DateTime @default(now())
+  id             String   @id @default(cuid())
+  sourceType     String
+  sourceId       String   @unique
+  content        String
+  projectId      String?
+  authorId       String?
+  organizationId String?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([sourceType, projectId])
+  @@index([organizationId])
   @@map("search_index")
 }
 
@@ -492,13 +550,16 @@ model AIInsight {
 // ── REWARDS ───────────────────────────────────────────────────────────────────
 
 model RewardConfig {
-  id        String  @id @default(cuid())
-  role      String  // MEMBER | MANAGER | ADMIN
-  action    String  // task_complete | task_early | attendance | streak
-  points    Int     @default(0)
-  isEnabled Boolean @default(true)
+  id             String  @id @default(cuid())
+  organizationId String
+  role           String
+  action         String
+  points         Int     @default(0)
+  isEnabled      Boolean @default(true)
 
-  @@unique([role, action])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, role, action])
   @@map("reward_configs")
 }
 
@@ -532,19 +593,22 @@ model PointTransaction {
 
 model Badge {
   id              String   @id @default(cuid())
-  name            String   @unique
+  organizationId  String
+  name            String
   label           String
   description     String
   icon            String   @default("🏆")
   roleScope       String?
-  conditionType   String   // LIFETIME_POINTS | ACTION_COUNT
+  conditionType   String
   conditionValue  Int
   conditionAction String?
   isSystem        Boolean  @default(false)
   createdAt       DateTime @default(now())
 
-  userBadges UserBadge[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userBadges   UserBadge[]
 
+  @@unique([organizationId, name])
   @@map("badges")
 }
 
@@ -563,20 +627,23 @@ model UserBadge {
 }
 
 model Coupon {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  label       String
-  description String?
-  pointCost   Int       @default(0)
-  quantity    Int?
-  usedCount   Int       @default(0)
-  expiresAt   DateTime?
-  isActive    Boolean   @default(true)
-  createdById String
-  createdAt   DateTime  @default(now())
+  id             String    @id @default(cuid())
+  organizationId String
+  code           String
+  label          String
+  description    String?
+  pointCost      Int       @default(0)
+  quantity       Int?
+  usedCount      Int       @default(0)
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  createdById    String
+  createdAt      DateTime  @default(now())
 
-  redemptions CouponRedemption[]
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  redemptions  CouponRedemption[]
 
+  @@unique([organizationId, code])
   @@map("coupons")
 }
 
@@ -597,36 +664,42 @@ model CouponRedemption {
 // ── RBAC ROLES ────────────────────────────────────────────────────────────────
 
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique   // matches User.role string
-  label       String
-  color       String   @default("#6B7280")
-  description String?
-  permissions String   @default("[]")  // JSON array of Permission strings
-  isSystem    Boolean  @default(false)  // built-in roles cannot be deleted
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  label          String
+  color          String   @default("#6B7280")
+  description    String?
+  permissions    String   @default("[]")
+  isSystem       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
   @@map("roles")
 }
 
 // ── AI AUTOMATIONS ────────────────────────────────────────────────────────────
 
 model Automation {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  rule        String                   // natural language rule stored as-is
-  trigger     String                   // JSON: { type, conditions }
-  action      String                   // JSON: { type, params }
-  isActive    Boolean  @default(true)
-  runCount    Int      @default(0)
-  lastRunAt   DateTime?
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  rule           String
+  trigger        String
+  action         String
+  isActive       Boolean  @default(true)
+  runCount       Int      @default(0)
+  lastRunAt      DateTime?
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
   runs        AutomationRun[]
 
   @@index([createdById])
@@ -743,19 +816,21 @@ model CustomFieldValue {
 }
 
 model ProjectTemplate {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  category    String   @default("general")
-  color       String   @default("#9D6BFF")
-  emoji       String   @default("📋")
-  isPublic    Boolean  @default(false)
-  config      String
-  usageCount  Int      @default(0)
-  createdById String
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  category       String   @default("general")
+  color          String   @default("#9D6BFF")
+  emoji          String   @default("📋")
+  isPublic       Boolean  @default(false)
+  config         String
+  usageCount     Int      @default(0)
+  createdById    String
+  createdAt      DateTime @default(now())
 
-  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@map("project_templates")
 }
@@ -777,18 +852,21 @@ model ClientPortal {
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String
-  action     String
-  entityType String
-  entityId   String
-  changes    String?
-  createdAt  DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  action         String
+  entityType     String
+  entityId       String
+  changes        String?
+  createdAt      DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([entityType, entityId])
   @@index([userId])
+  @@index([organizationId])
   @@index([createdAt])
   @@map("audit_logs")
 }
@@ -796,17 +874,19 @@ model AuditLog {
 // ── PHASE 5: REAL INTEGRATIONS ───────────────────────────────────────────────
 
 model Integration {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String   // SLACK | GITHUB | GOOGLE_CALENDAR | EMAIL
-  config    String   @default("{}") // JSON
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  type           String
+  config         String   @default("{}")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, type])
+  @@unique([organizationId, type])
   @@map("integrations")
 }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { generateJSON } from "@/lib/claude";
+import { requireOrg, isOrgError } from "@/lib/org";
 
 interface AITask {
   title: string;
@@ -10,8 +10,8 @@ interface AITask {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
 
   const { name, description, boardColumns } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "Project name required" }, { status: 400 });
@@ -46,7 +46,6 @@ Rules:
       true
     );
 
-    // Sanitise and cap at 10
     const valid = ["URGENT", "HIGH", "MEDIUM", "LOW"];
     const sanitised = tasks.slice(0, 10).map((t) => ({
       title: String(t.title ?? "").slice(0, 120),

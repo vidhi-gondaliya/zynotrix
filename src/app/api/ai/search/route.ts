@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { streamToResponse, SYSTEM_PROMPTS } from "@/lib/claude";
+import { requireOrg, isOrgError } from "@/lib/org";
 import type { SourceType } from "@/types";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
 
   const { query, scope, projectId } = await req.json();
 
   const candidates = await prisma.searchIndex.findMany({
     where: {
+      organizationId: orgId,
       content: { contains: query.split(" ")[0] },
       ...(scope && scope !== "ALL" ? { sourceType: scope as SourceType } : {}),
       ...(projectId ? { projectId } : {}),
