@@ -61,12 +61,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id   = user.id ?? token.sub ?? "";
         token.role = (user as { role?: string }).role ?? "MEMBER";
         // Look up org membership on initial sign-in
-        const member = await prisma.organizationMember.findFirst({
-          where: { userId: user.id ?? "" },
-          select: { organizationId: true, role: true },
-        });
-        token.organizationId = member?.organizationId ?? null;
-        token.orgRole        = member?.role ?? null;
+        try {
+          const member = await prisma.organizationMember.findFirst({
+            where: { userId: user.id ?? "" },
+            select: { organizationId: true, role: true },
+          });
+          token.organizationId = member?.organizationId ?? null;
+          token.orgRole        = member?.role ?? null;
+        } catch {
+          token.organizationId = null;
+          token.orgRole        = null;
+        }
       }
       if (account?.access_token) {
         token.accessToken = account.access_token;
@@ -90,5 +95,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  // Support both NEXTAUTH_SECRET (legacy) and AUTH_SECRET (Auth.js v5 default)
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
 });
