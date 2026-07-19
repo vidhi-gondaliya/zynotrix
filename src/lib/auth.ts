@@ -54,8 +54,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async jwt({ token, user, account, trigger, session: sessionData }) {
+      // Always ensure token.id is set (token.sub is the built-in NextAuth user id)
+      if (!token.id && token.sub) token.id = token.sub;
+
       if (user) {
-        token.id   = user.id ?? "";
+        token.id   = user.id ?? token.sub ?? "";
         token.role = (user as { role?: string }).role ?? "MEMBER";
         // Look up org membership on initial sign-in
         const member = await prisma.organizationMember.findFirst({
@@ -77,7 +80,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id             = token.id as string;
+        // token.id set by our jwt callback; token.sub is NextAuth's built-in fallback
+        session.user.id             = (token.id ?? token.sub) as string;
         session.user.role           = token.role as string;
         session.user.accessToken    = token.accessToken as string | undefined;
         session.user.organizationId = token.organizationId as string | null | undefined;
