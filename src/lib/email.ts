@@ -2,7 +2,9 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = "Colliq <noreply@colliq.app>";
+// Use a verified domain in production via RESEND_FROM env var.
+// Falls back to Resend's sandbox address (works on free tier without domain verification).
+const FROM = process.env.RESEND_FROM ?? "Colliq <onboarding@resend.dev>";
 const BASE_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://colliq.app";
 
 export async function sendPasswordResetEmail(email: string, token: string) {
