@@ -203,9 +203,11 @@ export default function DashboardPage() {
     setBriefing("");
     const prompt = `You are Colliq, an AI work operating system. Write a crisp morning briefing in exactly 4 bullet points (• symbol). Each bullet ≤14 words. Cover: most urgent risk, a quick win, team insight, and one recommendation. Data: ${data.activeProjects} projects, ${data.totalTasks} tasks, ${data.completedTasks} done (${data.completionRate}%), ${data.overdueTasks} overdue. Be specific, direct, no filler.`;
     const result = await ask("/api/ai/assistant", { messages: [{ role: "user", content: prompt }] });
-    if (result) {
+    if (result && !result.includes("[Error:")) {
       setBriefing(result);
       try { localStorage.setItem(BRIEFING_KEY, JSON.stringify({ text: result, ts: Date.now() })); } catch {}
+    } else {
+      setBriefing("Colliq AI is temporarily unavailable — try refreshing in a moment.");
     }
     setBriefingLoading(false);
     generatingRef.current = false;

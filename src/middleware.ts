@@ -14,9 +14,10 @@ export default auth((req) => {
   // Always allow API routes and public portal
   if (isApiRoute || isPortal) return NextResponse.next();
 
-  // Root redirect
+  // Root: unauthenticated users go to login; logged-in users can view the landing page
   if (isRoot) {
-    return NextResponse.redirect(new URL(isLoggedIn ? "/dashboard" : "/login", req.url));
+    if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.next();
   }
 
   // Not logged in → login page
