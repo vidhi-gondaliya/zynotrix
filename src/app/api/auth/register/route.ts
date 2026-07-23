@@ -21,16 +21,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate invite token if provided
-  let invite: { id: string; organizationId: string; role: string } | null = null;
+  let invite: { id: string; organizationId: string; role: string; accepted: boolean; expires: Date; email: string } | null = null;
   if (inviteToken) {
     invite = await (prisma as any).invitation.findUnique({
       where: { token: inviteToken },
       select: { id: true, organizationId: true, role: true, accepted: true, expires: true, email: true },
     });
-    if (!invite || invite.accepted || new Date((invite as any).expires) < new Date()) {
+    if (!invite || invite.accepted || new Date(invite.expires) < new Date()) {
       return NextResponse.json({ error: "Invalid or expired invitation" }, { status: 400 });
     }
-    if ((invite as any).email !== normalEmail) {
+    if (invite.email !== normalEmail) {
       return NextResponse.json({ error: "This invitation was sent to a different email address" }, { status: 400 });
     }
   }
