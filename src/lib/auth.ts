@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
+import { isRateLimited } from "./rate-limit";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -16,6 +17,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        // 10 failed attempts per email per 15 minutes
+        if (isRateLimited(`login:${(credentials.email as string).toLowerCase()}`, 10, 15 * 60_000)) {
+          throw new Error("Too many login attempts. Please wait 15 minutes.");
+        }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },

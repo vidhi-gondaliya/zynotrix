@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { isRateLimited } from "@/lib/rate-limit";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
   if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+
+  // 5 attempts per email per 15 minutes
+  if (isRateLimited(`forgot:${email.toLowerCase()}`, 5, 15 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Please wait before trying again." }, { status: 429 });
+  }
 
   const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 

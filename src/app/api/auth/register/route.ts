@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createNotification } from "@/lib/notifications";
+import { isRateLimited } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
+  // 10 registrations per IP per hour
+  if (isRateLimited(`register:${ip}`, 10, 60 * 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   const { name, email, password, inviteToken } = await req.json();
 
   if (!email || !password) {

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import {
   CheckSquare, ChevronDown, Search, X, AlertCircle, Calendar,
   Plus, CheckCircle2, Circle, Loader, User2, Users, Wand2, Sparkles,
+  Trash2, Square, Minus,
 } from "lucide-react";
 import { NLTaskCreator } from "@/components/ai/NLTaskCreator";
 import { Badge } from "@/components/ui/Badge";
@@ -253,6 +254,93 @@ function PersonalPanel() {
   );
 }
 
+// ── Bulk action bar ──────────────────────────────────────────────────────────
+
+function BulkBar({ selected, onClear, onAction }: {
+  selected: Set<string>;
+  onClear: () => void;
+  onAction: (action: "status" | "priority" | "delete", value?: string) => Promise<void>;
+}) {
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const run = async (action: "status" | "priority" | "delete", value?: string) => {
+    setBusyAction(action + (value ?? ""));
+    await onAction(action, value);
+    setBusyAction(null);
+  };
+
+  const count = selected.size;
+
+  return (
+    <AnimatePresence>
+      {count > 0 && (
+        <motion.div
+          initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 500, damping: 38 }}
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border-strong)", boxShadow: "0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px var(--border-strong)" }}>
+
+          {/* Count */}
+          <div className="flex items-center gap-2 pr-3" style={{ borderRight: "1px solid var(--border)" }}>
+            <span className="min-w-[20px] h-5 px-1.5 rounded-md text-[11px] font-black text-white flex items-center justify-center"
+              style={{ background: "var(--accent)" }}>{count}</span>
+            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>selected</span>
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>Status:</span>
+            {[
+              { v: "TODO", label: "To Do", color: "#60A5FA" },
+              { v: "IN_PROGRESS", label: "In Progress", color: "#A78BFA" },
+              { v: "DONE", label: "Done", color: "#34D399" },
+            ].map(s => (
+              <button key={s.v} onClick={() => run("status", s.v)} disabled={!!busyAction}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+                style={{ background: busyAction === "status" + s.v ? s.color + "33" : "var(--bg-elevated)", color: s.color }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Priority */}
+          <div className="flex items-center gap-1" style={{ borderLeft: "1px solid var(--border)", paddingLeft: 12 }}>
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>Priority:</span>
+            {[
+              { v: "LOW", label: "Low", color: "#6B7280" },
+              { v: "HIGH", label: "High", color: "#FFC107" },
+              { v: "URGENT", label: "Urgent", color: "#FF4466" },
+            ].map(p => (
+              <button key={p.v} onClick={() => run("priority", p.v)} disabled={!!busyAction}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+                style={{ background: "var(--bg-elevated)", color: p.color }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Delete */}
+          <button onClick={() => { if (confirm(`Delete ${count} task${count > 1 ? "s" : ""}?`)) run("delete"); }}
+            disabled={!!busyAction}
+            aria-label="Delete selected tasks"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold transition-all disabled:opacity-50"
+            style={{ background: "var(--danger-muted)", color: "var(--danger)", borderLeft: "1px solid var(--border)", marginLeft: 4 }}>
+            <Trash2 className="w-3.5 h-3.5" /> Delete
+          </button>
+
+          {/* Clear */}
+          <button onClick={onClear} aria-label="Clear selection"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            style={{ color: "var(--text-subtle)" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-elevated)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ── Team tasks panel ─────────────────────────────────────────────────────────
 
 function TeamPanel() {
@@ -267,6 +355,7 @@ function TeamPanel() {
   const [priorityFilter, setPriorityFilter] = useState("");
   const [projectFilter, setProjectFilter]  = useState("");
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const QUICK_TABS: { key: QuickFilter; label: string }[] = [
     { key: "all",      label: "All Tasks"      },
@@ -290,6 +379,7 @@ function TeamPanel() {
   }, [quick, statusFilter, priorityFilter, projectFilter]);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
+  useEffect(() => { setSelected(new Set()); }, [tasks]);
   useEffect(() => {
     fetch("/api/projects").then((r) => r.json()).then(setProjects).catch((err) => console.error("[tasks] load projects", err));
   }, []);
@@ -299,9 +389,35 @@ function TeamPanel() {
     t.project?.name?.toLowerCase().includes(search.toLowerCase())
   );
   const hasFilters = statusFilter || priorityFilter || projectFilter || search;
+  const allSelected = filtered.length > 0 && filtered.every(t => selected.has(t.id));
+  const someSelected = filtered.some(t => selected.has(t.id));
+
+  const toggleTask = (id: string) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(filtered.map(t => t.id)));
+  };
+
+  const handleBulkAction = async (action: "status" | "priority" | "delete", value?: string) => {
+    const ids = Array.from(selected);
+    await fetch("/api/tasks/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, action, value }),
+    });
+    setSelected(new Set());
+    loadTasks();
+  };
 
   return (
     <div className="space-y-4">
+      <BulkBar selected={selected} onClear={() => setSelected(new Set())} onAction={handleBulkAction} />
+
       {/* Quick filter tabs */}
       <div className="flex items-center gap-1 p-1 rounded-2xl w-fit"
         style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
@@ -344,6 +460,7 @@ function TeamPanel() {
         )}
         <span className="ml-auto text-xs font-semibold text-subtle">
           {filtered.length} task{filtered.length !== 1 ? "s" : ""}
+          {selected.size > 0 && <span style={{ color: "var(--accent)" }}> · {selected.size} selected</span>}
         </span>
       </div>
 
@@ -355,14 +472,44 @@ function TeamPanel() {
           description={hasFilters ? "Try adjusting your filters." : "Tasks will appear here once created in your projects."} />
       ) : (
         <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+          {/* Select-all header */}
+          <div className="flex items-center gap-3 px-5 py-2.5"
+            style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
+            <button onClick={toggleAll} aria-label="Select all tasks"
+              className="shrink-0 w-4 h-4 rounded flex items-center justify-center transition-colors"
+              style={{
+                background: allSelected ? "var(--accent)" : someSelected ? "var(--accent-muted)" : "var(--bg-card)",
+                border: `1.5px solid ${allSelected || someSelected ? "var(--accent)" : "var(--border-strong)"}`,
+              }}>
+              {allSelected ? <CheckSquare className="w-2.5 h-2.5 text-white" />
+                : someSelected ? <Minus className="w-2.5 h-2.5" style={{ color: "var(--accent)" }} />
+                : null}
+            </button>
+            <span className="text-[11px] font-semibold" style={{ color: "var(--text-subtle)" }}>
+              {allSelected ? "Deselect all" : "Select all"}
+            </span>
+          </div>
+
           {filtered.map((task, i) => {
             const overdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE";
+            const isSelected = selected.has(task.id);
             return (
               <motion.div key={task.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
-                <Link href={`/projects/${task.projectId}/board`}>
-                  <div className={`flex items-center gap-4 px-5 py-3.5 hover:bg-card-hover transition-colors cursor-pointer
-                    ${i < filtered.length - 1 ? "border-b" : ""} ${overdue ? "border-l-2 border-l-danger pl-4" : ""}`}
-                    style={{ borderColor: "var(--border)" }}>
+                <div className={`flex items-center gap-4 px-5 py-3.5 transition-colors cursor-pointer group
+                  ${i < filtered.length - 1 ? "border-b" : ""} ${overdue ? "border-l-2 border-l-danger pl-4" : ""}
+                  ${isSelected ? "bg-accent/5" : "hover:bg-card-hover"}`}
+                  style={{ borderColor: "var(--border)" }}>
+                  {/* Checkbox */}
+                  <button onClick={() => toggleTask(task.id)} aria-label={`Select task: ${task.title}`}
+                    className="shrink-0 w-4 h-4 rounded flex items-center justify-center transition-all"
+                    style={{
+                      background: isSelected ? "var(--accent)" : "var(--bg-elevated)",
+                      border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--border-strong)"}`,
+                    }}>
+                    {isSelected && <Square className="w-2.5 h-2.5 text-white fill-white" />}
+                  </button>
+
+                  <Link href={`/projects/${task.projectId}/board`} className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_DOT[task.status] ?? "#6B7280" }} />
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold truncate ${task.status === "DONE" ? "line-through text-muted" : "text-foreground"}`}>
@@ -387,8 +534,8 @@ function TeamPanel() {
                         ? <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />
                         : <div className="w-6 h-6 rounded-full border border-dashed" style={{ borderColor: "var(--border-strong)" }} />}
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               </motion.div>
             );
           })}
