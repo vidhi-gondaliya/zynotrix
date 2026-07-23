@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
-  Zap, ArrowRight, Bot, LayoutKanban, MessageSquare, Calendar,
+  Zap, ArrowRight, Bot, Kanban, MessageSquare, Calendar,
   BarChart2, Shield, Sparkles, CheckCircle2, Users, Clock,
   ChevronDown, Star, Trophy, FileText,
 } from "lucide-react";
@@ -113,7 +113,7 @@ function Step({ n, title, desc }: { n: string; title: string; desc: string }) {
 
 const FEATURES = [
   { icon: Bot,          title: "Ask Colliq AI",        accent: "linear-gradient(135deg,#7C3AED,#A78BFA)", desc: "Chat with your workspace. Summarize projects, draft updates, and get instant answers — no tab-switching required." },
-  { icon: LayoutKanban, title: "Kanban Boards",         accent: "linear-gradient(135deg,#0EA5E9,#22D3EE)",  desc: "Drag-and-drop task management with custom columns, priority badges, and real-time position sync across your team." },
+  { icon: Kanban, title: "Kanban Boards",         accent: "linear-gradient(135deg,#0EA5E9,#22D3EE)",  desc: "Drag-and-drop task management with custom columns, priority badges, and real-time position sync across your team." },
   { icon: MessageSquare,title: "Team Chat",             accent: "linear-gradient(135deg,#EC4899,#F43F5E)",  desc: "Threaded channels, direct messages, and file sharing — all in context with your work, not a separate app." },
   { icon: Calendar,     title: "Smart Meetings",        accent: "linear-gradient(135deg,#F59E0B,#FBBF24)",  desc: "Schedule meetings, auto-generate Google Meet links, and track attendance — with AI meeting summaries coming soon." },
   { icon: BarChart2,    title: "Workload Analytics",    accent: "linear-gradient(135deg,#10B981,#34D399)",  desc: "Visual burndown charts, sprint velocity, and capacity planning so no one burns out and nothing ships late." },
