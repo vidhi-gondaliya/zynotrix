@@ -39,6 +39,7 @@
     "react-markdown": "^10.1.0",
     "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
+    "resend": "^6.18.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },

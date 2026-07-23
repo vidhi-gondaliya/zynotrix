@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, User, ArrowRight, Zap, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -56,12 +56,32 @@ const PERKS = [
   "AI-powered insights from day one",
 ];
 
-export default function RegisterPage() {
+export default function RegisterPageWrapper() {
+  return <Suspense><RegisterPage /></Suspense>;
+}
+
+function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite");
+
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [inviteInfo, setInviteInfo] = useState<{ orgName: string; role: string } | null>(null);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Pre-fill email if coming from an invite link
+  useEffect(() => {
+    if (!inviteToken) return;
+    fetch(`/api/invitations/${inviteToken}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.email) setForm(f => ({ ...f, email: d.email }));
+        if (d.orgName) setInviteInfo({ orgName: d.orgName, role: d.role ?? "MEMBER" });
+      })
+      .catch(() => {});
+  }, [inviteToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +89,7 @@ export default function RegisterPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, inviteToken }),
     });
     if (!res.ok) {
       const d = await res.json();
@@ -108,12 +128,29 @@ export default function RegisterPage() {
 
           {/* Heading */}
           <div className="mb-8">
-            <h2 className="text-[26px] font-black tracking-[-0.03em]" style={{ color: "var(--text-foreground)" }}>
-              Create your workspace
-            </h2>
-            <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>
-              Free for 14 days. No credit card needed.
-            </p>
+            {inviteInfo ? (
+              <>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mb-3"
+                  style={{ background: "var(--accent-muted)", color: "var(--accent)" }}>
+                  Invited to join {inviteInfo.orgName}
+                </div>
+                <h2 className="text-[26px] font-black tracking-[-0.03em]" style={{ color: "var(--text-foreground)" }}>
+                  Create your account
+                </h2>
+                <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  You'll be added to <strong>{inviteInfo.orgName}</strong> as {inviteInfo.role.toLowerCase()}.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-[26px] font-black tracking-[-0.03em]" style={{ color: "var(--text-foreground)" }}>
+                  Create your workspace
+                </h2>
+                <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  Free for 14 days. No credit card needed.
+                </p>
+              </>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

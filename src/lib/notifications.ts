@@ -2,6 +2,11 @@ import { prisma } from "./prisma";
 import { broadcastToUser } from "./sse";
 import type { NotificationType } from "@/types";
 
+// Email types that warrant an async email (not spammy comment notifications)
+const EMAIL_WORTHY: Partial<Set<NotificationType>> = new Set<NotificationType>([
+  "TASK_ASSIGNED", "TASK_DUE", "TASK_OVERDUE", "MEETING_INVITE",
+]);
+
 const TYPE_TO_PREF: Partial<Record<NotificationType, "taskAssigned" | "taskDue" | "taskOverdue" | "meetingInvite" | "projectUpdate">> = {
   TASK_ASSIGNED:    "taskAssigned",
   TASK_DUE:         "taskDue",
@@ -72,6 +77,19 @@ export async function createNotification(
   });
 
   broadcastToUser(userId, { type: "notification", payload: notification });
+
+  // Send email if user has email notifications enabled for this type
+  if (prefs?.email && (EMAIL_WORTHY as Set<NotificationType>).has(type)) {
+    const emailAddr = prefs.emailAddress ?? (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email;
+    if (emailAddr) {
+      import("./email").then(({ sendTaskAssignedEmail }) => {
+        if (type === "TASK_ASSIGNED") {
+          sendTaskAssignedEmail(emailAddr, title.replace("Task assigned: ", ""), "", "", data?.taskId ?? "").catch(() => {});
+        }
+        // Other types (TASK_DUE, TASK_OVERDUE, MEETING_INVITE) use the generic notification body
+      }).catch(() => {});
+    }
+  }
 
   return notification;
 }

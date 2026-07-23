@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/task-activity";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET(_req: NextRequest, { params }: { params: { taskId: string } }) {
   const session = await auth();
@@ -23,7 +24,10 @@ export async function POST(req: NextRequest, { params }: { params: { taskId: str
   const { content } = await req.json();
   if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
 
-  const task = await prisma.task.findUnique({ where: { id: params.taskId }, select: { id: true } });
+  const task = await prisma.task.findUnique({
+    where: { id: params.taskId },
+    select: { id: true, title: true, assigneeId: true, creatorId: true },
+  });
   if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
   const comment = await prisma.comment.create({
@@ -32,10 +36,19 @@ export async function POST(req: NextRequest, { params }: { params: { taskId: str
       taskId: params.taskId,
       authorId: session.user.id,
     },
-    include: { author: { select: { id: true, name: true, image: true } } },
+    include: { author: { select: { id: true, name: true, email: true, image: true } } },
   });
 
-  await logActivity(params.taskId, session.user.id, "commented", {});
+  await logActivity(params.taskId, session.user.id, "commented", { preview: content.slice(0, 80) });
+
+  // Notify task assignee and creator (not the commenter)
+  const toNotify = new Set<string>();
+  if (task.assigneeId && task.assigneeId !== session.user.id) toNotify.add(task.assigneeId);
+  if (task.creatorId && task.creatorId !== session.user.id) toNotify.add(task.creatorId);
+  for (const id of toNotify) {
+    createNotification(id, "COMMENT_ADDED", `New comment on: ${task.title}`, content.slice(0, 120), { taskId: task.id }).catch(() => {});
+  }
+
   return NextResponse.json(comment, { status: 201 });
 }
 

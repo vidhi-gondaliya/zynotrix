@@ -138,6 +138,34 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("password_reset_tokens")
+}
+
+model Invitation {
+  id             String   @id @default(cuid())
+  email          String
+  organizationId String
+  role           String   @default("MEMBER")
+  token          String   @unique @default(cuid())
+  invitedById    String
+  expires        DateTime
+  accepted       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([email])
+  @@index([organizationId])
+  @@map("invitations")
+}
+
 // ── PROJECTS ────────────────────────────────────────────────────────────────
 
 model Project {

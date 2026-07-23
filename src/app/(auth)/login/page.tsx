@@ -227,6 +227,13 @@ function LoginForm() {
               }
             />
 
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-[11px] font-semibold"
+                style={{ color: "var(--accent)" }}>
+                Forgot password?
+              </Link>
+            </div>
+
             {error && (
               <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] text-[12px] font-semibold"
