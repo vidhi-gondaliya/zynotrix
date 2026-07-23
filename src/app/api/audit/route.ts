@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
+import { hasPermission } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { orgId } = ctx;
+  const { orgId, orgRole } = ctx;
+
+  if (!hasPermission(orgRole, "admin:access")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = req.nextUrl;
   const entityType = searchParams.get("entityType");

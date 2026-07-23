@@ -32,7 +32,7 @@ function AddMembersModal({ channel, onClose, onMembersUpdated }: {
   const currentMemberIds    = new Set((channel.members ?? []).map((m) => m.userId));
 
   useEffect(() => {
-    fetch("/api/users").then((r) => r.json()).then(setUsers).catch(() => {});
+    fetch("/api/users").then((r) => r.json()).then(setUsers).catch((err) => console.error("[chat] load users", err));
   }, []);
 
   const addMember = async (userId: string) => {
@@ -156,7 +156,7 @@ function NewChannelModal({ onClose, onCreated }: {
   const { data: session } = useSession();
 
   useEffect(() => {
-    fetch("/api/users").then((r) => r.json()).then(setUsers).catch(() => {});
+    fetch("/api/users").then((r) => r.json()).then(setUsers).catch((err) => console.error("[chat] load users", err));
   }, []);
 
   const toggleMember = (id: string) => {
@@ -305,7 +305,7 @@ export default function ChannelPage({ params }: { params: { channelId: string } 
 
   useEffect(() => {
     if (!channels.length) {
-      fetch("/api/channels").then((r) => r.json()).then(setChannels).catch(() => {});
+      fetch("/api/channels").then((r) => r.json()).then(setChannels).catch((err) => console.error("[chat] load channels", err));
     }
   }, [channels.length, setChannels]);
 
@@ -313,7 +313,7 @@ export default function ChannelPage({ params }: { params: { channelId: string } 
     fetch(`/api/channels/${params.channelId}/messages`)
       .then((r) => r.json())
       .then((data) => setMessages(params.channelId, data))
-      .catch(() => {});
+      .catch((err) => console.error("[chat] load messages", err));
   }, [params.channelId, setMessages]);
 
   useSSE(`/api/channels/${params.channelId}/sse`, useCallback((data: unknown) => {

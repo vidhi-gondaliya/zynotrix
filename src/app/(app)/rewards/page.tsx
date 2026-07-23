@@ -120,7 +120,7 @@ export default function RewardsPage() {
         if (roles.length > 0 && !roles.includes(lbRole)) setLbRole(roles[0]);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => { console.error("[rewards] load data", err); setLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

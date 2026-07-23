@@ -148,7 +148,7 @@ export default function AutomationsPage() {
     ]).then(([autos, projs]) => {
       setAutomations(Array.isArray(autos) ? autos : []);
       setProjects(Array.isArray(projs) ? projs : []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((err) => console.error("[automations] load data", err)).finally(() => setLoading(false));
   }, []);
 
   // Parse custom statuses from selected project's boardConfig

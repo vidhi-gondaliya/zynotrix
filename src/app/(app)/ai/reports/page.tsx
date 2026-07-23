@@ -113,8 +113,8 @@ export default function ReportsPage() {
   const { ask, text, streaming, reset } = useClaude();
 
   useEffect(() => {
-    fetch("/api/projects").then((r) => r.json()).then((d) => setProjects(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch("/api/users").then((r) => r.json()).then((d) => setUsers(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch("/api/projects").then((r) => r.json()).then((d) => setProjects(Array.isArray(d) ? d : [])).catch((err) => console.error("[reports] load projects", err));
+    fetch("/api/users").then((r) => r.json()).then((d) => setUsers(Array.isArray(d) ? d : [])).catch((err) => console.error("[reports] load users", err));
   }, []);
 
   const setF = useCallback(<K extends keyof ReportFilters>(key: K, val: ReportFilters[K]) =>

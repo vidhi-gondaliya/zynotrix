@@ -75,7 +75,7 @@ export default function ImportExportPage() {
   useEffect(() => {
     fetch("/api/projects").then((r) => r.json())
       .then((d) => setProjects(Array.isArray(d) ? d : []))
-      .catch(() => {});
+      .catch((err) => console.error("[import-export] load projects", err));
   }, []);
 
   const doExport = async () => {

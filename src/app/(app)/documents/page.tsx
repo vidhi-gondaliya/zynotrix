@@ -466,8 +466,8 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     load();
-    fetch("/api/users").then((r) => r.json()).then(setUsers).catch(() => {});
-    fetch("/api/projects").then((r) => r.json()).then(setProjects).catch(() => {});
+    fetch("/api/users").then((r) => r.json()).then(setUsers).catch((err) => console.error("[documents] load users", err));
+    fetch("/api/projects").then((r) => r.json()).then(setProjects).catch((err) => console.error("[documents] load projects", err));
   }, [load]);
 
   const createDoc = async (e: React.FormEvent) => {

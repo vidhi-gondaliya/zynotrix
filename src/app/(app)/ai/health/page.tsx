@@ -134,7 +134,7 @@ export default function AIHealthPage() {
     fetch("/api/alerts")
       .then((r) => r.json())
       .then((data) => { setAlerts(Array.isArray(data) ? data : []); setAlertsLoading(false); })
-      .catch(() => setAlertsLoading(false));
+      .catch((err) => { console.error("[health] load alerts", err); setAlertsLoading(false); });
   };
 
   const refreshAlerts = async () => {

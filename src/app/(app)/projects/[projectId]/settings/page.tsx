@@ -50,8 +50,8 @@ export default function ProjectSettingsPage() {
           status: p.status ?? "ACTIVE",
         });
       });
-    fetch(`/api/projects/${projectId}/custom-fields`).then((r) => r.json()).then(setCustomFields).catch(() => {});
-    fetch(`/api/projects/${projectId}/client-portal`).then((r) => r.json()).then((d) => { if (d?.id) setPortal(d); }).catch(() => {});
+    fetch(`/api/projects/${projectId}/custom-fields`).then((r) => r.json()).then(setCustomFields).catch((err) => console.error("[project/settings] load custom-fields", err));
+    fetch(`/api/projects/${projectId}/client-portal`).then((r) => r.json()).then((d) => { if (d?.id) setPortal(d); }).catch((err) => console.error("[project/settings] load client-portal", err));
   }, [projectId]);
 
   const handleSave = async (e: React.FormEvent) => {

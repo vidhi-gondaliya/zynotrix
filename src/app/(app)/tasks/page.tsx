@@ -291,7 +291,7 @@ function TeamPanel() {
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
   useEffect(() => {
-    fetch("/api/projects").then((r) => r.json()).then(setProjects).catch(() => {});
+    fetch("/api/projects").then((r) => r.json()).then(setProjects).catch((err) => console.error("[tasks] load projects", err));
   }, []);
 
   const filtered = tasks.filter((t) =>

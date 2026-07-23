@@ -32,7 +32,7 @@ export default function NewMeetingPage() {
   });
 
   useEffect(() => {
-    fetch("/api/users").then((r) => r.json()).then(setUsers).catch(() => {});
+    fetch("/api/users").then((r) => r.json()).then(setUsers).catch((err) => console.error("[meetings/new] load users", err));
   }, []);
 
   const toggle = (id: string) =>

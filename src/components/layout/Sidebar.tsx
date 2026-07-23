@@ -262,6 +262,7 @@ export function Sidebar() {
         <button
           onClick={toggle}
           title={collapsed ? "Expand (⌘B)" : "Collapse (⌘B)"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="hidden lg:flex shrink-0 w-6 h-6 rounded-md items-center justify-center transition-all"
           style={{ color: "var(--text-subtle)" }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; (e.currentTarget as HTMLElement).style.color = "var(--text-foreground)"; }}
@@ -344,6 +345,7 @@ export function Sidebar() {
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               title="Sign out"
+              aria-label="Sign out"
               className="shrink-0 p-1 rounded-md transition-all"
               style={{ color: "var(--text-subtle)" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--danger)"; (e.currentTarget as HTMLElement).style.background = "var(--danger-muted)"; }}

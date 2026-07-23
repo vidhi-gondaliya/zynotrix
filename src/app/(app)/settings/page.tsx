@@ -380,6 +380,24 @@ export default function SettingsPage() {
         </>
       )}
 
+      {/* Organization settings shortcut */}
+      <div className="rounded-2xl p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-accent" /> Workspace
+        </h3>
+        <a href="/settings/organization"
+          className="flex items-center justify-between px-4 py-3 rounded-xl transition-all group"
+          style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.background = "var(--accent-muted)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--bg-elevated)"; }}>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Organization Settings</p>
+            <p className="text-xs text-muted mt-0.5">Manage workspace name, members, and invitations</p>
+          </div>
+          <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>Manage →</span>
+        </a>
+      </div>
+
       {/* Product attribution */}
       <div className="pt-4 pb-2 text-center">
         <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>

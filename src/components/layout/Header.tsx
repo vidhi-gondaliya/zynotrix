@@ -25,7 +25,8 @@ const PAGE_TITLES: Record<string, { title: string; sub?: string }> = {
   "/ai/health":    { title: "Project Health",  sub: "Colliq risk analysis" },
   "/ai/search":    { title: "Search with Colliq", sub: "Find anything, instantly" },
   "/notifications":{ title: "Notifications",   sub: "Inbox" },
-  "/settings":     { title: "Settings",        sub: "Your preferences" },
+  "/settings":             { title: "Settings",              sub: "Your preferences" },
+  "/settings/organization":{ title: "Organization Settings", sub: "Workspace & members" },
   "/admin":        { title: "Admin Panel",     sub: "Workspace management" },
   "/automations":  { title: "Automations",     sub: "Workflow rules" },
   "/templates":    { title: "Templates",       sub: "Reusable patterns" },
@@ -61,6 +62,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
       {/* Mobile menu */}
       <button
         onClick={() => setMobileOpen(true)}
+        aria-label="Open navigation"
         className="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center transition-all"
         style={{ color: "var(--text-muted)" }}
         onMouseEnter={(e) => {
@@ -137,6 +139,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
       <button
         onClick={onOpenCommand}
         title="Quick create (⌘K)"
+        aria-label="Quick create"
         className="w-8 h-8 rounded-xl text-white flex items-center justify-center transition-all duration-100 active:scale-95 shrink-0"
         style={{
           background: "var(--accent)",
@@ -161,6 +164,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
       {/* Notifications */}
       <Link
         href="/notifications"
+        aria-label="Notifications"
         className="relative w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-100 shrink-0"
         style={{ color: "var(--text-muted)" }}
         onMouseEnter={(e) => {
