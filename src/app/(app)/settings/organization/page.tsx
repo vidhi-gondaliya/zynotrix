@@ -276,7 +276,7 @@ export default function OrgSettingsPage() {
             <motion.div key={m.user.id} layout
               className="flex items-center gap-3 rounded-xl px-3 py-2.5"
               style={{ background: "var(--bg-elevated)" }}>
-              <Avatar name={m.user.name ?? m.user.email} image={m.user.image} size={32} />
+              <Avatar name={m.user.name ?? m.user.email} image={m.user.image} size="sm" />
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-semibold truncate" style={{ color: "var(--text-foreground)" }}>
                   {m.user.name ?? m.user.email}
