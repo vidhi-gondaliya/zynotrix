@@ -62,7 +62,7 @@ export default function AIAssistantPage() {
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">ZYNOTRIX AI</h2>
+            <h2 className="text-sm font-semibold text-foreground">Ask Colliq</h2>
             <p className="text-[11px] text-muted">Ask anything about your projects, tasks & team</p>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function AIAssistantPage() {
           <div className="flex-1 bg-card border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-accent/30 focus-within:border-accent transition-all">
             <textarea
               className="w-full bg-transparent text-sm text-foreground placeholder:text-subtle resize-none focus:outline-none max-h-32 min-h-[24px]"
-              placeholder="Ask ZYNOTRIX AI anything..."
+              placeholder="Ask Colliq anything…"
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}

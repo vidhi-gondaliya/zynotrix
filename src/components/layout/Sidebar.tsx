@@ -55,12 +55,12 @@ const SECTIONS = [
   },
   {
     key: "ai",
-    label: "AI",
+    label: "Colliq AI",
     items: [
-      { href: "/ai/assistant", icon: Bot,      label: "AI Assistant"   },
-      { href: "/ai/reports",   icon: Sparkles, label: "AI Reports"     },
-      { href: "/ai/health",    icon: Heart,    label: "Project Health" },
-      { href: "/ai/search",    icon: Search,   label: "AI Search"      },
+      { href: "/ai/assistant", icon: Bot,      label: "Ask Colliq"      },
+      { href: "/ai/reports",   icon: Sparkles, label: "Colliq Reports"  },
+      { href: "/ai/health",    icon: Heart,    label: "Project Health"  },
+      { href: "/ai/search",    icon: Search,   label: "Search with Colliq" },
     ] as NavItem[],
   },
   {
@@ -237,17 +237,25 @@ export function Sidebar() {
           </div>
           <AnimatePresence initial={false}>
             {!collapsed && (
-              <motion.span
+              <motion.div
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -6 }}
                 transition={{ duration: 0.12 }}
-                className="text-[13.5px] font-black tracking-[-0.03em] overflow-hidden whitespace-nowrap"
-                style={{
-                  background: "linear-gradient(120deg, var(--text-foreground) 20%, var(--accent) 100%)",
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                }}
+                className="flex flex-col overflow-hidden"
               >
-                ZYNOTRIX
-              </motion.span>
+                <span
+                  className="text-[14px] font-black tracking-[-0.04em] whitespace-nowrap leading-none"
+                  style={{
+                    background: "linear-gradient(120deg, var(--text-foreground) 20%, var(--accent) 100%)",
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                  }}
+                >
+                  COLLIQ
+                </span>
+                <span className="text-[8.5px] font-semibold tracking-widest uppercase whitespace-nowrap leading-none mt-0.5"
+                  style={{ color: "var(--text-subtle)" }}>
+                  by Zynotrix
+                </span>
+              </motion.div>
             )}
           </AnimatePresence>
         </Link>

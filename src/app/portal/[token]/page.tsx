@@ -177,7 +177,7 @@ export default function ClientPortalPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-600 pb-4">
-          Powered by <span className="font-bold text-gray-500">ZYNOTRIX</span>
+          Powered by <span className="font-bold text-gray-500">Colliq</span>
         </p>
       </div>
     </div>

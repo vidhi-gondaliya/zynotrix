@@ -30,7 +30,7 @@ export async function GET(
 
   // ── Build workbook ─────────────────────────────────────────────────
   const workbook = new ExcelJS.Workbook();
-  workbook.creator  = "ZYNOTRIX";
+  workbook.creator  = "Colliq";
   workbook.created  = new Date();
 
   // ── Reference sheet (hidden in Excel, used for dropdown lists) ─────
@@ -193,7 +193,7 @@ export async function GET(
   // ── Info sheet ─────────────────────────────────────────────────────
   const infoSheet = workbook.addWorksheet("Instructions");
   const infoRows = [
-    ["ZYNOTRIX — Task Import Template"],
+    ["Colliq — Task Import Template"],
     [`Project: ${project.name}`],
     [""],
     ["HOW TO USE"],
@@ -202,7 +202,7 @@ export async function GET(
     ["3. Status and Assignee columns have dropdowns — click the cell and select from the list."],
     ["4. Date format: YYYY-MM-DD (e.g. 2025-08-15)"],
     ["5. Tags: comma-separated, no spaces around commas (e.g. frontend,bug,auth)"],
-    ["6. Save the file, then upload it in ZYNOTRIX → Board → Import"],
+    ["6. Save the file, then upload it in Colliq → Board → Import"],
     [""],
     ["VALID STATUS VALUES"],
     ...statusLabels.map((l, i) => [`  ${l} (id: ${statusIds[i]})`]),

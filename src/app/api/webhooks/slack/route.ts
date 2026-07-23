@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ response_type: "ephemeral", text: "Could not find your ZYNOTRIX account." });
+    return NextResponse.json({ response_type: "ephemeral", text: "Could not find your Colliq account." });
   }
 
   // Event callback

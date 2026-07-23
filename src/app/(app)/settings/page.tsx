@@ -78,7 +78,7 @@ export default function SettingsPage() {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       update("browser", true);
-      new Notification("ZYNOTRIX", { body: "Browser notifications enabled!" });
+      new Notification("Colliq", { body: "Browser notifications enabled!" });
       toast.success("Browser notifications enabled!");
     } else {
       toast.error("Permission denied — check browser settings");
@@ -379,6 +379,13 @@ export default function SettingsPage() {
           </div>
         </>
       )}
+
+      {/* Product attribution */}
+      <div className="pt-4 pb-2 text-center">
+        <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>
+          Part of the <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Zynotrix</span> ecosystem &nbsp;·&nbsp; Colliq v1.0
+        </p>
+      </div>
     </div>
   );
 }

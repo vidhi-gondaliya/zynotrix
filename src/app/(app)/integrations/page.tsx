@@ -105,7 +105,7 @@ const SECTIONS: { label: string; items: IntegrationMeta[] }[] = [
       {
         type: "GOOGLE_CALENDAR",
         name: "Google Calendar",
-        description: "Push ZYNOTRIX meetings to your Google Calendar with one click.",
+        description: "Push Colliq meetings to your Google Calendar with one click.",
         color: "#4285F4",
         icon: "📅",
         setupSteps: [
@@ -134,7 +134,7 @@ const SECTIONS: { label: string; items: IntegrationMeta[] }[] = [
       {
         type: "STORAGE_LOCAL",
         name: "Local Storage",
-        description: "Save uploaded files to a directory on the server running ZYNOTRIX.",
+        description: "Save uploaded files to a directory on the server running Colliq.",
         color: "#64748B",
         icon: "💾",
         setupSteps: [
@@ -163,7 +163,7 @@ const SECTIONS: { label: string; items: IntegrationMeta[] }[] = [
         color: "#0F9D58",
         icon: "📂",
         setupSteps: [
-          "Sign in with Google (Settings → Account) so ZYNOTRIX has Drive access",
+          "Sign in with Google (Settings → Account) so Colliq has Drive access",
           "Paste the Google Drive Folder ID from the folder's URL",
           "All new attachments will be uploaded to that folder",
         ],
@@ -243,7 +243,7 @@ export default function IntegrationsPage() {
         <div>
           <h1 className="text-2xl font-black" style={{ color: "var(--text-foreground)" }}>Integrations</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-            Connect ZYNOTRIX to your existing tools for real-time sync and automation.
+            Connect Colliq to your existing tools for real-time sync and automation.
           </p>
         </div>
         <div
@@ -799,7 +799,7 @@ function GDriveForm({ config, color, saving, onSave, onRemove }: {
   return (
     <div className="space-y-4">
       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-        Sign in with Google (Settings → Account) so ZYNOTRIX has Drive access. Then paste the folder ID from your Drive folder URL.
+        Sign in with Google (Settings → Account) so Colliq has Drive access. Then paste the folder ID from your Drive folder URL.
       </p>
       <Field label="Google Drive Folder ID" value={folderId} onChange={setFolderId}
         placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />

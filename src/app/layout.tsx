@@ -27,8 +27,20 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZYNOTRIX — Smart Workspace",
-  description: "AI-powered task management and team collaboration platform",
+  title: "Colliq — AI Work OS",
+  description: "Your team's smartest colleague. One AI-powered workspace to plan, build, communicate and decide together.",
+  metadataBase: new URL("https://zynotrix-task-manager.vercel.app"),
+  openGraph: {
+    title: "Colliq — AI Work OS",
+    description: "Your team's smartest colleague. Plan, build, communicate and decide — powered by AI.",
+    siteName: "Colliq",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Colliq — AI Work OS",
+    description: "Your team's smartest colleague. Plan, build, communicate and decide — powered by AI.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

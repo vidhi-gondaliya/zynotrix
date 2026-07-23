@@ -121,8 +121,8 @@ export function NLTaskCreator({ open, onClose, onCreated, defaultProjectId }: Pr
             <Wand2 className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1">
-            <h2 className="text-sm font-black text-foreground">AI Task Creator</h2>
-            <p className="text-[11px] text-muted">Describe what needs to be done — AI creates structured tasks</p>
+            <h2 className="text-sm font-black text-foreground">Create with Colliq</h2>
+            <p className="text-[11px] text-muted">Describe what needs to be done — Colliq creates structured tasks</p>
           </div>
           <button onClick={onClose} className="w-7 h-7 rounded-xl flex items-center justify-center transition-colors"
             style={{ color: "var(--text-muted)" }}

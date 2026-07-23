@@ -20,10 +20,10 @@ const PAGE_TITLES: Record<string, { title: string; sub?: string }> = {
   "/messages":     { title: "Messages",        sub: "Direct conversations" },
   "/meetings":     { title: "Meetings",        sub: "Schedule & video" },
   "/documents":    { title: "Documents",       sub: "Shared knowledge" },
-  "/ai/assistant": { title: "AI Assistant",    sub: "Claude-powered" },
-  "/ai/reports":   { title: "AI Reports",      sub: "Generated insights" },
-  "/ai/health":    { title: "Project Health",  sub: "Status scores" },
-  "/ai/search":    { title: "AI Search",       sub: "Semantic workspace search" },
+  "/ai/assistant": { title: "Ask Colliq",       sub: "Your AI teammate" },
+  "/ai/reports":   { title: "Colliq Reports",  sub: "AI-generated insights" },
+  "/ai/health":    { title: "Project Health",  sub: "Colliq risk analysis" },
+  "/ai/search":    { title: "Search with Colliq", sub: "Find anything, instantly" },
   "/notifications":{ title: "Notifications",   sub: "Inbox" },
   "/settings":     { title: "Settings",        sub: "Your preferences" },
   "/admin":        { title: "Admin Panel",     sub: "Workspace management" },
@@ -44,7 +44,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
   const matched = Object.entries(PAGE_TITLES).find(([key]) =>
     pathname === key || pathname.startsWith(key + "/")
   );
-  const { title, sub } = matched?.[1] ?? { title: "ZYNOTRIX" };
+  const { title, sub } = matched?.[1] ?? { title: "Colliq" };
 
   return (
     <header
@@ -119,7 +119,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
           className="flex-1 text-left text-[12.5px]"
           style={{ color: "var(--text-subtle)" }}
         >
-          Search workspace…
+          Ask Colliq or search…
         </span>
         <span
           className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-1 rounded-md shrink-0"

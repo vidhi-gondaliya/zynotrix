@@ -50,7 +50,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
   const steps = [
     {
-      title: "Welcome to ZYNOTRIX",
+      title: "Welcome to Colliq",
       subtitle: "Let's set up your workspace in 60 seconds.",
       content: (
         <div className="text-center py-6">
@@ -66,7 +66,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     },
     {
       title: "Team size",
-      subtitle: "How many people will be using ZYNOTRIX?",
+      subtitle: "How many people will be using Colliq?",
       content: (
         <div className="grid grid-cols-3 gap-2.5">
           {TEAM_SIZES.map((size) => (

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const to   = phoneNumber.startsWith("whatsapp:") ? phoneNumber : `whatsapp:${phoneNumber}`;
   const from = fromNumber.startsWith("whatsapp:")  ? fromNumber  : `whatsapp:${fromNumber}`;
 
-  const body = `👋 ZYNOTRIX WhatsApp integration is working! You'll receive task notifications here.`;
+  const body = `👋 Colliq WhatsApp integration is working! You'll receive task notifications here.`;
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
   const params = new URLSearchParams({ To: to, From: from, Body: body });

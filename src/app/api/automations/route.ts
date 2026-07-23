@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     isValid: boolean; validationMessage: string;
   }>(
     [{ role: "user", content: `Parse this automation rule: "${rule}"` }],
-    `You are an automation rule parser for ZYNOTRIX.
+    `You are an automation rule parser for Colliq.
 Available triggers: task_status_changed, task_created, task_due_soon, task_overdue, project_health_low, member_overloaded, comment_added, daily_schedule, weekly_schedule
 Available actions: change_task_status, assign_task, send_notification, create_task, move_to_project, add_tag, set_priority, send_standup
 Available task statuses: ${statusList}

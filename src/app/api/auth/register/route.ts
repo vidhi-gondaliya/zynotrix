@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  await createNotification(user.id, "SYSTEM", "Welcome to ZYNOTRIX! 🎉", "Your workspace is ready.");
+  await createNotification(user.id, "SYSTEM", "Welcome to Colliq! 🎉", "Your workspace is ready.");
 
   return NextResponse.json({ success: true });
 }

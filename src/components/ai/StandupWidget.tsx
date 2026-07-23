@@ -44,7 +44,7 @@ export function StandupWidget() {
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-foreground">AI Standup</h3>
+            <h3 className="text-sm font-black text-foreground">Colliq Standup</h3>
             {standup && <p className="text-[10px] text-muted">{standup.emoji} {standup.mood} day ahead</p>}
           </div>
         </div>

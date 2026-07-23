@@ -67,7 +67,7 @@ export function buildTaskNotification(opts: {
   }[event];
 
   return {
-    username: "ZYNOTRIX",
+    username: "Colliq",
     icon_emoji: ":zap:",
     blocks: [
       {

@@ -40,10 +40,15 @@ export default function CreateWorkspacePage() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-primary)", padding: "24px" }}>
       <div style={{ width: "100%", maxWidth: 440, background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: "40px 36px" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 12, background: "linear-gradient(135deg,var(--accent),var(--accent-2,#22D3EE))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 900, color: "#fff", margin: "0 auto 16px" }}>Z</div>
+          <div style={{ margin: "0 auto 16px" }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: "linear-gradient(135deg, var(--accent), #A78BFA)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", boxShadow: "0 8px 24px rgba(79,82,217,0.35)" }}>
+              <span style={{ color: "#fff", fontSize: 20, fontWeight: 900, letterSpacing: "-0.04em" }}>C</span>
+            </div>
+            <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--text-subtle)" }}>A Zynotrix Product</p>
+          </div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 8 }}>Create your workspace</h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: 1.65 }}>
-            This is your team&apos;s home on ZYNOTRIX. Give it your company or team name.
+          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.65 }}>
+            This is your team&apos;s home on Colliq. Give it your company or team name.
           </p>
         </div>
 
@@ -64,7 +69,7 @@ export default function CreateWorkspacePage() {
             />
             {name && (
               <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 6 }}>
-                URL: zynotrix.app/<strong>{name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}</strong>
+                URL: colliq.app/<strong>{name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}</strong>
               </p>
             )}
           </div>

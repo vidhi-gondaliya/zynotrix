@@ -100,7 +100,10 @@ export default function RegisterPage() {
               style={{ background: "linear-gradient(135deg, #9D6BFF, #00CFFF)", boxShadow: "0 0 20px rgba(157,107,255,0.4)" }}>
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-[15px] font-black tracking-tight" style={{ color: "var(--text-foreground)" }}>ZYNOTRIX</span>
+            <div className="flex flex-col">
+              <span className="text-[15px] font-black tracking-[-0.04em] leading-none" style={{ color: "var(--text-foreground)" }}>COLLIQ</span>
+              <span className="text-[8px] font-semibold tracking-widest uppercase leading-none mt-0.5" style={{ color: "var(--text-subtle)" }}>by Zynotrix</span>
+            </div>
           </div>
 
           {/* Heading */}
@@ -219,13 +222,13 @@ export default function RegisterPage() {
                 }}>stress less.</span>
               </h2>
               <p className="text-[15px] mt-4 leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
-                ZYNOTRIX gives your team the AI edge — from project kickoff to final delivery.
+                Colliq gives your team the AI edge — from project kickoff to final delivery.
               </p>
             </div>
 
             {/* Feature chips */}
             <div className="flex flex-wrap gap-2">
-              {["AI Assistant", "Kanban Boards", "Team Chat", "Meetings", "Analytics", "Rewards"].map((f) => (
+              {["Ask Colliq", "Kanban Boards", "Team Chat", "Meetings", "Analytics", "Rewards"].map((f) => (
                 <span key={f} className="px-3 py-1.5 rounded-full text-[11px] font-semibold"
                   style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   {f}

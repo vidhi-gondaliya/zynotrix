@@ -71,7 +71,7 @@ export default function AISearchPage() {
         >
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-4 h-4 text-accent" />
-            <span className="text-sm font-semibold text-foreground">AI Answer</span>
+            <span className="text-sm font-semibold text-foreground">Colliq Answer</span>
             {streaming && <span className="text-xs text-accent animate-pulse">Searching...</span>}
           </div>
           <div
@@ -86,7 +86,7 @@ export default function AISearchPage() {
           <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mb-4 shadow-glow">
             <Search className="w-8 h-8 text-white" />
           </div>
-          <h3 className="text-sm font-semibold text-foreground mb-2">AI-Powered Search</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">Search with Colliq</h3>
           <p className="text-xs text-muted max-w-xs">
             Search across all your messages, documents, meetings, and tasks using natural language.
           </p>

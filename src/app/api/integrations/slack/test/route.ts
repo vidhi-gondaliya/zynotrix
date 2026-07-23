@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   const payload = buildTaskNotification({
     event: "done",
-    taskTitle: "Test task — ZYNOTRIX integration working! 🎉",
+    taskTitle: "Test task — Colliq integration working! 🎉",
     taskId: "test",
     projectName: "Test Project",
     assigneeName: session.user.name ?? "You",

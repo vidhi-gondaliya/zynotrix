@@ -119,26 +119,26 @@ function LoginForm() {
               style={{ background: "linear-gradient(135deg, #818CF8, #A78BFA)", boxShadow: "0 0 24px rgba(129,140,248,0.55)" }}>
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-[15px] font-black tracking-tight text-white">ZYNOTRIX</span>
+            <span className="text-[15px] font-black tracking-tight text-white">COLLIQ</span>
           </div>
         </div>
 
         <div className="relative z-10 px-12 pb-16 space-y-6">
           <div className="space-y-3">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(129,140,248,0.85)" }}>
-              AI-Powered Workspace
+              AI Work OS · A Zynotrix Product
             </p>
             <h1 className="text-5xl font-black leading-[1.05] tracking-[-0.04em] text-white">
-              Where ambitious<br />
+              Your smartest<br />
               <span style={{
                 background: "linear-gradient(135deg, #818CF8 0%, #A78BFA 45%, #FBBF24 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               }}>
-                teams ship.
+                colleague.
               </span>
             </h1>
             <p className="text-[15px] leading-relaxed max-w-sm" style={{ color: "rgba(255,255,255,0.42)" }}>
-              Project intelligence, real-time collaboration, and AI that actually helps — in one workspace.
+              Colliq thinks, plans, and works alongside your team — so you ship faster with less friction.
             </p>
           </div>
 
@@ -159,7 +159,7 @@ function LoginForm() {
           {/* Testimonial */}
           <div className="p-5 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
             <p className="text-[13px] leading-relaxed italic" style={{ color: "rgba(255,255,255,0.6)" }}>
-              "ZYNOTRIX replaced our entire stack — Jira, Confluence, Slack threads. It just works."
+              "Colliq replaced our entire stack — Jira, Confluence, Slack threads. It just works."
             </p>
             <div className="flex items-center gap-2.5 mt-3">
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
@@ -173,7 +173,7 @@ function LoginForm() {
         </div>
 
         <div className="relative z-10 px-12 pb-8">
-          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>© 2026 ZYNOTRIX Inc.</p>
+          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>© 2026 Zynotrix · Colliq is a Zynotrix product</p>
         </div>
       </div>
 
@@ -194,7 +194,7 @@ function LoginForm() {
               style={{ background: "linear-gradient(135deg, #9D6BFF, #00CFFF)" }}>
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-[15px] font-black tracking-tight" style={{ color: "var(--text-foreground)" }}>ZYNOTRIX</span>
+            <span className="text-[15px] font-black tracking-tight" style={{ color: "var(--text-foreground)" }}>COLLIQ</span>
           </div>
 
           {/* Heading */}
@@ -259,8 +259,8 @@ function LoginForm() {
           {/* Demo fills */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: "Owner",   email: "admin@zynotrix.com", role: "OWNER" },
-              { label: "Manager", email: "alice@zynotrix.com", role: "MANAGER" },
+              { label: "Admin",   email: "demo@nexusdigital.io",  role: "ADMIN" },
+              { label: "Manager", email: "marcus@nexusdigital.io", role: "MANAGER" },
             ].map((u) => (
               <button key={u.email} type="button" onClick={() => fill(u.email)}
                 className="text-left px-3.5 py-3 rounded-[10px] transition-all group"

@@ -146,8 +146,8 @@ export function AIChatBubble() {
                 <Bot className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-foreground">ZYNOTRIX AI</p>
-                <p className="text-[10px] text-muted">Always here to help</p>
+                <p className="text-sm font-black text-foreground">Colliq</p>
+                <p className="text-[10px] text-muted">Your smartest colleague</p>
               </div>
               <button onClick={() => setOpen(false)} className="text-muted hover:text-foreground transition-colors p-1 rounded-lg hover:bg-elevated">
                 <Minimize2 className="w-4 h-4" />
