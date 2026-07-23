@@ -27,13 +27,25 @@ export async function PATCH(req: NextRequest, { params }: P) {
     return NextResponse.json({ ok: true });
   }
 
+  // Auto-calculate velocity when a sprint is completed
+  let autoVelocity: number | undefined;
+  if (status === "COMPLETED") {
+    const sprintTasks = await (prisma as any).sprintTask.findMany({
+      where: { sprintId: params.sprintId },
+      include: { task: { select: { status: true, storyPoints: true } } },
+    });
+    autoVelocity = sprintTasks
+      .filter((st: any) => st.task?.status === "DONE")
+      .reduce((sum: number, st: any) => sum + (st.task?.storyPoints ?? 0), 0);
+  }
+
   const sprint = await (prisma as any).sprint.update({
     where: { id: params.sprintId },
     data: {
       ...(status && { status }),
       ...(name && { name }),
       ...(goal !== undefined && { goal }),
-      ...(velocity !== undefined && { velocity }),
+      ...(velocity !== undefined ? { velocity } : autoVelocity !== undefined ? { velocity: autoVelocity } : {}),
     },
   });
 

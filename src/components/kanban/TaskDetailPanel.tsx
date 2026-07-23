@@ -177,15 +177,15 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
     fetch(`/api/tasks/${task.id}/assignees`).then((r) => r.json())
       .then((d: any[]) => setMultiAssignees(Array.isArray(d) ? d : [])).catch(() => setMultiAssignees([]));
     fetch(`/api/tasks/${task.id}/time`).then((r) => r.json())
-      .then((d: any) => { setTimeLogs(d.logs ?? []); setTotalMinutes(d.totalMinutes ?? 0); }).catch(() => {});
+      .then((d: any) => { setTimeLogs(d.logs ?? []); setTotalMinutes(d.totalMinutes ?? 0); }).catch(() => { setTimeLogs([]); });
     fetch(`/api/tasks/${task.id}/dependencies`).then((r) => r.json())
-      .then((d: any) => { setBlockedBy(d.blockedBy ?? []); setBlocking(d.blocking ?? []); }).catch(() => {});
+      .then((d: any) => { setBlockedBy(d.blockedBy ?? []); setBlocking(d.blocking ?? []); }).catch(() => { setBlockedBy([]); setBlocking([]); });
     fetch(`/api/tasks/${task.id}/links`).then((r) => r.json())
-      .then((d: any) => setTaskLinks(Array.isArray(d) ? d : [])).catch(() => {});
+      .then((d: any) => setTaskLinks(Array.isArray(d) ? d : [])).catch(() => setTaskLinks([]));
   }, [task]);
 
   useEffect(() => {
-    fetch("/api/users").then((r) => r.json()).then(setUsers).catch(() => {});
+    fetch("/api/users").then((r) => r.json()).then(setUsers).catch((err) => console.error("[task-panel] failed to load users", err));
   }, []);
 
   const save = async (updates: Partial<typeof form>) => {

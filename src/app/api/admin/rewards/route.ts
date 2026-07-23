@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermissionAsync } from "@/lib/permissions";
 
 const DEFAULT_CONFIGS = [
   { role: "MEMBER",  action: "task_complete", points: 10, isEnabled: true },
@@ -23,7 +23,7 @@ export async function GET() {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
   const { orgId, orgRole } = ctx;
-  if (!hasPermission(orgRole, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!await hasPermissionAsync(orgRole, orgId, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   await seedIfEmpty(orgId);
   const configs = await prisma.rewardConfig.findMany({ where: { organizationId: orgId }, orderBy: [{ role: "asc" }, { action: "asc" }] });
@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
   const { orgId, orgRole } = ctx;
-  if (!hasPermission(orgRole, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!await hasPermissionAsync(orgRole, orgId, "admin:access")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const updates: { role: string; action: string; points: number; isEnabled: boolean }[] = await req.json();
 

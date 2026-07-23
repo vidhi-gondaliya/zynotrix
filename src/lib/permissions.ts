@@ -72,6 +72,47 @@ export function can(role: string | undefined | null, ...permissions: Permission[
   return permissions.every((p) => hasPermission(role, p));
 }
 
+/**
+ * Resolves the full permission list for a role.
+ * For system roles (OWNER/ADMIN/MANAGER/MEMBER) uses the static map.
+ * For custom roles, queries the database by role name + org.
+ */
+export async function resolveRolePermissions(
+  role: string,
+  orgId: string
+): Promise<Permission[]> {
+  if (DEFAULT_ROLE_PERMISSIONS[role]) {
+    return DEFAULT_ROLE_PERMISSIONS[role];
+  }
+  // Custom role — look up from DB
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const customRole = await prisma.role.findFirst({
+      where: { name: role, organizationId: orgId },
+      select: { permissions: true },
+    });
+    if (customRole?.permissions) {
+      const parsed = JSON.parse(customRole.permissions) as Permission[];
+      return Array.isArray(parsed) ? parsed : [];
+    }
+  } catch {}
+  return DEFAULT_ROLE_PERMISSIONS["MEMBER"]; // safe fallback
+}
+
+/**
+ * Async permission check that correctly handles custom DB-defined roles.
+ * Use this in API route guards instead of hasPermission().
+ */
+export async function hasPermissionAsync(
+  role: string | undefined | null,
+  orgId: string,
+  permission: Permission
+): Promise<boolean> {
+  if (!role) return false;
+  const perms = await resolveRolePermissions(role, orgId);
+  return perms.includes(permission);
+}
+
 export const ROLES = ["OWNER", "ADMIN", "MANAGER", "MEMBER"] as const;
 export type UserRole = (typeof ROLES)[number];
 

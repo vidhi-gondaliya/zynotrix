@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "src/app/api/ai/**": { "maxDuration": 60 },
+    "src/app/api/reports/**": { "maxDuration": 60 },
+    "src/app/api/automations/**": { "maxDuration": 30 }
+  }
+}

@@ -19,7 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           id: p.id, name: p.name, color: p.color,
         }))
       ))
-      .catch(() => {});
+      .catch((err) => console.error("[layout] failed to load projects", err));
   }, []);
 
   useEffect(() => {

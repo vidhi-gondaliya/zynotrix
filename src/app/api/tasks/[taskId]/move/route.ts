@@ -49,6 +49,23 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
     });
   });
 
+  // Re-index all affected columns to eliminate any position gaps or collisions
+  const columnsToReindex = oldStatus !== status ? [oldStatus, status] : [status];
+  await Promise.all(
+    columnsToReindex.map(async (col) => {
+      const tasks = await prisma.task.findMany({
+        where: { projectId: task.projectId, status: col },
+        orderBy: { position: "asc" },
+        select: { id: true },
+      });
+      await prisma.$transaction(
+        tasks.map((t, i) =>
+          prisma.task.update({ where: { id: t.id }, data: { position: i + 1 } })
+        )
+      );
+    })
+  );
+
   const updated = await prisma.task.findUnique({
     where: { id: params.taskId },
     include: {

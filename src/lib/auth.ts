@@ -74,7 +74,38 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
       if (account?.access_token) {
-        token.accessToken = account.access_token;
+        token.accessToken  = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.accessTokenExpiresAt = account.expires_at
+          ? account.expires_at * 1000          // convert seconds → ms
+          : Date.now() + 3600 * 1000;          // default 1 hour
+      }
+
+      // Refresh Google access token when it has expired
+      if (
+        token.refreshToken &&
+        token.accessTokenExpiresAt &&
+        Date.now() > (token.accessTokenExpiresAt as number)
+      ) {
+        try {
+          const resp = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              client_id:     process.env.GOOGLE_CLIENT_ID ?? "",
+              client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+              grant_type:    "refresh_token",
+              refresh_token: token.refreshToken as string,
+            }),
+          });
+          if (resp.ok) {
+            const refreshed = await resp.json();
+            token.accessToken = refreshed.access_token;
+            token.accessTokenExpiresAt = Date.now() + (refreshed.expires_in ?? 3600) * 1000;
+          }
+        } catch {
+          // If refresh fails, token remains stale — Google Meet links will regenerate on next sign-in
+        }
       }
       // Allow frontend to update org in session after workspace creation
       if (trigger === "update" && sessionData) {

@@ -18,7 +18,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     fetch("/api/notifications")
       .then((r) => r.json())
       .then((data) => setNotifications(data))
-      .catch(() => {});
+      .catch((err) => console.error("[notifications] failed to load", err));
   }, [session?.user?.id, loaded, setNotifications]);
 
   // Subscribe to SSE for real-time notifications

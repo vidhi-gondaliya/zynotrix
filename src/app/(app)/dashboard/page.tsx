@@ -181,7 +181,7 @@ export default function DashboardPage() {
       setLoading(false);
       if (Array.isArray(d.alerts)) setCriticalAlerts(d.alerts.filter((x: RiskAlert) => x.severity === "critical"));
     }).catch(() => setLoading(false));
-    fetch("/api/tasks/upcoming").then(r => r.json()).then(setUpcoming).catch(() => {});
+    fetch("/api/tasks/upcoming").then(r => r.json()).then(setUpcoming).catch((err) => console.error("[dashboard] failed to load upcoming tasks", err));
   }, []);
 
   const generateBriefing = useCallback(async (force = false) => {

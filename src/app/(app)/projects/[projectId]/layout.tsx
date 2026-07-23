@@ -14,7 +14,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const loadProject = () => {
-    fetch(`/api/projects/${projectId}`).then((r) => r.json()).then(setProject).catch(() => {});
+    fetch(`/api/projects/${projectId}`).then((r) => r.json()).then(setProject).catch((err) => console.error("[project-layout] failed to load project", err));
   };
   useEffect(() => { loadProject(); }, [projectId]);
 
