@@ -1,21 +1,25 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazily initialize so missing env vars don't crash module load at build time.
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
-// Use a verified domain in production via RESEND_FROM env var.
-// Falls back to Resend's sandbox address (works on free tier without domain verification).
-const FROM = process.env.RESEND_FROM ?? "Colliq <onboarding@resend.dev>";
-const REPLY_TO = process.env.RESEND_REPLY_TO;
-const BASE_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://colliq.app";
+const FROM = () => process.env.RESEND_FROM ?? "Colliq <onboarding@resend.dev>";
+const REPLY_TO = () => process.env.RESEND_REPLY_TO;
+const BASE_URL = () => process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://colliq.app";
 
-function baseEmail(fields: Parameters<typeof resend.emails.send>[0]) {
-  return resend.emails.send({ ...(REPLY_TO ? { replyTo: REPLY_TO } : {}), ...fields });
+function baseEmail(fields: Parameters<Resend["emails"]["send"]>[0]) {
+  const replyTo = REPLY_TO();
+  return getResend().emails.send({ ...(replyTo ? { replyTo } : {}), ...fields });
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const link = `${BASE_URL}/reset-password/${token}`;
+  const link = `${BASE_URL()}/reset-password/${token}`;
   await baseEmail({
-    from: FROM,
+    from: FROM(),
     to: email,
     subject: "Reset your Colliq password",
     html: `
@@ -47,9 +51,9 @@ export async function sendInvitationEmail(
   orgName: string,
   inviterName: string
 ) {
-  const link = `${BASE_URL}/register?invite=${token}`;
+  const link = `${BASE_URL()}/register?invite=${token}`;
   await baseEmail({
-    from: FROM,
+    from: FROM(),
     to: email,
     subject: `${inviterName} invited you to join ${orgName} on Colliq`,
     html: `
@@ -82,9 +86,9 @@ export async function sendTaskAssignedEmail(
   assignerName: string,
   taskId: string
 ) {
-  const link = `${BASE_URL}/tasks`;
+  const link = `${BASE_URL()}/tasks`;
   await baseEmail({
-    from: FROM,
+    from: FROM(),
     to: email,
     subject: `New task assigned: ${taskTitle}`,
     html: `
