@@ -1,31 +1,150 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckSquare, AlertTriangle,
-  Calendar, Sparkles, ArrowRight, Users, Zap, Clock,
-  Activity, Eye, Wand2,
+  CheckSquare, AlertTriangle, Calendar, Sparkles, ArrowRight,
+  Users, Zap, Clock, Activity, Eye, Wand2, Shield, RefreshCw,
+  Target, Flame, TrendingUp,
 } from "lucide-react";
 import { StandupWidget } from "@/components/ai/StandupWidget";
 import { NLTaskCreator } from "@/components/ai/NLTaskCreator";
-
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
-import { motion, AnimatePresence } from "framer-motion";
 import type { AnalyticsData, Meeting, Task } from "@/types";
 import type { RiskAlert } from "@/app/api/alerts/route";
-import { format, isPast, formatDistanceToNow } from "date-fns";
+import { format, isPast } from "date-fns";
 import { useClaude } from "@/hooks/useClaude";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
-const STATUS_CONFIG = {
+// ── Animated number hook ───────────────────────────────────────────────────────
+function useCountUp(target: number, duration = 1200, delay = 0): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (target === 0) { setValue(0); return; }
+    let rafId: number;
+    let startTime: number | null = null;
+    const timeout = setTimeout(() => {
+      const step = (ts: number) => {
+        if (!startTime) startTime = ts;
+        const t = Math.min((ts - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 4);
+        setValue(Math.round(eased * target));
+        if (t < 1) rafId = requestAnimationFrame(step);
+        else setValue(target);
+      };
+      rafId = requestAnimationFrame(step);
+    }, delay);
+    return () => { clearTimeout(timeout); cancelAnimationFrame(rafId); };
+  }, [target, duration, delay]);
+  return value;
+}
+
+// ── Workspace health ring ──────────────────────────────────────────────────────
+function HealthRing({ score }: { score: number }) {
+  const size = 128;
+  const radius = (size - 14) / 2;
+  const circ = 2 * Math.PI * radius;
+  const fill = (score / 100) * circ;
+  const color = score >= 80 ? "#00F090" : score >= 60 ? "#FFC107" : "#FF4466";
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={10} />
+        <motion.circle cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke={color} strokeWidth={10} strokeLinecap="round"
+          strokeDasharray={circ}
+          initial={{ strokeDashoffset: circ }}
+          animate={{ strokeDashoffset: circ - fill }}
+          transition={{ duration: 1.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <motion.span className="text-[26px] font-black leading-none tabular-nums"
+          style={{ color }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
+          {score}
+        </motion.span>
+        <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5"
+          style={{ color: "var(--text-subtle)" }}>Score</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Focus metric card ──────────────────────────────────────────────────────────
+function FocusMetric({
+  label, value, icon: Icon, color, href, badge, index,
+}: {
+  label: string; value: number; icon: React.ElementType;
+  color: string; href: string; badge?: string; index: number;
+}) {
+  const animated = useCountUp(value, 1000, 100 + index * 80);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.06 + index * 0.05, ease: [0.16, 1, 0.3, 1] }}>
+      <Link href={href}>
+        <div
+          className="relative rounded-[16px] p-4 cursor-pointer transition-all duration-200 group"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = color + "50";
+            (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 28px ${color}16`;
+            (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "none";
+            (e.currentTarget as HTMLElement).style.transform = "none";
+          }}>
+          {/* Top accent line */}
+          <div className="absolute top-0 left-4 right-4 h-[1px] rounded-b-full"
+            style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }} />
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: color + "15" }}>
+              <Icon className="w-4 h-4" style={{ color }} />
+            </div>
+            {badge && (
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md"
+                style={{ background: color + "18", color }}>
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className="text-[30px] font-black leading-none tabular-nums tracking-[-0.04em]"
+            style={{ color }}>
+            {animated}
+          </p>
+          <p className="text-[11px] font-semibold mt-1.5" style={{ color: "var(--text-muted)" }}>{label}</p>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function getGreeting() {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+
+function computeHealth(data: AnalyticsData): number {
+  if (data.totalTasks === 0) return 88;
+  const completionPart = Math.min(data.completionRate, 100) * 0.5;
+  const overduePct = data.overdueTasks / data.totalTasks;
+  const overduePart = Math.max(0, 1 - overduePct * 3) * 35;
+  const activityPart = data.activeTasks > 0 ? 15 : 4;
+  return Math.min(99, Math.round(completionPart + overduePart + activityPart));
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   BACKLOG:     { label: "Backlog",     color: "#6B7280" },
   TODO:        { label: "To Do",       color: "#60A5FA" },
   IN_PROGRESS: { label: "In Progress", color: "#A78BFA" },
@@ -33,89 +152,88 @@ const STATUS_CONFIG = {
   DONE:        { label: "Done",        color: "#34D399" },
 };
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
+const PRIORITY_ORDER: Record<string, number> = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+const BRIEFING_KEY = "colliq_briefing_v2";
+const BRIEFING_TTL = 30 * 60 * 1000;
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string; color: string }[]; label?: string }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="panel px-4 py-3 text-xs shadow-float">
-      <p className="text-muted mb-2 font-semibold">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} className="font-semibold" style={{ color: p.color }}>{p.name}: {p.value}</p>
-      ))}
-    </div>
-  );
-};
-
-interface SavedInsight { id: string; content: string; createdAt: string; }
-
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [upcoming, setUpcoming] = useState<{ today: Task[]; tomorrow: Task[] }>({ today: [], tomorrow: [] });
-  const { ask, text: aiInsight, streaming } = useClaude();
+  const { ask, text: aiStream, streaming, reset: resetAI } = useClaude();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [insightHistory, setInsightHistory] = useState<SavedInsight[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [criticalAlerts, setCriticalAlerts] = useState<RiskAlert[]>([]);
   const [alertsDismissed, setAlertsDismissed] = useState(false);
   const [showNLCreator, setShowNLCreator] = useState(false);
+  const [briefing, setBriefing] = useState("");
+  const [briefingLoading, setBriefingLoading] = useState(false);
+  const generatingRef = useRef(false);
 
   useEffect(() => {
-    const done = localStorage.getItem("zynotrix_onboarded");
-    if (!done) setShowOnboarding(true);
+    if (!localStorage.getItem("colliq_onboarded")) setShowOnboarding(true);
   }, []);
 
   useEffect(() => {
-    // Single call replacing /api/analytics + /api/alerts
-    fetch("/api/dashboard").then((r) => r.json()).then((d) => {
+    fetch("/api/dashboard").then(r => r.json()).then(d => {
       setData(d);
       setLoading(false);
-      if (Array.isArray(d.alerts)) {
-        setCriticalAlerts(d.alerts.filter((x: RiskAlert) => x.severity === "critical"));
-      }
+      if (Array.isArray(d.alerts)) setCriticalAlerts(d.alerts.filter((x: RiskAlert) => x.severity === "critical"));
     }).catch(() => setLoading(false));
-    fetch("/api/tasks/upcoming").then((r) => r.json()).then(setUpcoming).catch(() => {});
-    fetch("/api/ai/insights").then((r) => r.json()).then(setInsightHistory).catch(() => {});
+    fetch("/api/tasks/upcoming").then(r => r.json()).then(setUpcoming).catch(() => {});
   }, []);
 
-  const generateInsight = async () => {
-    if (!data) return;
-    const prompt = `Workspace summary: ${data.activeProjects} active projects, ${data.totalTasks} tasks, ${data.completedTasks} done (${data.completionRate}%), ${data.overdueTasks} overdue. Give me 3 specific insights and priorities for this week. Use bullet points. Be direct and actionable.`;
-    const result = await ask("/api/ai/assistant", {
-      messages: [{ role: "user", content: prompt }],
-    });
-    if (result) {
-      // Save to history
+  const generateBriefing = useCallback(async (force = false) => {
+    if (generatingRef.current || !data) return;
+    if (!force) {
       try {
-        const res = await fetch("/api/ai/insights", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: result, prompt }),
-        });
-        if (res.ok) {
-          const saved: SavedInsight = await res.json();
-          setInsightHistory((prev) => [saved, ...prev.slice(0, 9)]);
+        const cached = localStorage.getItem(BRIEFING_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.ts < BRIEFING_TTL && parsed.text) {
+            setBriefing(parsed.text);
+            return;
+          }
         }
       } catch {}
     }
-  };
+    generatingRef.current = true;
+    setBriefingLoading(true);
+    setBriefing("");
+    const prompt = `You are Colliq, an AI work operating system. Write a crisp morning briefing in exactly 4 bullet points (• symbol). Each bullet ≤14 words. Cover: most urgent risk, a quick win, team insight, and one recommendation. Data: ${data.activeProjects} projects, ${data.totalTasks} tasks, ${data.completedTasks} done (${data.completionRate}%), ${data.overdueTasks} overdue. Be specific, direct, no filler.`;
+    const result = await ask("/api/ai/assistant", { messages: [{ role: "user", content: prompt }] });
+    if (result) {
+      setBriefing(result);
+      try { localStorage.setItem(BRIEFING_KEY, JSON.stringify({ text: result, ts: Date.now() })); } catch {}
+    }
+    setBriefingLoading(false);
+    generatingRef.current = false;
+  }, [data, ask]);
+
+  useEffect(() => {
+    if (data && !generatingRef.current) generateBriefing();
+  }, [data, generateBriefing]);
+
+  // Priority feed: overdue first, then by priority
+  const priorityFeed = [...(upcoming.today ?? [])].sort((a, b) => {
+    const aOv = !!(a.dueDate && isPast(new Date(a.dueDate)) && a.status !== "DONE");
+    const bOv = !!(b.dueDate && isPast(new Date(b.dueDate)) && b.status !== "DONE");
+    if (aOv !== bOv) return aOv ? -1 : 1;
+    return (PRIORITY_ORDER[a.priority] ?? 2) - (PRIORITY_ORDER[b.priority] ?? 2);
+  });
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="h-16 w-64 skeleton rounded-2xl" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 skeleton rounded-2xl" />)}
+      <div className="p-6 space-y-5 animate-pulse">
+        <div className="h-8 w-44 rounded-xl" style={{ background: "var(--bg-elevated)" }} />
+        <div className="h-[88px] rounded-2xl" style={{ background: "var(--bg-elevated)" }} />
+        <div className="grid grid-cols-4 gap-3">
+          {[0,1,2,3].map(i => <div key={i} className="h-24 rounded-2xl" style={{ background: "var(--bg-elevated)" }} />)}
         </div>
         <div className="grid grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-64 skeleton rounded-2xl" />)}
+          <div className="col-span-2 h-72 rounded-2xl" style={{ background: "var(--bg-elevated)" }} />
+          <div className="h-72 rounded-2xl" style={{ background: "var(--bg-elevated)" }} />
         </div>
       </div>
     );
@@ -124,499 +242,479 @@ export default function DashboardPage() {
   if (!data) return null;
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
+  const healthScore = computeHealth(data);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="relative min-h-screen">
       <NLTaskCreator open={showNLCreator} onClose={() => setShowNLCreator(false)} />
-
-      {/* Onboarding wizard — shows once per browser */}
       {showOnboarding && (
-        <OnboardingWizard onComplete={() => { localStorage.setItem("zynotrix_onboarded", "1"); setShowOnboarding(false); }} />
+        <OnboardingWizard onComplete={() => { localStorage.setItem("colliq_onboarded", "1"); setShowOnboarding(false); }} />
       )}
 
-      {/* ── Critical Risk Banner ── */}
-      <AnimatePresence>
-        {criticalAlerts.length > 0 && !alertsDismissed && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className="rounded-2xl p-4 flex items-start justify-between gap-3"
-            style={{ background: "rgba(255,68,102,0.08)", border: "1px solid rgba(255,68,102,0.25)" }}>
-            <div className="flex items-start gap-3 min-w-0">
-              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "#FF4466" }} />
-              <div className="min-w-0">
-                <p className="text-sm font-bold" style={{ color: "#FF4466" }}>
-                  {criticalAlerts.length} critical risk{criticalAlerts.length > 1 ? "s" : ""} detected
-                </p>
-                <p className="text-xs text-muted mt-0.5 truncate">
-                  {criticalAlerts[0].title}
-                  {criticalAlerts.length > 1 && ` · +${criticalAlerts.length - 1} more`}
-                </p>
+      {/* ── Ambient atmosphere ── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div style={{ position: "absolute", top: "-15%", left: "-8%", width: 560, height: 560,
+          background: "radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)", filter: "blur(48px)" }} />
+        <div style={{ position: "absolute", bottom: "0%", right: "-5%", width: 480, height: 480,
+          background: "radial-gradient(circle, rgba(0,207,255,0.055) 0%, transparent 70%)", filter: "blur(48px)" }} />
+        <div style={{ position: "absolute", inset: 0,
+          backgroundImage: "linear-gradient(rgba(157,107,255,0.022) 1px, transparent 1px),linear-gradient(90deg, rgba(157,107,255,0.022) 1px, transparent 1px)",
+          backgroundSize: "48px 48px" }} />
+      </div>
+
+      <div className="relative z-10 p-6 space-y-5">
+
+        {/* ── Critical banner ── */}
+        <AnimatePresence>
+          {criticalAlerts.length > 0 && !alertsDismissed && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+              style={{ background: "rgba(255,68,102,0.07)", border: "1px solid rgba(255,68,102,0.18)" }}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(255,68,102,0.12)" }}>
+                  <AlertTriangle className="w-3 h-3" style={{ color: "#FF4466" }} />
+                </div>
+                <span className="text-[13px] font-semibold min-w-0 truncate" style={{ color: "var(--text-foreground)" }}>
+                  <span style={{ color: "#FF4466", fontWeight: 700 }}>{criticalAlerts.length} critical risk{criticalAlerts.length > 1 ? "s" : ""}</span>
+                  {" "}— {criticalAlerts[0].title}
+                </span>
               </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link href="/ai/health">
-                <button className="text-xs font-bold px-3 py-1.5 rounded-xl transition-colors"
-                  style={{ background: "rgba(255,68,102,0.15)", color: "#FF4466" }}>
-                  View Alerts
-                </button>
-              </Link>
-              <button onClick={() => setAlertsDismissed(true)}
-                className="text-xs text-muted hover:text-foreground transition-colors px-2 py-1.5">
-                ✕
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <div className="flex gap-2 shrink-0">
+                <Link href="/ai/health">
+                  <button className="text-[11px] font-bold px-3 py-1.5 rounded-xl"
+                    style={{ background: "rgba(255,68,102,0.1)", color: "#FF4466" }}>Review</button>
+                </Link>
+                <button onClick={() => setAlertsDismissed(true)} className="text-[11px] text-muted hover:text-foreground px-2">✕</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* ── Greeting hero ── */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[20px] p-6"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
-
-        {/* Ambient gradient */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at 80% 50%, var(--accent-glow) 0%, transparent 60%)" }} />
-        <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-[20px]"
-          style={{ background: "linear-gradient(90deg, transparent 0%, var(--accent) 40%, var(--energy) 70%, transparent 100%)" }} />
-
-        <div className="relative z-10 flex items-center justify-between gap-4">
+        {/* ── Greeting ── */}
+        <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] mb-1.5" style={{ color: "var(--text-subtle)" }}>
-              {getGreeting()}
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1"
+              style={{ color: "var(--text-subtle)" }}>
+              {getGreeting()} · {format(new Date(), "EEEE, MMMM d")}
             </p>
-            <h1 className="text-[28px] font-black tracking-[-0.035em] leading-none" style={{ color: "var(--text-foreground)" }}>
-              {firstName}
-            </h1>
-            <p className="text-[13px] mt-2" style={{ color: "var(--text-muted)" }}>
-              {data.overdueTasks > 0
-                ? <><span style={{ color: "var(--warning)", fontWeight: 700 }}>{data.overdueTasks} overdue</span> — address these first to unblock your team</>
-                : <>All caught up · <span style={{ color: "var(--success)", fontWeight: 700 }}>{data.completionRate}%</span> completion rate this sprint</>
-              }
+            <h1 className="text-[34px] font-black tracking-[-0.045em] leading-none"
+              style={{ color: "var(--text-foreground)" }}>{firstName}</h1>
+            <p className="text-[13px] mt-1.5" style={{ color: "var(--text-muted)" }}>
+              {data.overdueTasks > 0 ? (
+                <><span style={{ color: "#FF4466", fontWeight: 700 }}>{data.overdueTasks} task{data.overdueTasks !== 1 ? "s" : ""} overdue</span> — your team may be blocked</>
+              ) : (
+                <>All caught up · <span style={{ color: "var(--success)", fontWeight: 700 }}>{data.completionRate}%</span> completion rate</>
+              )}
             </p>
           </div>
-
-          <div className="hidden md:flex items-center gap-2 shrink-0">
+          <div className="hidden md:flex items-center gap-2 shrink-0 pb-1">
             <button onClick={() => setShowNLCreator(true)}
-              className="flex items-center gap-2 h-9 px-4 rounded-[10px] text-[13px] font-bold text-white transition-all hover:scale-[1.02]"
+              className="flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-bold text-white transition-all hover:-translate-y-px"
               style={{ background: "linear-gradient(135deg, var(--accent), #A78BFA)", boxShadow: "var(--shadow-glow-btn)" }}>
-              <Wand2 className="w-3.5 h-3.5" /> AI Create Task
+              <Wand2 className="w-3.5 h-3.5" /> Create with Colliq
             </button>
             <Link href="/ai/assistant">
-              <button className="flex items-center gap-2 h-9 px-4 rounded-[10px] text-[13px] font-bold transition-all hover:scale-[1.02]"
-                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-foreground)" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-glow)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}>
-                <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} /> Ask AI
-              </button>
-            </Link>
-            <Link href="/projects">
-              <button className="flex items-center gap-2 h-9 px-4 rounded-[10px] text-[13px] font-bold text-white transition-all hover:scale-[1.02]"
-                style={{ background: "var(--accent)", boxShadow: "var(--shadow-glow-btn)" }}>
-                <Zap className="w-3.5 h-3.5" /> New Project
+              <button className="flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-bold transition-all hover:-translate-y-px"
+                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-foreground)" }}>
+                <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} /> Ask Colliq
               </button>
             </Link>
           </div>
         </div>
-      </motion.div>
 
-      {/* ── Metric cards — reordered: Active Tasks → Overdue → Total → Completion ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-        <MetricCard title="Active Tasks"       value={data.activeTasks}   icon={<Activity className="w-4.5 h-4.5" />}       color="accent"                                                       index={0} href="/tasks?filter=mine" />
-        <MetricCard title="Overdue"            value={data.overdueTasks}  icon={<AlertTriangle className="w-4.5 h-4.5" />}  color={data.overdueTasks > 0 ? "danger" : "success"} trend={data.overdueTasks > 0 ? "down" : "neutral"} index={1} href="/tasks?filter=overdue" />
-        <MetricCard title="Under Review"       value={data.reviewTasks}   icon={<Eye className="w-4.5 h-4.5" />}            color="warning"   trend={data.reviewTasks > 0 ? "up" : "neutral"}           index={2} href="/tasks?filter=review" />
-        <MetricCard title="Total Tasks"        value={data.totalTasks}    icon={<CheckSquare className="w-4.5 h-4.5" />}    color="secondary"                                                    index={3} href="/tasks" />
-      </div>
+        {/* ── Colliq Briefing ── */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
+          className="relative rounded-[18px] overflow-hidden"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          {/* Accent bar */}
+          <div className="absolute top-0 left-0 right-0 h-[1.5px]"
+            style={{ background: "linear-gradient(90deg, transparent, var(--accent) 25%, #A78BFA 65%, transparent)" }} />
+          {/* Corner glow */}
+          <div className="absolute -top-8 right-0 w-48 h-48 pointer-events-none"
+            style={{ background: "radial-gradient(circle, rgba(157,107,255,0.07) 0%, transparent 70%)" }} />
 
-      {/* ── Upcoming tasks ── */}
-      {(upcoming.today.length > 0 || upcoming.tomorrow.length > 0) && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="rounded-2xl p-5"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: "var(--energy-muted)" }}>
-                <Clock className="w-3.5 h-3.5" style={{ color: "var(--energy)" }} />
+          <div className="relative z-10 flex items-start gap-4 px-5 py-4">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              style={{ background: "linear-gradient(135deg, var(--accent), #A78BFA)", boxShadow: "0 4px 14px rgba(157,107,255,0.3)" }}>
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>Colliq Briefing</span>
+                {briefingLoading && (
+                  <span className="text-[10px] font-semibold animate-pulse" style={{ color: "var(--accent)" }}>analyzing…</span>
+                )}
+                {!briefingLoading && (briefing || aiStream) && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: "var(--accent-muted)", color: "var(--accent)" }}>Today</span>
+                )}
               </div>
-              <h3 className="text-sm font-bold text-foreground">Upcoming Tasks</h3>
+              <AnimatePresence mode="wait">
+                {(briefing || aiStream) ? (
+                  <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="text-[13px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                    <MarkdownRenderer content={briefing || aiStream} />
+                  </motion.div>
+                ) : briefingLoading ? (
+                  <motion.div key="dots" className="flex items-center gap-2 py-1">
+                    {[0,1,2].map(i => (
+                      <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: "var(--accent)" }}
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 0.85, delay: i * 0.18, repeat: Infinity }} />
+                    ))}
+                    <span className="text-[12px]" style={{ color: "var(--text-subtle)" }}>Colliq is analyzing your workspace…</span>
+                  </motion.div>
+                ) : (
+                  <motion.div key="empty">
+                    <span className="text-[12px]" style={{ color: "var(--text-subtle)" }}>Generating your briefing…</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            <Link href="/tasks">
-              <button className="text-[10px] font-bold hover:underline underline-offset-2 flex items-center gap-1" style={{ color: "var(--accent)" }}>
-                View all <ArrowRight className="w-3 h-3" />
-              </button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Today */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
-                  style={{ background: "var(--accent-muted)", color: "var(--accent)" }}>Today</span>
-                <span className="text-[10px] text-muted">{upcoming.today.length} task{upcoming.today.length !== 1 ? "s" : ""}</span>
-              </div>
-              {upcoming.today.length === 0 ? (
-                <p className="text-xs text-subtle px-1">No tasks due today 🎉</p>
-              ) : (
-                <div className="space-y-2">
-                  {upcoming.today.slice(0, 5).map((t) => (
-                    <Link key={t.id} href={`/projects/${t.projectId}/list`}>
-                      <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-card-hover transition-colors group cursor-pointer">
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ background: t.project?.color ?? "var(--accent)" }} />
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold text-foreground truncate ${t.status === "DONE" ? "line-through opacity-50" : ""}`}>{t.title}</p>
-                          {t.project && <p className="text-[10px] text-subtle truncate">{t.project.name}</p>}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {t.dueDate && (
-                            <span className={`text-[10px] font-semibold ${isPast(new Date(t.dueDate)) ? "text-danger" : "text-muted"}`}>
-                              {format(new Date(t.dueDate), "h:mm a")}
-                            </span>
-                          )}
-                          {t.assignee && <Avatar name={t.assignee.name} image={t.assignee.image} size="xs" />}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Tomorrow */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
-                  style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>Tomorrow</span>
-                <span className="text-[10px] text-muted">{upcoming.tomorrow.length} task{upcoming.tomorrow.length !== 1 ? "s" : ""}</span>
-              </div>
-              {upcoming.tomorrow.length === 0 ? (
-                <p className="text-xs text-subtle px-1">Nothing due tomorrow</p>
-              ) : (
-                <div className="space-y-2">
-                  {upcoming.tomorrow.slice(0, 5).map((t) => (
-                    <Link key={t.id} href={`/projects/${t.projectId}/list`}>
-                      <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-card-hover transition-colors cursor-pointer">
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ background: t.project?.color ?? "var(--text-subtle)" }} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-foreground truncate">{t.title}</p>
-                          {t.project && <p className="text-[10px] text-subtle truncate">{t.project.name}</p>}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {t.dueDate && (
-                            <span className="text-[10px] font-semibold text-muted">
-                              {format(new Date(t.dueDate), "h:mm a")}
-                            </span>
-                          )}
-                          {t.assignee && <Avatar name={t.assignee.name} image={t.assignee.image} size="xs" />}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── Charts row ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Task trend */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="lg:col-span-2 rounded-2xl p-5"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-sm font-bold text-foreground">Task Activity</h3>
-              <p className="text-xs text-muted mt-0.5">Last 14 days</p>
-            </div>
-            <div className="flex items-center gap-4 text-[10px] font-semibold text-muted">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} />Completed
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ background: "var(--energy)" }} />Created
-              </span>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={data.taskTrend}>
-              <defs>
-                <linearGradient id="gCompleted" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#818CF8" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#818CF8" stopOpacity={0}    />
-                </linearGradient>
-                <linearGradient id="gCreated" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#FBBF24" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#FBBF24" stopOpacity={0}    />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-subtle)", fontWeight: 600 }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 9, fill: "var(--text-subtle)" }} tickLine={false} axisLine={false} width={18} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="completed" name="Completed" stroke="var(--accent)" fill="url(#gCompleted)" strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="created"   name="Created"   stroke="var(--energy)" fill="url(#gCreated)"   strokeWidth={2} dot={false} strokeDasharray="5 3" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Team activity */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-          className="rounded-2xl p-5"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: "var(--accent-muted)" }}>
-              <Users className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-foreground">Team Activity</h3>
-              <p className="text-xs text-muted">Tasks assigned</p>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={data.teamActivity} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 9, fill: "var(--text-subtle)" }} tickLine={false} axisLine={false} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "var(--text-muted)", fontWeight: 600 }} tickLine={false} axisLine={false} width={44} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="tasks" name="Tasks" fill="var(--accent)" radius={[0, 6, 6, 0]} maxBarSize={14} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </div>
-
-      {/* ── Recent Tasks ── */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
-        className="rounded-2xl overflow-hidden"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: "var(--accent-muted)" }}>
-              <Activity className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
-            </div>
-            <h3 className="text-sm font-bold text-foreground">Recent Tasks</h3>
-          </div>
-          <Link href="/tasks">
-            <button className="text-[10px] font-bold hover:underline underline-offset-2 flex items-center gap-1" style={{ color: "var(--accent)" }}>
-              View all <ArrowRight className="w-3 h-3" />
+            <button
+              onClick={() => { setBriefing(""); resetAI(); generatingRef.current = false; setTimeout(() => generateBriefing(true), 80); }}
+              disabled={briefingLoading || streaming}
+              className="w-7 h-7 rounded-xl flex items-center justify-center transition-colors shrink-0 disabled:opacity-40 mt-0.5"
+              style={{ color: "var(--text-subtle)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+              <RefreshCw className={`w-3.5 h-3.5 ${briefingLoading ? "animate-spin" : ""}`} />
             </button>
-          </Link>
+          </div>
+        </motion.div>
+
+        {/* ── Focus Metrics Strip ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <FocusMetric label="Active Tasks" value={data.activeTasks} icon={Activity}
+            color="var(--accent)" href="/tasks?filter=mine" index={0} />
+          <FocusMetric label="Overdue" value={data.overdueTasks} icon={AlertTriangle}
+            color={data.overdueTasks > 0 ? "#FF4466" : "#00F090"} href="/tasks?filter=overdue"
+            badge={data.overdueTasks > 0 ? "!" : "✓"} index={1} />
+          <FocusMetric label="In Review" value={data.reviewTasks} icon={Eye}
+            color="#FFC107" href="/tasks?filter=review" index={2} />
+          <FocusMetric label="Total Tasks" value={data.totalTasks} icon={CheckSquare}
+            color="var(--text-subtle)" href="/tasks" index={3} />
         </div>
-        <div>
-          {(data.recentTasks ?? []).map((task: Task, i: number) => {
-            const overdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE";
-            const STATUS_DOT: Record<string, string> = { BACKLOG: "#6B7280", TODO: "#60A5FA", IN_PROGRESS: "#A78BFA", REVIEW: "#FBBF24", DONE: "#34D399" };
-            const PRIORITY_V: Record<string, "default"|"info"|"warning"|"danger"> = { LOW: "default", MEDIUM: "info", HIGH: "warning", URGENT: "danger" };
-            return (
-              <Link key={task.id} href={`/projects/${task.projectId}/board`}>
-                <div className="flex items-center gap-4 px-5 py-3 hover:bg-card-hover transition-colors cursor-pointer"
-                  style={i < (data.recentTasks?.length ?? 0) - 1 ? { borderBottom: "1px solid var(--border)" } : {}}>
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_DOT[task.status] ?? "#6B7280" }} />
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold truncate ${task.status === "DONE" ? "line-through text-muted" : "text-foreground"}`}>{task.title}</p>
-                    {task.project && (
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <div className="w-2 h-2 rounded-sm" style={{ background: task.project.color }} />
-                        <span className="text-[11px] text-subtle">{task.project.name}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="hidden sm:flex items-center gap-3 shrink-0">
-                    <Badge variant={PRIORITY_V[task.priority] ?? "default"} size="sm">{task.priority}</Badge>
-                    {task.dueDate && (
-                      <span className={`text-[10px] font-semibold flex items-center gap-1 ${overdue ? "text-danger" : "text-subtle"}`}>
-                        <Calendar className="w-3 h-3" />{format(new Date(task.dueDate), "MMM d")}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-subtle">{formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}</span>
-                    {task.assignee ? <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" /> : null}
-                  </div>
+
+        {/* ── Main Content Row: Priority Feed + Health ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Priority Feed — 2 cols */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
+            className="lg:col-span-2 rounded-[18px] overflow-hidden"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between px-5 py-3.5"
+              style={{ borderBottom: "1px solid var(--border)" }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center"
+                  style={{ background: "rgba(255,100,50,0.09)" }}>
+                  <Flame className="w-3.5 h-3.5" style={{ color: "#FF6432" }} />
                 </div>
+                <div>
+                  <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>Priority Feed</h3>
+                  <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>What demands your attention right now</p>
+                </div>
+              </div>
+              <Link href="/tasks">
+                <button className="flex items-center gap-1 text-[11px] font-bold" style={{ color: "var(--accent)" }}>
+                  All tasks <ArrowRight className="w-3 h-3" />
+                </button>
               </Link>
-            );
-          })}
-        </div>
-      </motion.div>
-
-      {/* ── Bottom row: status+meetings left, AI right ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Left col: Status + Meetings stacked */}
-        <div className="lg:col-span-1 flex flex-col gap-4">
-
-          {/* Status breakdown */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="rounded-[16px] p-5"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}>
-                Tasks by Status
-              </h3>
-              <span className="text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-subtle)" }}>
-                {data.totalTasks} total
-              </span>
             </div>
-            <div className="space-y-2.5">
+
+            {priorityFeed.length === 0 && upcoming.tomorrow.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center px-6">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+                  style={{ background: "rgba(0,240,144,0.07)", border: "1px solid rgba(0,240,144,0.14)" }}>
+                  <Target className="w-6 h-6" style={{ color: "#00F090" }} />
+                </div>
+                <p className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>Nothing urgent today</p>
+                <p className="text-[12px] mt-1" style={{ color: "var(--text-muted)" }}>You&apos;re on top of everything.</p>
+                <button onClick={() => setShowNLCreator(true)}
+                  className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold text-white"
+                  style={{ background: "var(--accent)", boxShadow: "var(--shadow-glow-btn)" }}>
+                  <Wand2 className="w-3.5 h-3.5" /> Create with Colliq
+                </button>
+              </div>
+            ) : (
+              <div>
+                {priorityFeed.slice(0, 8).map((task, i) => {
+                  const overdue = !!(task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE");
+                  const urgentColor = overdue && task.priority === "URGENT" ? "#FF4466"
+                    : overdue ? "#FFC107"
+                    : task.priority === "URGENT" ? "#FF4466"
+                    : task.priority === "HIGH" ? "#FFC107"
+                    : "var(--border)";
+                  return (
+                    <motion.div key={task.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.08 + i * 0.035 }}>
+                      <Link href={`/projects/${task.projectId}/board`}>
+                        <div className="flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors hover:bg-card-hover"
+                          style={{ borderBottom: i < priorityFeed.slice(0, 8).length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
+                          <div className="w-[3px] h-8 rounded-full shrink-0" style={{ background: urgentColor }} />
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: task.project?.color ?? "var(--text-subtle)" }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold truncate" style={{ color: "var(--text-foreground)" }}>{task.title}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {task.project && <span className="text-[10px]" style={{ color: "var(--text-subtle)" }}>{task.project.name}</span>}
+                              {overdue && <span className="text-[10px] font-bold" style={{ color: "#FF4466" }}>· overdue</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {(task.priority === "URGENT" || task.priority === "HIGH") && (
+                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
+                                style={{
+                                  background: task.priority === "URGENT" ? "rgba(255,68,102,0.1)" : "rgba(255,193,7,0.1)",
+                                  color: task.priority === "URGENT" ? "#FF4466" : "#FFC107",
+                                }}>
+                                {task.priority}
+                              </span>
+                            )}
+                            {task.dueDate && (
+                              <span className="text-[10px] font-semibold flex items-center gap-0.5"
+                                style={{ color: overdue ? "#FF4466" : "var(--text-subtle)" }}>
+                                <Calendar className="w-2.5 h-2.5" />
+                                {format(new Date(task.dueDate), "MMM d")}
+                              </span>
+                            )}
+                            {task.assignee && <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />}
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+                {upcoming.tomorrow.length > 0 && (
+                  <div className="px-5 py-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                    <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--text-subtle)" }}>Tomorrow</p>
+                    {upcoming.tomorrow.slice(0, 3).map(task => (
+                      <Link key={task.id} href={`/projects/${task.projectId}/list`}>
+                        <div className="flex items-center gap-3 py-2 hover:opacity-70 transition-opacity cursor-pointer">
+                          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: task.project?.color ?? "var(--text-subtle)" }} />
+                          <p className="text-[12px] flex-1 truncate" style={{ color: "var(--text-muted)" }}>{task.title}</p>
+                          {task.dueDate && <span className="text-[10px]" style={{ color: "var(--text-subtle)" }}>{format(new Date(task.dueDate), "h:mm a")}</span>}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Workspace Health — 1 col */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+            className="rounded-[18px] p-5 flex flex-col gap-4"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: "rgba(0,240,144,0.08)" }}>
+                <Shield className="w-3.5 h-3.5" style={{ color: "#00F090" }} />
+              </div>
+              <div>
+                <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>Workspace Health</h3>
+                <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Colliq score</p>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <HealthRing score={healthScore} />
+            </div>
+
+            <div className="space-y-2">
               {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
                 const count = (data.tasksByStatus as Record<string, number>)[status] ?? 0;
                 const pct = data.totalTasks > 0 ? Math.round((count / data.totalTasks) * 100) : 0;
                 return (
                   <div key={status}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "var(--text-muted)" }}>
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: cfg.color }} />
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="text-[11px] font-medium flex items-center gap-1.5" style={{ color: "var(--text-subtle)" }}>
+                        <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ background: cfg.color }} />
                         {cfg.label}
                       </span>
-                      <span className="text-[12px] font-bold tabular-nums" style={{ color: cfg.color }}>{count}</span>
+                      <span className="text-[11px] font-bold tabular-nums" style={{ color: cfg.color }}>{count}</span>
                     </div>
-                    <div className="h-[3px] rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
+                    <div className="h-[2px] rounded-full" style={{ background: "var(--bg-elevated)" }}>
                       <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                        transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                         className="h-full rounded-full" style={{ background: cfg.color }} />
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl p-2.5 text-center" style={{ background: "var(--bg-elevated)" }}>
+                <p className="text-[13px] font-black tabular-nums" style={{ color: data.overdueTasks > 0 ? "#FF4466" : "#00F090" }}>
+                  {data.totalTasks > 0 ? Math.round((data.overdueTasks / data.totalTasks) * 100) : 0}%
+                </p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: "var(--text-subtle)" }}>Overdue</p>
+              </div>
+              <div className="rounded-xl p-2.5 text-center" style={{ background: "var(--bg-elevated)" }}>
+                <p className="text-[13px] font-black tabular-nums" style={{ color: "var(--accent)" }}>{data.completionRate}%</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: "var(--text-subtle)" }}>Complete</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── Charts + Team Pulse ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Activity chart — 2 cols */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+            className="lg:col-span-2 rounded-[18px] p-5"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>Activity Trend</h3>
+                <p className="text-[10px] mt-0.5" style={{ color: "var(--text-subtle)" }}>Tasks completed vs created — last 14 days</p>
+              </div>
+              <div className="flex gap-4 text-[10px] font-semibold" style={{ color: "var(--text-subtle)" }}>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} />Completed
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full" style={{ background: "#FBBF24" }} />Created
+                </span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={data.taskTrend}>
+                <defs>
+                  <linearGradient id="gAcc" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#818CF8" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#818CF8" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gEng" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FBBF24" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#FBBF24" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-subtle)", fontWeight: 600 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "var(--text-subtle)" }} tickLine={false} axisLine={false} width={20} />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="px-3 py-2 rounded-xl text-xs" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-float)" }}>
+                      <p className="font-semibold mb-1" style={{ color: "var(--text-subtle)" }}>{label}</p>
+                      {payload.map((p, i) => <p key={i} className="font-bold" style={{ color: p.color as string }}>{p.name}: {p.value}</p>)}
+                    </div>
+                  );
+                }} />
+                <Area type="monotone" dataKey="completed" name="Completed" stroke="var(--accent)" fill="url(#gAcc)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="created" name="Created" stroke="#FBBF24" fill="url(#gEng)" strokeWidth={2} dot={false} strokeDasharray="5 3" />
+              </AreaChart>
+            </ResponsiveContainer>
           </motion.div>
 
-          {/* Upcoming meetings */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-            className="rounded-[16px] p-5 flex-1"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
+          {/* Team Pulse — 1 col */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}
+            className="rounded-[18px] p-5"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: "var(--accent-muted)" }}>
+                <Users className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+              </div>
+              <div>
+                <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>Team Pulse</h3>
+                <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Tasks per member</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {(data.teamActivity ?? []).slice(0, 6).map((m: { name: string; tasks: number }, i: number) => {
+                const maxT = Math.max(...(data.teamActivity ?? [{ tasks: 1 }]).map((x: { tasks: number }) => x.tasks), 1);
+                const pct = Math.round((m.tasks / maxT) * 100);
+                return (
+                  <div key={m.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Avatar name={m.name} size="xs" />
+                        <span className="text-[12px] font-medium" style={{ color: "var(--text-foreground)" }}>
+                          {m.name?.split(" ")[0] ?? "—"}
+                        </span>
+                        {i === 0 && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
+                            style={{ background: "var(--accent-muted)", color: "var(--accent)" }}>TOP</span>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-bold tabular-nums" style={{ color: "var(--text-muted)" }}>{m.tasks}</span>
+                    </div>
+                    <div className="h-[3px] rounded-full" style={{ background: "var(--bg-elevated)" }}>
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                        transition={{ delay: 0.3 + i * 0.07, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                        className="h-full rounded-full"
+                        style={{ background: i === 0 ? "var(--accent)" : "var(--border-strong)" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── Bottom Row: Meetings + Standup ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Upcoming Meetings */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.31 }}
+            className="rounded-[18px] p-5"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}>Meetings</h3>
-              <Link href="/meetings" className="flex items-center gap-1 text-[11px] font-bold transition-colors"
-                style={{ color: "var(--accent)" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.textDecoration = "none"; }}>
-                View all <ArrowRight className="w-3 h-3" />
+              <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>Upcoming Meetings</h3>
+              <Link href="/meetings" className="flex items-center gap-1 text-[11px] font-bold" style={{ color: "var(--accent)" }}>
+                All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
             {data.upcomingMeetings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-4 text-center">
-                <Calendar className="w-6 h-6 mb-2" style={{ color: "var(--text-subtle)" }} />
-                <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>No upcoming meetings</p>
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <Calendar className="w-8 h-8 mb-2" style={{ color: "var(--text-subtle)", opacity: 0.4 }} />
+                <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>No meetings scheduled</p>
+                <Link href="/meetings">
+                  <button className="mt-3 text-[11px] font-bold px-3 py-1.5 rounded-xl"
+                    style={{ background: "var(--accent-muted)", color: "var(--accent)" }}>
+                    Schedule meeting
+                  </button>
+                </Link>
               </div>
             ) : (
-              <div className="space-y-1.5">
-                {data.upcomingMeetings.slice(0, 3).map((m: Meeting) => (
-                  <Link key={m.id} href="/meetings"
-                    className="flex items-center gap-3 p-2.5 rounded-[10px] group transition-colors"
-                    style={{ border: "1px solid transparent" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.borderColor = "transparent"; }}>
-                    <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 text-[11px] font-black"
-                      style={{ background: "var(--accent-muted)", color: "var(--accent)" }}>
-                      {format(new Date(m.startTime), "d")}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold truncate" style={{ color: "var(--text-foreground)" }}>{m.title}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: "var(--text-subtle)" }}>{format(new Date(m.startTime), "MMM d · h:mm a")}</p>
+              <div className="space-y-2">
+                {data.upcomingMeetings.slice(0, 4).map((m: Meeting) => (
+                  <Link key={m.id} href="/meetings">
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-elevated transition-colors cursor-pointer">
+                      <div className="w-9 h-9 rounded-xl flex flex-col items-center justify-center shrink-0"
+                        style={{ background: "var(--accent-muted)" }}>
+                        <span className="text-[7px] font-bold uppercase leading-none" style={{ color: "var(--accent)", letterSpacing: "0.06em" }}>
+                          {format(new Date(m.startTime), "MMM")}
+                        </span>
+                        <span className="text-[15px] font-black leading-tight" style={{ color: "var(--accent)" }}>
+                          {format(new Date(m.startTime), "d")}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-semibold truncate" style={{ color: "var(--text-foreground)" }}>{m.title}</p>
+                        <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>
+                          {format(new Date(m.startTime), "h:mm a")}
+                        </p>
+                      </div>
                     </div>
                   </Link>
                 ))}
               </div>
             )}
           </motion.div>
+
+          {/* Standup widget — 2 cols */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+            className="lg:col-span-2">
+            <StandupWidget />
+          </motion.div>
         </div>
 
-        {/* Right col: AI insights — full height */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          className="lg:col-span-2 rounded-[16px] p-5 flex flex-col relative overflow-hidden"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)", minHeight: "280px" }}>
-
-          {/* Premium top border */}
-          <div className="absolute top-0 left-0 right-0 h-[1.5px]"
-            style={{ background: "linear-gradient(90deg, transparent 0%, var(--accent) 30%, #A78BFA 60%, transparent 100%)" }} />
-          {/* Ambient glow */}
-          <div className="absolute -top-16 right-0 w-80 h-80 pointer-events-none"
-            style={{ background: "radial-gradient(circle, var(--accent-glow) 0%, transparent 60%)" }} />
-
-          <div className="relative z-10 flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, var(--accent), #A78BFA)", boxShadow: "var(--shadow-glow)" }}>
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}>AI Insights</h3>
-                <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Powered by Claude</p>
-              </div>
-              {insightHistory.length > 0 && (
-                <button onClick={() => setShowHistory((v) => !v)}
-                  className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ml-1"
-                  style={{ background: showHistory ? "var(--accent-muted)" : "var(--bg-elevated)", color: showHistory ? "var(--accent)" : "var(--text-subtle)", border: "1px solid var(--border)" }}>
-                  History ({insightHistory.length})
-                </button>
-              )}
-            </div>
-            <button onClick={generateInsight} disabled={streaming}
-              className="flex items-center gap-1.5 h-8 px-3.5 rounded-[8px] text-[12px] font-bold text-white disabled:opacity-60 transition-all hover:scale-[1.02]"
-              style={{ background: "var(--accent)", boxShadow: "var(--shadow-glow-btn)" }}>
-              {streaming
-                ? <><span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Thinking…</>
-                : <><Sparkles className="w-3 h-3" /> Generate</>
-              }
-            </button>
-          </div>
-
-          <div className="relative z-10 flex-1 overflow-y-auto min-h-[160px]">
-            <AnimatePresence mode="wait">
-              {showHistory ? (
-                <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                  {insightHistory.map((insight) => (
-                    <div key={insight.id} className="rounded-[10px] p-3"
-                      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
-                      <p className="text-[10px] font-semibold mb-2" style={{ color: "var(--text-subtle)" }}>
-                        {formatDistanceToNow(new Date(insight.createdAt), { addSuffix: true })}
-                      </p>
-                      <MarkdownRenderer content={insight.content} />
-                    </div>
-                  ))}
-                </motion.div>
-              ) : aiInsight ? (
-                <motion.div key="current" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <MarkdownRenderer content={aiInsight} />
-                  {streaming && (
-                    <div className="flex items-center gap-2 mt-3">
-                      <div className="flex gap-1">
-                        {[0, 1, 2].map((i) => (
-                          <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
-                            style={{ background: "var(--accent)" }}
-                            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 0.9, delay: i * 0.2, repeat: Infinity }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>Generating…</span>
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="h-full flex flex-col items-center justify-center text-center py-8">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                    style={{ background: "var(--accent-muted)", border: "1px solid var(--accent-glow)" }}>
-                    <Sparkles className="w-5 h-5" style={{ color: "var(--accent)" }} />
-                  </div>
-                  <p className="text-[13px] font-semibold mb-1" style={{ color: "var(--text-foreground)" }}>Ready to analyze your workspace</p>
-                  <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>
-                    Click <strong style={{ color: "var(--text-foreground)" }}>Generate</strong> for AI-powered priorities and insights.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
       </div>
-
-      {/* ── AI Standup widget ── */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-        <StandupWidget />
-      </motion.div>
     </div>
   );
 }
