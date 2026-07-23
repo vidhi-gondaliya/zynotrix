@@ -5,11 +5,16 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Use a verified domain in production via RESEND_FROM env var.
 // Falls back to Resend's sandbox address (works on free tier without domain verification).
 const FROM = process.env.RESEND_FROM ?? "Colliq <onboarding@resend.dev>";
+const REPLY_TO = process.env.RESEND_REPLY_TO;
 const BASE_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://colliq.app";
+
+function baseEmail(fields: Parameters<typeof resend.emails.send>[0]) {
+  return resend.emails.send({ ...(REPLY_TO ? { replyTo: REPLY_TO } : {}), ...fields });
+}
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const link = `${BASE_URL}/reset-password/${token}`;
-  await resend.emails.send({
+  await baseEmail({
     from: FROM,
     to: email,
     subject: "Reset your Colliq password",
@@ -43,7 +48,7 @@ export async function sendInvitationEmail(
   inviterName: string
 ) {
   const link = `${BASE_URL}/register?invite=${token}`;
-  await resend.emails.send({
+  await baseEmail({
     from: FROM,
     to: email,
     subject: `${inviterName} invited you to join ${orgName} on Colliq`,
@@ -78,7 +83,7 @@ export async function sendTaskAssignedEmail(
   taskId: string
 ) {
   const link = `${BASE_URL}/tasks`;
-  await resend.emails.send({
+  await baseEmail({
     from: FROM,
     to: email,
     subject: `New task assigned: ${taskTitle}`,
