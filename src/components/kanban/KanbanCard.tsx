@@ -239,7 +239,7 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
         )}
 
         {/* Dependency indicator */}
-        {task.parentId && (
+        {task.parentTaskId && (
           <div className="absolute top-2.5 right-2.5">
             <span className="text-[9px] p-0.5 rounded" style={{ color: "var(--text-subtle)" }}>
               <Link2 className="w-2.5 h-2.5" />

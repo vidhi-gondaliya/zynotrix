@@ -3,8 +3,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckSquare, AlertTriangle, Calendar, Sparkles, ArrowRight,
-  Users, Zap, Clock, Activity, Eye, Wand2, Shield, RefreshCw,
-  Target, Flame, TrendingUp,
+  Users, Activity, Eye, Wand2, Shield, RefreshCw,
+  Target, Flame,
 } from "lucide-react";
 import { StandupWidget } from "@/components/ai/StandupWidget";
 import { NLTaskCreator } from "@/components/ai/NLTaskCreator";
