@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       prisma.organizationMember.findMany({
         where: { organizationId: orgId },
         include: { user: { select: { id: true, name: true, image: true, email: true } } },
-        orderBy: { createdAt: "asc" },
+        orderBy: { user: { name: "asc" } },
       }),
     ]);
 
