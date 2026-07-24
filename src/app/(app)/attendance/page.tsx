@@ -537,14 +537,14 @@ export default function AttendancePage() {
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             {/* Table header */}
             <div className="grid gap-3 px-5 py-3 text-[11px] font-bold text-subtle"
-              style={{ gridTemplateColumns: "1fr 60px 60px 60px 60px 60px auto", borderBottom: "1px solid var(--border)" }}>
+              style={{ gridTemplateColumns: "1fr 72px 72px 64px 64px 72px 120px", borderBottom: "1px solid var(--border)" }}>
               <span>Member</span>
               <span className="text-center" style={{ color: "#34D399" }}>Present</span>
               <span className="text-center" style={{ color: "#F87171" }}>Absent</span>
               <span className="text-center" style={{ color: "#FBBF24" }}>Late</span>
               <span className="text-center" style={{ color: "#60A5FA" }}>Half</span>
               <span className="text-center" style={{ color: "#A78BFA" }}>Remote</span>
-              <span />
+              <span className="text-right">Actions</span>
             </div>
 
             {teamLoading ? (
@@ -560,7 +560,7 @@ export default function AttendancePage() {
                     {/* Member row */}
                     <div
                       className="grid items-center gap-3 px-5 py-3 hover:bg-card-hover transition-colors cursor-pointer"
-                      style={{ gridTemplateColumns: "1fr 60px 60px 60px 60px 60px auto" }}
+                      style={{ gridTemplateColumns: "1fr 72px 72px 64px 64px 72px 120px" }}
                       onClick={() => setExpandedId(expanded ? null : member.id)}>
                       {/* Name + role */}
                       <div className="flex items-center gap-3 min-w-0">
