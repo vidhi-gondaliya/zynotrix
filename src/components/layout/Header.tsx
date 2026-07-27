@@ -1,7 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Bell, Search, Plus, Command, Menu } from "lucide-react";
+import { Bell, Search, Plus, Command, Menu, Sparkles } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ThemeToggle } from "./ThemeToggle";
 import { PunchClock } from "./PunchClock";
@@ -9,29 +9,29 @@ import { useNotifications } from "@/store/useNotifications";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./Sidebar";
 
-const PAGE_TITLES: Record<string, { title: string; sub?: string }> = {
-  "/dashboard":    { title: "Dashboard",       sub: "Your command centre" },
-  "/projects":     { title: "Projects",        sub: "All your workspaces" },
-  "/tasks":        { title: "My Tasks",        sub: "What needs doing" },
-  "/attendance":   { title: "Attendance",      sub: "Punch in & out" },
-  "/workload":     { title: "Workload",        sub: "Team capacity" },
-  "/rewards":      { title: "Rewards",         sub: "Gamified milestones" },
-  "/chat":         { title: "Team Chat",       sub: "Real-time collaboration" },
-  "/messages":     { title: "Messages",        sub: "Direct conversations" },
-  "/meetings":     { title: "Meetings",        sub: "Schedule & video" },
-  "/documents":    { title: "Documents",       sub: "Shared knowledge" },
-  "/ai/assistant": { title: "Ask Colliq",       sub: "Your AI teammate" },
-  "/ai/reports":   { title: "Colliq Reports",  sub: "AI-generated insights" },
-  "/ai/health":    { title: "Project Health",  sub: "Colliq risk analysis" },
-  "/ai/search":    { title: "Search with Colliq", sub: "Find anything, instantly" },
-  "/notifications":{ title: "Notifications",   sub: "Inbox" },
-  "/settings":             { title: "Settings",              sub: "Your preferences" },
-  "/settings/organization":{ title: "Organization Settings", sub: "Workspace & members" },
-  "/admin":        { title: "Admin Panel",     sub: "Workspace management" },
-  "/automations":  { title: "Automations",     sub: "Workflow rules" },
-  "/templates":    { title: "Templates",       sub: "Reusable patterns" },
-  "/integrations": { title: "Integrations",    sub: "Connected services" },
-  "/audit":        { title: "Audit Log",       sub: "Activity history" },
+const PAGE_TITLES: Record<string, { title: string; sub?: string; emoji?: string }> = {
+  "/dashboard":             { title: "Dashboard",          sub: "Your command centre",       emoji: "⚡" },
+  "/projects":              { title: "Projects",           sub: "All your workspaces",        emoji: "📁" },
+  "/tasks":                 { title: "My Tasks",           sub: "What needs doing",           emoji: "✓"  },
+  "/attendance":            { title: "Attendance",         sub: "Punch in & out",             emoji: "🕐" },
+  "/workload":              { title: "Workload",           sub: "Team capacity",              emoji: "📊" },
+  "/rewards":               { title: "Rewards",            sub: "Gamified milestones",        emoji: "🏆" },
+  "/chat":                  { title: "Team Chat",          sub: "Real-time collaboration",    emoji: "💬" },
+  "/messages":              { title: "Messages",           sub: "Direct conversations",       emoji: "✉️" },
+  "/meetings":              { title: "Meetings",           sub: "Schedule & video",           emoji: "📅" },
+  "/documents":             { title: "Documents",          sub: "Shared knowledge",           emoji: "📄" },
+  "/ai/assistant":          { title: "Ask Colliq",         sub: "Your AI teammate",           emoji: "🤖" },
+  "/ai/reports":            { title: "Colliq Reports",     sub: "AI-generated insights",      emoji: "✨" },
+  "/ai/health":             { title: "Project Health",     sub: "Colliq risk analysis",       emoji: "💚" },
+  "/ai/search":             { title: "Smart Search",       sub: "Find anything, instantly",   emoji: "🔍" },
+  "/notifications":         { title: "Notifications",      sub: "Inbox",                      emoji: "🔔" },
+  "/settings":              { title: "Settings",           sub: "Your preferences",           emoji: "⚙️" },
+  "/settings/organization": { title: "Organization",       sub: "Workspace & members",        emoji: "🏢" },
+  "/admin":                 { title: "Admin Panel",        sub: "Workspace management",       emoji: "🛡️" },
+  "/automations":           { title: "Automations",        sub: "Workflow rules",             emoji: "⚡" },
+  "/templates":             { title: "Templates",          sub: "Reusable patterns",          emoji: "📋" },
+  "/integrations":          { title: "Integrations",       sub: "Connected services",         emoji: "🔗" },
+  "/audit":                 { title: "Audit Log",          sub: "Activity history",           emoji: "📜" },
 };
 
 interface HeaderProps { onOpenCommand?: () => void; }
@@ -54,68 +54,58 @@ export function Header({ onOpenCommand }: HeaderProps) {
         height: "var(--header-h)",
         padding: "0 var(--page-x)",
         background: "var(--bg-overlay)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
+        backdropFilter: "blur(28px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(28px) saturate(1.6)",
         borderBottom: "1px solid var(--border-subtle)",
+        boxShadow: "0 1px 0 var(--border-subtle)",
       }}
     >
       {/* Mobile menu */}
       <button
         onClick={() => setMobileOpen(true)}
-        aria-label="Open navigation"
-        className="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-        style={{ color: "var(--text-muted)" }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "var(--bg-card-hover)";
-          el.style.color = "var(--text-foreground)";
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "transparent";
-          el.style.color = "var(--text-muted)";
-        }}
+        className="lg:hidden w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+        style={{ color: "var(--text-muted)", background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
       >
-        <Menu className="w-[17px] h-[17px]" />
+        <Menu className="w-[15px] h-[15px]" />
       </button>
 
       {/* Page identity */}
-      <div className="flex flex-col justify-center flex-1 min-w-0">
-        <h1
-          className="text-[15px] font-black leading-none truncate"
-          style={{
-            letterSpacing: "-0.03em",
-            background: "linear-gradient(120deg, var(--text-foreground) 40%, var(--accent) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
-        >
-          {title}
-        </h1>
-        {sub && (
-          <p
-            className="hidden sm:block text-[11px] leading-none mt-[3px] truncate"
-            style={{ color: "var(--text-subtle)" }}
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <div className="flex flex-col justify-center">
+          <h1
+            className="text-[14.5px] font-black leading-none truncate"
+            style={{
+              letterSpacing: "-0.03em",
+              background: "linear-gradient(120deg, var(--text-foreground) 30%, var(--accent) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
           >
-            {sub}
-          </p>
-        )}
+            {title}
+          </h1>
+          {sub && (
+            <p className="hidden sm:block text-[10.5px] leading-none mt-[3px] truncate"
+              style={{ color: "var(--text-subtle)" }}>
+              {sub}
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* ⌘K search pill */}
+      {/* Search pill */}
       <button
         onClick={onOpenCommand}
-        className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-xl transition-all duration-150"
+        className="hidden md:flex items-center gap-2 h-8 px-3 rounded-xl transition-all duration-150 group"
         style={{
           background: "var(--bg-elevated)",
-          border: "1.5px solid var(--border)",
-          minWidth: "180px",
-          maxWidth: "260px",
+          border: "1px solid var(--border)",
+          minWidth: "200px",
+          maxWidth: "280px",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--accent)";
-          e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
+          e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
+          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.08)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = "var(--border)";
@@ -123,14 +113,11 @@ export function Header({ onOpenCommand }: HeaderProps) {
         }}
       >
         <Search className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-subtle)" }} />
-        <span
-          className="flex-1 text-left text-[12.5px]"
-          style={{ color: "var(--text-subtle)" }}
-        >
-          Ask Colliq or search…
+        <span className="flex-1 text-left text-[12px]" style={{ color: "var(--text-subtle)" }}>
+          Search anything…
         </span>
         <span
-          className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-1 rounded-md shrink-0"
+          className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0"
           style={{
             background: "var(--bg-card)",
             border: "1px solid var(--border-strong)",
@@ -145,17 +132,18 @@ export function Header({ onOpenCommand }: HeaderProps) {
       <button
         onClick={onOpenCommand}
         title="Quick create (⌘K)"
-        aria-label="Quick create"
         className="w-8 h-8 rounded-xl text-white flex items-center justify-center transition-all duration-100 active:scale-95 shrink-0"
         style={{
-          background: "var(--accent)",
-          boxShadow: "var(--shadow-glow-btn)",
+          background: "linear-gradient(135deg, #6366F1 0%, #A78BFA 100%)",
+          boxShadow: "0 4px 20px rgba(99,102,241,0.40), inset 0 1px 0 rgba(255,255,255,0.20)",
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)";
+          (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";
+          (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 28px rgba(99,102,241,0.55), inset 0 1px 0 rgba(255,255,255,0.25)";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.background = "var(--accent)";
+          (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+          (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(99,102,241,0.40), inset 0 1px 0 rgba(255,255,255,0.20)";
         }}
       >
         <Plus className="w-4 h-4" strokeWidth={2.5} />
@@ -170,21 +158,22 @@ export function Header({ onOpenCommand }: HeaderProps) {
       {/* Notifications */}
       <Link
         href="/notifications"
-        aria-label="Notifications"
-        className="relative w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-100 shrink-0"
+        className="relative w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150 shrink-0"
         style={{ color: "var(--text-muted)" }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "var(--bg-card-hover)";
+          el.style.background = "var(--bg-elevated)";
           el.style.color = "var(--text-foreground)";
+          el.style.boxShadow = "0 0 0 1px var(--border)";
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
           el.style.background = "transparent";
           el.style.color = "var(--text-muted)";
+          el.style.boxShadow = "none";
         }}
       >
-        <Bell className="w-[16px] h-[16px]" />
+        <Bell className="w-[15px] h-[15px]" />
         {unreadCount > 0 && (
           <span
             className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full text-white text-[8px] font-bold flex items-center justify-center"
@@ -198,14 +187,23 @@ export function Header({ onOpenCommand }: HeaderProps) {
       {/* User avatar */}
       <Link href="/settings" className="flex items-center gap-2 shrink-0 group">
         <div className="relative">
-          <Avatar name={session?.user?.name} image={session?.user?.image} size="sm" ring />
+          <div style={{
+            padding: 2,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #6366F1, #A78BFA)",
+            boxShadow: "0 0 12px rgba(99,102,241,0.35)",
+          }}>
+            <div style={{ borderRadius: "50%", overflow: "hidden", background: "var(--bg-sidebar)" }}>
+              <Avatar name={session?.user?.name} image={session?.user?.image} size="sm" />
+            </div>
+          </div>
           <span
             className="absolute -bottom-0.5 -right-0.5 w-[9px] h-[9px] rounded-full border-[1.5px]"
-            style={{ background: "var(--success)", borderColor: "var(--bg-base)" }}
+            style={{ background: "#22C55E", borderColor: "var(--bg-base)" }}
           />
         </div>
         <span
-          className="hidden md:block text-[12.5px] font-semibold leading-none transition-colors duration-100 group-hover:text-[var(--accent)]"
+          className="hidden md:block text-[12px] font-semibold leading-none transition-colors group-hover:opacity-80"
           style={{ color: "var(--text-secondary)" }}
         >
           {session?.user?.name?.split(" ")[0] ?? session?.user?.email?.split("@")[0]}

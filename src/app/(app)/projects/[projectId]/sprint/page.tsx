@@ -79,16 +79,27 @@ export default function SprintPage() {
   );
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-5 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black text-foreground">Sprint Planning</h2>
-          <p className="text-xs text-muted mt-0.5">{backlog.length} tasks in backlog</p>
+          <h2 className="text-[20px] font-black tracking-[-0.03em]"
+            style={{
+              background: "linear-gradient(120deg, var(--text-foreground) 30%, var(--accent) 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+            }}>
+            Sprint Planning
+          </h2>
+          <p className="text-[12px] mt-0.5" style={{ color: "var(--text-subtle)" }}>
+            {backlog.length} task{backlog.length !== 1 ? "s" : ""} in backlog
+          </p>
         </div>
         <button onClick={() => setCreating(true)}
-          className="flex items-center gap-2 h-9 px-4 rounded-xl text-sm font-bold text-white transition-all"
-          style={{ background: "linear-gradient(135deg,#9D6BFF,#06B6D4)", boxShadow: "0 4px 12px rgba(157,107,255,0.3)" }}>
+          className="flex items-center gap-2 h-9 px-4 rounded-[12px] text-[13px] font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.98]"
+          style={{
+            background: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
+            boxShadow: "0 4px 20px rgba(139,92,246,0.40), inset 0 1px 0 rgba(255,255,255,0.20)",
+          }}>
           <Plus className="w-4 h-4" /> New Sprint
         </button>
       </div>
@@ -149,65 +160,123 @@ export default function SprintPage() {
         const daysLeft = differenceInDays(new Date(sprint.endDate), new Date());
         const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
+        const sprintColor = sprint.status === "ACTIVE" ? "#8B5CF6"
+          : sprint.status === "COMPLETED" ? "#22C55E"
+          : "#6B7280";
+
         return (
-          <div key={sprint.id} className="rounded-2xl overflow-hidden"
-            style={{ border: sprint.status === "ACTIVE" ? "1px solid var(--accent)" : "1px solid var(--border)", boxShadow: sprint.status === "ACTIVE" ? "0 0 0 3px rgba(157,107,255,0.08)" : "none" }}>
+          <motion.div key={sprint.id}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-[18px] overflow-hidden"
+            style={{
+              border: `1px solid ${sprint.status === "ACTIVE" ? "rgba(139,92,246,0.40)" : "var(--border)"}`,
+              boxShadow: sprint.status === "ACTIVE"
+                ? "0 4px 32px rgba(139,92,246,0.12), 0 0 0 1px rgba(139,92,246,0.08)"
+                : "var(--shadow-xs)",
+            }}>
             {/* Sprint header */}
-            <div className="px-5 py-4 flex items-center gap-4"
-              style={{ background: "var(--bg-card)" }}>
-              <button onClick={() => setExpanded((p) => ({ ...p, [sprint.id]: !p[sprint.id] }))}>
-                {expanded[sprint.id] ? <ChevronUp className="w-4 h-4 text-muted" /> : <ChevronDown className="w-4 h-4 text-muted" />}
+            <div className="relative px-5 py-4 flex items-center gap-4 overflow-hidden"
+              style={{
+                background: sprint.status === "ACTIVE"
+                  ? "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, var(--bg-card) 60%)"
+                  : "var(--bg-card)",
+              }}>
+              {/* Color accent bar */}
+              <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+                style={{ background: `linear-gradient(180deg, ${sprintColor}, ${sprintColor}44)` }} />
+
+              <button
+                onClick={() => setExpanded((p) => ({ ...p, [sprint.id]: !p[sprint.id] }))}
+                className="p-1 rounded-lg transition-colors shrink-0"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                {expanded[sprint.id] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-3.5 h-3.5 shrink-0"
-                    style={{ color: sprint.status === "ACTIVE" ? "var(--accent)" : "var(--text-muted)" }} />
-                  <span className="text-sm font-black text-foreground">{sprint.name}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Zap className="w-3.5 h-3.5 shrink-0" style={{ color: sprintColor }} />
+                  <span className="text-[14px] font-black" style={{ color: "var(--text-foreground)", letterSpacing: "-0.02em" }}>
+                    {sprint.name}
+                  </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
                     style={{
-                      background: sprint.status === "ACTIVE" ? "var(--accent-muted)" : sprint.status === "COMPLETED" ? "rgba(0,240,144,0.1)" : "var(--bg-elevated)",
-                      color: sprint.status === "ACTIVE" ? "var(--accent)" : sprint.status === "COMPLETED" ? "#00F090" : "var(--text-muted)",
+                      background: sprint.status === "ACTIVE" ? "rgba(139,92,246,0.18)"
+                        : sprint.status === "COMPLETED" ? "rgba(34,197,94,0.12)"
+                        : "var(--bg-elevated)",
+                      color: sprintColor,
+                      border: `1px solid ${sprintColor}35`,
                     }}>
                     {sprint.status}
                   </span>
                 </div>
-                {sprint.goal && <p className="text-xs text-muted mt-0.5 truncate">{sprint.goal}</p>}
-              </div>
-
-              <div className="flex items-center gap-4 shrink-0 text-xs text-muted">
-                <span>{format(new Date(sprint.startDate), "MMM d")} – {format(new Date(sprint.endDate), "MMM d")}</span>
-                {sprint.status === "ACTIVE" && (
-                  <span className={daysLeft < 0 ? "text-red-400 font-bold" : ""}>{daysLeft < 0 ? "Overdue" : `${daysLeft}d left`}</span>
+                {sprint.goal && (
+                  <p className="text-[12px] mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>{sprint.goal}</p>
                 )}
-                <span className="font-semibold text-foreground">{done}/{total} tasks</span>
-                {points > 0 && <span>{points} pts</span>}
               </div>
 
-              {/* Status actions */}
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right hidden sm:block">
+                  <p className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>
+                    {format(new Date(sprint.startDate), "MMM d")} – {format(new Date(sprint.endDate), "MMM d")}
+                  </p>
+                  {sprint.status === "ACTIVE" && (
+                    <p className="text-[11px] font-bold" style={{ color: daysLeft < 0 ? "var(--danger)" : "var(--text-subtle)" }}>
+                      {daysLeft < 0 ? "Overdue" : `${daysLeft}d left`}
+                    </p>
+                  )}
+                </div>
+                <div className="text-center">
+                  <p className="text-[18px] font-black" style={{ color: sprintColor }}>{done}/{total}</p>
+                  <p className="text-[9px] uppercase tracking-widest font-bold" style={{ color: "var(--text-subtle)" }}>tasks</p>
+                </div>
+                {points > 0 && (
+                  <div className="text-center">
+                    <p className="text-[18px] font-black" style={{ color: "var(--text-foreground)" }}>{points}</p>
+                    <p className="text-[9px] uppercase tracking-widest font-bold" style={{ color: "var(--text-subtle)" }}>points</p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-2 shrink-0">
                 {sprint.status === "PLANNING" && (
                   <button onClick={() => changeStatus(sprint.id, "ACTIVE")}
-                    className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-bold text-white"
-                    style={{ background: "var(--accent)" }}>
-                    <Play className="w-3 h-3" /> Start
+                    className="flex items-center gap-1.5 h-8 px-3 rounded-[10px] text-[12px] font-bold text-white"
+                    style={{
+                      background: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+                      boxShadow: "0 3px 12px rgba(139,92,246,0.40)",
+                    }}>
+                    <Play className="w-3 h-3" fill="currentColor" /> Start
                   </button>
                 )}
                 {sprint.status === "ACTIVE" && (
                   <button onClick={() => changeStatus(sprint.id, "COMPLETED")}
-                    className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-bold"
-                    style={{ background: "rgba(0,240,144,0.12)", color: "#00F090", border: "1px solid rgba(0,240,144,0.2)" }}>
+                    className="flex items-center gap-1.5 h-8 px-3 rounded-[10px] text-[12px] font-bold"
+                    style={{
+                      background: "rgba(34,197,94,0.12)",
+                      color: "#22C55E",
+                      border: "1px solid rgba(34,197,94,0.25)",
+                    }}>
                     <CheckCircle2 className="w-3 h-3" /> Complete
                   </button>
                 )}
-                {sprint.status === "COMPLETED" && <Archive className="w-4 h-4 text-muted" />}
+                {sprint.status === "COMPLETED" && (
+                  <Archive className="w-4 h-4" style={{ color: "var(--text-subtle)" }} />
+                )}
               </div>
             </div>
 
             {/* Progress bar */}
-            <div className="h-1" style={{ background: "var(--bg-elevated)" }}>
-              <div className="h-full transition-all duration-500 rounded-full"
-                style={{ width: `${pct}%`, background: "linear-gradient(90deg,var(--accent),#00F090)" }} />
+            <div className="h-[4px]" style={{ background: "var(--bg-elevated)" }}>
+              <div className="h-full transition-all duration-700 rounded-full"
+                style={{
+                  width: `${pct}%`,
+                  background: `linear-gradient(90deg, ${sprintColor}, ${pct === 100 ? "#22C55E" : sprintColor}88)`,
+                  boxShadow: pct > 0 ? `0 0 8px ${sprintColor}60` : "none",
+                }} />
             </div>
 
             {/* Tasks */}
@@ -219,21 +288,42 @@ export default function SprintPage() {
                     {sprintTasks.length === 0 && (
                       <p className="text-xs text-muted py-2 text-center">No tasks — drag from backlog below</p>
                     )}
-                    {sprintTasks.map((task) => (
-                      <div key={task.id} className="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors hover:bg-card-hover">
-                        <Grip className="w-3.5 h-3.5 text-muted cursor-grab shrink-0" />
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: PRIORITY_COLOR[task.priority] }} />
-                        <span className={`flex-1 text-sm text-foreground truncate ${task.status === "DONE" ? "line-through opacity-50" : ""}`}>{task.title}</span>
-                        {task.storyPoints && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>{task.storyPoints}pt</span>
-                        )}
-                        <span className="text-[10px] font-bold" style={{ color: STATUS_COLOR[task.status] ?? "#6B7280" }}>{task.status.replace("_", " ")}</span>
-                        <button onClick={() => moveTasks(sprint.id, task.id, "remove")}
-                          className="p-1 rounded-lg text-muted hover:text-red-400 transition-colors shrink-0">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+                    {sprintTasks.map((task) => {
+                      const prColor = PRIORITY_COLOR[task.priority] ?? "#6B7280";
+                      const stColor = STATUS_COLOR[task.status] ?? "#6B7280";
+                      return (
+                        <div key={task.id}
+                          className="group flex items-center gap-3 px-3 py-2.5 rounded-[12px] transition-all duration-150"
+                          style={{ background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                          <Grip className="w-3.5 h-3.5 cursor-grab shrink-0 opacity-30 group-hover:opacity-70 transition-opacity" style={{ color: "var(--text-muted)" }} />
+                          {/* Priority dot */}
+                          <div className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: prColor, boxShadow: `0 0 4px ${prColor}80` }} />
+                          <span className={`flex-1 text-[13px] font-medium truncate ${task.status === "DONE" ? "line-through" : ""}`}
+                            style={{ color: task.status === "DONE" ? "var(--text-subtle)" : "var(--text-foreground)" }}>
+                            {task.title}
+                          </span>
+                          {task.storyPoints && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: "rgba(139,92,246,0.10)", color: "#8B5CF6", border: "1px solid rgba(139,92,246,0.20)" }}>
+                              {task.storyPoints}sp
+                            </span>
+                          )}
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                            style={{ background: `${stColor}18`, color: stColor }}>
+                            {task.status.replace(/_/g, " ")}
+                          </span>
+                          <button onClick={() => moveTasks(sprint.id, task.id, "remove")}
+                            className="p-1 rounded-lg shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{ color: "var(--text-muted)" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#F43F5E"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </motion.div>
               )}
@@ -244,29 +334,48 @@ export default function SprintPage() {
 
       {/* Backlog */}
       {backlog.length > 0 && (
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-          <div className="px-5 py-4 flex items-center gap-3" style={{ background: "var(--bg-card)" }}>
-            <Target className="w-4 h-4 text-muted" />
-            <span className="text-sm font-black text-foreground">Backlog</span>
+        <div className="rounded-[18px] overflow-hidden"
+          style={{ border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
+          <div className="px-5 py-3.5 flex items-center gap-3"
+            style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--border-subtle)" }}>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ background: "rgba(107,114,128,0.12)" }}>
+              <Target className="w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
+            </div>
+            <span className="text-[13px] font-black" style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}>Backlog</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-              style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
-              {backlog.length}
+              style={{ background: "var(--bg-elevated)", color: "var(--text-subtle)", border: "1px solid var(--border)" }}>
+              {backlog.length} tasks
             </span>
           </div>
-          <div className="divide-y" style={{ "--tw-divide-opacity": "1", borderTop: "1px solid var(--border-subtle)" } as React.CSSProperties}>
-            {backlog.map((task) => {
+          <div style={{ background: "var(--bg-card)" }}>
+            {backlog.map((task, idx) => {
               const activeSprint = sprints.find((s) => s.status !== "COMPLETED");
+              const prColor = PRIORITY_COLOR[task.priority] ?? "#6B7280";
               return (
-                <div key={task.id} className="flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-card-hover">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: PRIORITY_COLOR[task.priority] }} />
-                  <span className="flex-1 text-sm text-foreground truncate">{task.title}</span>
+                <div key={task.id}
+                  className="group flex items-center gap-3 px-5 py-2.5 transition-all duration-150"
+                  style={{
+                    borderTop: idx > 0 ? "1px solid var(--border-subtle)" : "none",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                  <div className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: prColor, boxShadow: `0 0 4px ${prColor}80` }} />
+                  <span className="flex-1 text-[13px] font-medium truncate" style={{ color: "var(--text-foreground)" }}>{task.title}</span>
                   {task.storyPoints && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>{task.storyPoints}pt</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: "rgba(139,92,246,0.10)", color: "#8B5CF6", border: "1px solid rgba(139,92,246,0.20)" }}>
+                      {task.storyPoints}sp
+                    </span>
                   )}
                   {activeSprint && (
                     <button onClick={() => moveTasks(activeSprint.id, task.id, "add")}
-                      className="flex items-center gap-1.5 h-6 px-2 rounded-lg text-[10px] font-bold transition-colors"
-                      style={{ background: "var(--accent-muted)", color: "var(--accent)" }}>
+                      className="flex items-center gap-1.5 h-7 px-3 rounded-[8px] text-[11px] font-bold opacity-0 group-hover:opacity-100 transition-all"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(139,92,246,0.18), rgba(99,102,241,0.12))",
+                        color: "#8B5CF6",
+                        border: "1px solid rgba(139,92,246,0.25)",
+                      }}>
                       <Plus className="w-3 h-3" /> Add to Sprint
                     </button>
                   )}

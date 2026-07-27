@@ -18,7 +18,6 @@ import { Avatar } from "@/components/ui/Avatar";
 import { create } from "zustand";
 import { useEffect, useState } from "react";
 
-// ── Sidebar state ──────────────────────────────────────────────────
 interface SidebarStore {
   collapsed: boolean;
   mobileOpen: boolean;
@@ -34,14 +33,12 @@ export const useSidebar = create<SidebarStore>((set) => ({
 
 interface NavItem { href: string; icon: React.ElementType; label: string; }
 
-// ── Pinned — always visible ────────────────────────────────────────
 const PINNED: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/projects",  icon: FolderKanban,    label: "Projects"  },
   { href: "/tasks",     icon: CheckSquare,     label: "My Tasks"  },
 ];
 
-// ── Collapsible sections ───────────────────────────────────────────
 const SECTIONS = [
   {
     key: "collaborate",
@@ -85,7 +82,6 @@ const SECTIONS = [
   },
 ] as const;
 
-// ── Sidebar ────────────────────────────────────────────────────────
 export function Sidebar() {
   const pathname = usePathname();
   const { unreadCount } = useNotifications();
@@ -94,7 +90,6 @@ export function Sidebar() {
   const userRole = (session?.user as { role?: string })?.role ?? "MEMBER";
   const isAdmin  = hasPermission(userRole, "admin:access");
 
-  // Which section has an active route — auto-expand it
   const activeSection = SECTIONS.find((s) =>
     s.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
   )?.key ?? null;
@@ -105,7 +100,6 @@ export function Sidebar() {
     return init;
   });
 
-  // Auto-expand section containing active route
   useEffect(() => {
     if (activeSection) setOpen((p) => ({ ...p, [activeSection]: true }));
   }, [activeSection]);
@@ -123,7 +117,6 @@ export function Sidebar() {
   const isActive = (href: string) =>
     pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
 
-  // ── Single nav item ──────────────────────────────────────────────
   const NavLink = ({ item, badge }: { item: NavItem; badge?: React.ReactNode }) => {
     const active = isActive(item.href);
     return (
@@ -132,38 +125,26 @@ export function Sidebar() {
         title={collapsed ? item.label : undefined}
         className="relative flex items-center gap-2.5 rounded-[10px] transition-all duration-150 group"
         style={{
-          padding: "8px 10px",
+          padding: "7px 10px",
           justifyContent: collapsed ? "center" : undefined,
-          color: active ? "var(--accent)" : "var(--text-secondary)",
+          color: active ? "#fff" : "var(--text-secondary)",
           background: active
-            ? "var(--accent-muted)"
+            ? "linear-gradient(135deg, rgba(99,102,241,0.90) 0%, rgba(139,92,246,0.85) 100%)"
             : "transparent",
           boxShadow: active
-            ? `inset 0 0 0 1px var(--accent-glow), 0 2px 12px var(--accent-glow)`
+            ? "0 2px 16px rgba(99,102,241,0.40), inset 0 1px 0 rgba(255,255,255,0.15)"
             : "none",
-          fontSize: "13.5px",
+          fontSize: "13px",
           fontWeight: active ? 700 : 500,
-          lineHeight: 1,
         }}
       >
-        {active && (
-          <motion.div
-            layoutId="nav-rail"
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full"
-            style={{
-              height: "60%",
-              background: "var(--accent)",
-              boxShadow: "0 0 8px var(--accent)",
-            }}
-            transition={{ type: "spring", stiffness: 600, damping: 48 }}
-          />
-        )}
         {!active && (
-          <span className="absolute inset-0 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "var(--bg-card-hover)" }} />
+          <span className="absolute inset-0 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ background: "rgba(255,255,255,0.05)" }} />
         )}
 
-        <span className="relative z-10 shrink-0 flex items-center justify-center" style={{ width: 18, height: 18 }}>
-          <item.icon className="w-[16px] h-[16px]" strokeWidth={active ? 2.2 : 1.8} />
+        <span className="relative z-10 shrink-0 flex items-center justify-center" style={{ width: 17, height: 17 }}>
+          <item.icon className="w-[15px] h-[15px]" strokeWidth={active ? 2.3 : 1.9} />
         </span>
 
         <AnimatePresence initial={false}>
@@ -186,21 +167,18 @@ export function Sidebar() {
     );
   };
 
-  // ── Inline section divider (collapsible) ─────────────────────────
   const SectionToggle = ({ section }: { section: typeof SECTIONS[number] }) => {
     const isOpen = open[section.key];
     const hasActive = section.items.some((item) => isActive(item.href));
 
     if (collapsed) {
-      return (
-        <div className="mx-2 my-1.5 h-px" style={{ background: "var(--border)" }} />
-      );
+      return <div className="mx-2 my-2 h-px" style={{ background: "var(--border-subtle)" }} />;
     }
 
     return (
       <button
         onClick={() => setOpen((p) => ({ ...p, [section.key]: !p[section.key] }))}
-        className="w-full flex items-center gap-1.5 px-1.5 py-1 mt-0.5 group/sec"
+        className="w-full flex items-center gap-1.5 px-1.5 py-1 mt-1 group/sec"
         style={{ minHeight: 22 }}
       >
         <ChevronRight
@@ -211,8 +189,11 @@ export function Sidebar() {
           }}
         />
         <span
-          className="text-[11px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap shrink-0"
-          style={{ color: hasActive ? "var(--accent)" : isOpen ? "var(--text-muted)" : "var(--text-subtle)" }}
+          className="text-[10px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap shrink-0"
+          style={{
+            color: hasActive ? "var(--accent)" : isOpen ? "var(--text-muted)" : "var(--text-subtle)",
+            letterSpacing: "0.09em",
+          }}
         >
           {section.label}
         </span>
@@ -233,7 +214,6 @@ export function Sidebar() {
           borderBottom: "1px solid var(--border-subtle)",
         }}
       >
-        {/* Aurora glow behind brand */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -263,7 +243,7 @@ export function Sidebar() {
                 <span
                   className="text-[16px] font-black tracking-[-0.04em] whitespace-nowrap leading-none"
                   style={{
-                    background: "linear-gradient(120deg, var(--text-foreground) 15%, var(--accent) 85%)",
+                    background: "linear-gradient(120deg, #fff 10%, #a5b4fc 85%)",
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
                   }}
                 >
@@ -280,23 +260,25 @@ export function Sidebar() {
         <button
           onClick={toggle}
           title={collapsed ? "Expand (⌘B)" : "Collapse (⌘B)"}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="hidden lg:flex shrink-0 w-6 h-6 rounded-md items-center justify-center transition-all"
           style={{ color: "var(--text-subtle)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; (e.currentTarget as HTMLElement).style.color = "var(--text-foreground)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-subtle)"; }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
+            (e.currentTarget as HTMLElement).style.color = "var(--text-foreground)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "var(--text-subtle)";
+          }}
         >
           {collapsed ? <PanelLeftOpen className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
         </button>
       </div>
 
       {/* ── Nav ───────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5 no-scrollbar">
-
-        {/* Pinned core items */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 no-scrollbar">
         {PINNED.map((item) => <NavLink key={item.href} item={item} />)}
 
-        {/* Collapsible sections */}
         {SECTIONS.map((section) => (
           <div key={section.key}>
             <SectionToggle section={section} />
@@ -312,7 +294,8 @@ export function Sidebar() {
                 >
                   {section.items.map((item) => {
                     const badge = item.href === "/messages" && unreadCount > 0
-                      ? <span className="min-w-[14px] h-[14px] px-0.5 rounded-full text-white text-[8px] font-bold flex items-center justify-center" style={{ background: "var(--danger)" }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
+                      ? <span className="min-w-[14px] h-[14px] px-0.5 rounded-full text-white text-[8px] font-bold flex items-center justify-center"
+                          style={{ background: "var(--danger)" }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
                       : null;
                     return <NavLink key={item.href} item={item} badge={badge} />;
                   })}
@@ -324,11 +307,13 @@ export function Sidebar() {
       </nav>
 
       {/* ── Bottom dock ───────────────────────────────────────── */}
-      <div className="shrink-0 px-2 pb-2" style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 8 }}>
+      <div className="shrink-0 px-2 pb-2"
+        style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 8 }}>
         <div className="space-y-0.5">
           <NavLink
             item={{ href: "/notifications", icon: Bell, label: "Notifications" }}
-            badge={unreadCount > 0 ? <span className="min-w-[14px] h-[14px] px-0.5 rounded-full text-white text-[8px] font-bold flex items-center justify-center" style={{ background: "var(--danger)" }}>{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
+            badge={unreadCount > 0 ? <span className="min-w-[14px] h-[14px] px-0.5 rounded-full text-white text-[8px] font-bold flex items-center justify-center"
+              style={{ background: "var(--danger)" }}>{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
           />
           {(isAdmin || pathname.startsWith("/admin")) && (
             <NavLink item={{ href: "/admin", icon: ShieldCheck, label: "Admin Panel" }} />
@@ -336,42 +321,52 @@ export function Sidebar() {
           <NavLink item={{ href: "/settings", icon: Settings, label: "Settings" }} />
         </div>
 
-        {/* User */}
-        <div className="mt-2 pt-2 flex items-center gap-2 px-1" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <div className="relative shrink-0">
-            <Avatar name={session?.user?.name} image={session?.user?.image} size="xs" />
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-[1.5px]"
-              style={{ background: "var(--success)", borderColor: "var(--bg-sidebar)" }} />
-          </div>
-          <AnimatePresence initial={false}>
+        {/* User card */}
+        <div className="mt-2 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          <div className="flex items-center gap-2 px-2 py-2 rounded-xl transition-all"
+            style={{ background: "var(--bg-card-hover)" }}>
+            <div className="relative shrink-0">
+              <Avatar name={session?.user?.name} image={session?.user?.image} size="xs" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-[1.5px]"
+                style={{ background: "#22C55E", borderColor: "var(--bg-sidebar)" }} />
+            </div>
+            <AnimatePresence initial={false}>
+              {!collapsed && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.12 }}
+                  className="flex-1 min-w-0 overflow-hidden"
+                >
+                  <p className="text-[12px] font-bold leading-none truncate whitespace-nowrap"
+                    style={{ color: "var(--text-foreground)" }}>
+                    {session?.user?.name?.split(" ")[0] ?? session?.user?.email?.split("@")[0]}
+                  </p>
+                  <p className="text-[9.5px] font-semibold mt-0.5 truncate whitespace-nowrap uppercase tracking-wider"
+                    style={{ color: "var(--text-subtle)" }}>
+                    {userRole}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
             {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.12 }}
-                className="flex-1 min-w-0 overflow-hidden"
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                title="Sign out"
+                className="shrink-0 p-1 rounded-lg transition-all"
+                style={{ color: "var(--text-subtle)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "var(--danger)";
+                  (e.currentTarget as HTMLElement).style.background = "var(--danger-muted)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "var(--text-subtle)";
+                  (e.currentTarget as HTMLElement).style.background = "transparent";
+                }}
               >
-                <p className="text-[13px] font-bold leading-none truncate whitespace-nowrap" style={{ color: "var(--text-foreground)" }}>
-                  {session?.user?.name?.split(" ")[0] ?? session?.user?.email?.split("@")[0]}
-                </p>
-                <p className="text-[10px] font-semibold mt-0.5 truncate whitespace-nowrap uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>
-                  {userRole}
-                </p>
-              </motion.div>
+                <LogOut className="w-3 h-3" />
+              </button>
             )}
-          </AnimatePresence>
-          {!collapsed && (
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              title="Sign out"
-              aria-label="Sign out"
-              className="shrink-0 p-1 rounded-md transition-all"
-              style={{ color: "var(--text-subtle)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--danger)"; (e.currentTarget as HTMLElement).style.background = "var(--danger-muted)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-subtle)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-            >
-              <LogOut className="w-3 h-3" />
-            </button>
-          )}
+          </div>
         </div>
       </div>
     </div>

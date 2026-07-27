@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { gsap } from "gsap";
 import {
   CheckSquare, AlertTriangle, Calendar, Sparkles, ArrowRight,
   Users, Activity, Eye, Wand2, Shield, RefreshCw,
@@ -234,6 +235,30 @@ export default function DashboardPage() {
     return (PRIORITY_ORDER[a.priority] ?? 2) - (PRIORITY_ORDER[b.priority] ?? 2);
   });
 
+  // GSAP entrance animation after data loads
+  useEffect(() => {
+    if (!data) return;
+    const ctx = gsap.context(() => {
+      // Stagger the metric cards
+      gsap.fromTo(".gsap-metric-card", {
+        y: 30, opacity: 0, scale: 0.94,
+      }, {
+        y: 0, opacity: 1, scale: 1,
+        duration: 0.55, stagger: 0.08,
+        ease: "power3.out", delay: 0.1,
+      });
+      // Slide up content sections
+      gsap.fromTo(".gsap-section", {
+        y: 20, opacity: 0,
+      }, {
+        y: 0, opacity: 1,
+        duration: 0.5, stagger: 0.07,
+        ease: "power2.out", delay: 0.35,
+      });
+    });
+    return () => ctx.revert();
+  }, [data]);
+
   if (loading) {
     return (
       <div className="p-6 space-y-5 animate-pulse">
@@ -419,29 +444,29 @@ export default function DashboardPage() {
 
         {/* ── Focus Metrics Strip ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <FocusMetric label="Active Tasks" value={data.activeTasks} icon={Activity}
+          <div className="gsap-metric-card"><FocusMetric label="Active Tasks" value={data.activeTasks} icon={Activity}
             gradient="linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)"
             shadowColor="rgba(6,182,212,0.35)"
-            href="/tasks?filter=mine" trend="Live" index={0} />
-          <FocusMetric label="Overdue" value={data.overdueTasks} icon={AlertTriangle}
+            href="/tasks?filter=mine" trend="Live" index={0} /></div>
+          <div className="gsap-metric-card"><FocusMetric label="Overdue" value={data.overdueTasks} icon={AlertTriangle}
             gradient={data.overdueTasks > 0
               ? "linear-gradient(135deg, #F43F5E 0%, #BE185D 100%)"
               : "linear-gradient(135deg, #10B981 0%, #059669 100%)"}
             shadowColor={data.overdueTasks > 0 ? "rgba(244,63,94,0.35)" : "rgba(16,185,129,0.35)"}
             href="/tasks?filter=overdue"
-            trend={data.overdueTasks > 0 ? "Action" : "Clear"} index={1} />
-          <FocusMetric label="In Review" value={data.reviewTasks} icon={Eye}
+            trend={data.overdueTasks > 0 ? "Action" : "Clear"} index={1} /></div>
+          <div className="gsap-metric-card"><FocusMetric label="In Review" value={data.reviewTasks} icon={Eye}
             gradient="linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
             shadowColor="rgba(245,158,11,0.35)"
-            href="/tasks?filter=review" trend="Pending" index={2} />
-          <FocusMetric label="Total Tasks" value={data.totalTasks} icon={CheckSquare}
+            href="/tasks?filter=review" trend="Pending" index={2} /></div>
+          <div className="gsap-metric-card"><FocusMetric label="Total Tasks" value={data.totalTasks} icon={CheckSquare}
             gradient="linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)"
             shadowColor="rgba(139,92,246,0.35)"
-            href="/tasks" index={3} />
+            href="/tasks" index={3} /></div>
         </div>
 
         {/* ── Main Content Row: Priority Feed + Health ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="gsap-section grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           {/* Priority Feed — 2 cols */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
@@ -603,7 +628,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Charts + Team Pulse ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="gsap-section grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           {/* Activity chart — 2 cols */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}

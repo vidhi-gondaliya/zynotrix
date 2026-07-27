@@ -187,8 +187,12 @@ export default function WorkloadPage() {
             <Users className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-foreground">Team Workload</h1>
-            <p className="text-xs text-subtle">{workloads.length} members · {teamTotal} active tasks</p>
+            <h1 className="text-xl font-black" style={{
+              background: "linear-gradient(135deg, var(--text-foreground) 0%, #8B5CF6 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.03em",
+            }}>Team Workload</h1>
+            <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>{workloads.length} members · {teamTotal} active tasks</p>
           </div>
         </div>
 
@@ -280,14 +284,17 @@ export default function WorkloadPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Active",  value: teamTotal,          color: "#9D6BFF" },
-          { label: "Overloaded",    value: overloaded.length,  color: "#FF4466" },
-          { label: "Team Members",  value: workloads.length,   color: "#00CFFF" },
-          { label: "Avg Capacity",  value: `${avgCapacity}%`,  color: "#00F090" },
+          { label: "Total Active",  value: teamTotal,          gradient: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)", shadow: "rgba(139,92,246,0.35)" },
+          { label: "Overloaded",    value: overloaded.length,  gradient: "linear-gradient(135deg, #F43F5E 0%, #BE123C 100%)", shadow: "rgba(244,63,94,0.35)" },
+          { label: "Team Members",  value: workloads.length,   gradient: "linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)", shadow: "rgba(6,182,212,0.35)" },
+          { label: "Avg Capacity",  value: `${avgCapacity}%`,  gradient: overloaded.length > 0 ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" : "linear-gradient(135deg, #22C55E 0%, #15803D 100%)", shadow: overloaded.length > 0 ? "rgba(245,158,11,0.35)" : "rgba(34,197,94,0.35)" },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-            <p className="text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-xs text-subtle mt-0.5">{s.label}</p>
+          <div key={s.label} className="relative rounded-[16px] p-4 overflow-hidden"
+            style={{ background: s.gradient, boxShadow: `0 4px 20px ${s.shadow}` }}>
+            <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full" style={{ background: "rgba(255,255,255,0.10)" }} />
+            <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} />
+            <p className="text-[26px] font-black text-white relative z-10">{s.value}</p>
+            <p className="text-[11px] font-semibold text-white/80 mt-0.5 relative z-10">{s.label}</p>
           </div>
         ))}
       </div>

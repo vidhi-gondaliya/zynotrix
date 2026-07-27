@@ -14,44 +14,45 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const loadProject = () => {
-    fetch(`/api/projects/${projectId}`).then((r) => r.json()).then(setProject).catch((err) => console.error("[project-layout] failed to load project", err));
+    fetch(`/api/projects/${projectId}`).then((r) => r.json()).then(setProject)
+      .catch((err) => console.error("[project-layout] failed to load project", err));
   };
   useEffect(() => { loadProject(); }, [projectId]);
 
-  const isBoard = pathname.endsWith("/board");
-
   const views = [
-    { href: `/projects/${projectId}/list`,     label: "All Tasks", icon: List             },
-    { href: `/projects/${projectId}/board`,    label: "Board",     icon: Kanban           },
-    { href: `/projects/${projectId}/timeline`, label: "Timeline",  icon: GanttChartSquare },
-    { href: `/projects/${projectId}/sprint`,   label: "Sprint",    icon: Zap              },
+    { href: `/projects/${projectId}/list`,     label: "List",     icon: List             },
+    { href: `/projects/${projectId}/board`,    label: "Board",    icon: Kanban           },
+    { href: `/projects/${projectId}/timeline`, label: "Timeline", icon: GanttChartSquare },
+    { href: `/projects/${projectId}/sprint`,   label: "Sprint",   icon: Zap              },
   ];
+
+  const pColor = project?.color ?? "#6366F1";
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Project sub-header ───────────────────────────── */}
+      {/* ── Project sub-header ──────────────────────────────── */}
       <div
-        className="relative flex items-center gap-3 px-5 overflow-hidden"
+        className="relative flex items-center gap-3 px-4 overflow-hidden shrink-0"
         style={{
           background: "var(--bg-sidebar)",
           borderBottom: "1px solid var(--border)",
-          minHeight: 54,
+          minHeight: 52,
         }}
       >
-        {/* Project color ambient glow */}
+        {/* Ambient color wash */}
         {project && (
           <>
             <div className="absolute left-0 top-0 bottom-0 w-[3px]"
-              style={{ background: project.color }} />
-            <div className="absolute left-0 top-0 bottom-0 w-24 pointer-events-none"
-              style={{ background: `linear-gradient(90deg, ${project.color}18, transparent)` }} />
+              style={{ background: `linear-gradient(180deg, ${pColor}cc, ${pColor}44)` }} />
+            <div className="absolute left-0 top-0 bottom-0 w-32 pointer-events-none"
+              style={{ background: `linear-gradient(90deg, ${pColor}12, transparent)` }} />
           </>
         )}
 
         {/* Back */}
         <Link
           href="/projects"
-          className="p-1.5 rounded-lg transition-all shrink-0"
+          className="relative z-10 p-1.5 rounded-lg transition-all shrink-0"
           style={{ color: "var(--text-muted)" }}
           onMouseEnter={(e) => {
             const el = e.currentTarget as HTMLElement;
@@ -64,56 +65,46 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
             el.style.color = "var(--text-muted)";
           }}
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3.5 h-3.5" />
         </Link>
 
         {/* Project identity */}
         {project && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="relative z-10 flex items-center gap-2 shrink-0">
             <div
-              className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center"
+              className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center"
               style={{
-                background: `linear-gradient(135deg, ${project.color}30, ${project.color}15)`,
-                border: `1px solid ${project.color}35`,
-                boxShadow: `0 0 12px ${project.color}22`,
+                background: `linear-gradient(135deg, ${pColor} 0%, ${pColor}88 100%)`,
+                boxShadow: `0 0 12px ${pColor}40`,
               }}
             >
-              <div className="w-3 h-3 rounded-sm" style={{
-                background: project.color,
-                boxShadow: `0 0 6px ${project.color}80`,
-              }} />
+              <div className="w-2.5 h-2.5 rounded-sm bg-white opacity-90" />
             </div>
-            <span className="text-[13.5px] font-bold" style={{ color: "var(--text-foreground)" }}>
+            <span className="text-[13px] font-bold" style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}>
               {project.name}
             </span>
           </div>
         )}
 
         {/* Divider */}
-        <div className="w-px h-5 shrink-0" style={{ background: "var(--border)" }} />
+        <div className="relative z-10 w-px h-4 shrink-0" style={{ background: "var(--border)" }} />
 
-        {/* View toggle — pill style */}
-        <div
-          className="flex items-center gap-1 p-1 rounded-xl"
-          style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
-        >
+        {/* View toggle */}
+        <div className="relative z-10 flex items-center gap-0.5">
           {views.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
-            const pColor = project?.color ?? "var(--accent)";
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all duration-150"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150"
                 style={{
                   background: active
-                    ? "var(--bg-card)"
+                    ? `linear-gradient(135deg, ${pColor}25 0%, ${pColor}12 100%)`
                     : "transparent",
-                  color: active ? "var(--text-foreground)" : "var(--text-muted)",
-                  boxShadow: active
-                    ? `var(--shadow-xs), 0 0 0 1px ${pColor}25`
-                    : "none",
-                  borderBottom: active ? `2px solid ${pColor}` : "2px solid transparent",
+                  color: active ? pColor : "var(--text-muted)",
+                  border: active ? `1px solid ${pColor}35` : "1px solid transparent",
+                  boxShadow: active ? `0 2px 12px ${pColor}18` : "none",
                 }}
                 onMouseEnter={(e) => {
                   if (!active) {
@@ -128,40 +119,42 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
                   }
                 }}
               >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
+                <Icon className="w-3.5 h-3.5" strokeWidth={active ? 2.2 : 1.8} />
+                <span className="hidden sm:inline">{label}</span>
               </Link>
             );
           })}
         </div>
 
         {/* Settings */}
-        <Link href={`/projects/${projectId}/settings`} className="ml-auto shrink-0">
-          <button
-            className="p-2 rounded-xl transition-all"
-            style={
-              pathname.endsWith("/settings")
-                ? { color: "var(--accent)", background: "var(--accent-muted)" }
-                : { color: "var(--text-muted)", background: "transparent" }
-            }
-            onMouseEnter={(e) => {
-              if (!pathname.endsWith("/settings")) {
-                const el = e.currentTarget as HTMLElement;
-                el.style.color = "var(--text-foreground)";
-                el.style.background = "var(--bg-card-hover)";
+        <div className="relative z-10 ml-auto">
+          <Link href={`/projects/${projectId}/settings`}>
+            <button
+              className="p-2 rounded-xl transition-all"
+              style={
+                pathname.endsWith("/settings")
+                  ? { color: pColor, background: `${pColor}18`, boxShadow: `0 0 12px ${pColor}20` }
+                  : { color: "var(--text-muted)", background: "transparent" }
               }
-            }}
-            onMouseLeave={(e) => {
-              if (!pathname.endsWith("/settings")) {
-                const el = e.currentTarget as HTMLElement;
-                el.style.color = "var(--text-muted)";
-                el.style.background = "transparent";
-              }
-            }}
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        </Link>
+              onMouseEnter={(e) => {
+                if (!pathname.endsWith("/settings")) {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.color = "var(--text-foreground)";
+                  el.style.background = "var(--bg-card-hover)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!pathname.endsWith("/settings")) {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.color = "var(--text-muted)";
+                  el.style.background = "transparent";
+                }
+              }}
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto">{children}</div>

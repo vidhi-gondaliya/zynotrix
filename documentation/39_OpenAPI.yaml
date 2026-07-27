@@ -1,0 +1,1662 @@
+openapi: 3.0.3
+info:
+  title: ZYNOTRIX API
+  description: |
+    REST API for the ZYNOTRIX AI-powered task management and team collaboration platform.
+
+    ## Authentication
+    All endpoints (except `/api/auth/*`, `/api/portal/*`, and `/api/webhooks/*`) require an active session.
+    Authentication is managed by NextAuth v5 using HttpOnly JWT cookies.
+    Include credentials in requests: `credentials: "include"` (fetch) or cookie jar (server-to-server).
+
+    ## Multi-tenancy
+    All data is scoped to the authenticated user's organization. The `organizationId` is extracted
+    from the JWT and applied to every query automatically. Clients do not pass `organizationId`.
+
+    ## Rate Limiting
+    Currently no rate limiting is implemented. This is a known gap.
+
+    ## Base URL
+    Production: `https://your-domain.com`
+    Development: `http://localhost:3000`
+  version: 1.0.0
+  contact:
+    name: ZYNOTRIX Support
+    email: support@zynotrix.com
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://your-domain.vercel.app
+    description: Production
+
+tags:
+  - name: Auth
+    description: Authentication and registration
+  - name: Organizations
+    description: Workspace management
+  - name: Users
+    description: User management
+  - name: Projects
+    description: Project CRUD and management
+  - name: Tasks
+    description: Task CRUD and operations
+  - name: Sprints
+    description: Sprint planning and tracking
+  - name: Channels
+    description: Chat channels and messaging
+  - name: Conversations
+    description: Direct messages
+  - name: Meetings
+    description: Meeting scheduling
+  - name: Documents
+    description: Document management
+  - name: Notifications
+    description: Notification management and SSE
+  - name: Attendance
+    description: Clock-in/clock-out tracking
+  - name: Rewards
+    description: Points, badges, and coupons
+  - name: AI
+    description: AI-powered features
+  - name: Admin
+    description: Administrative operations
+  - name: Analytics
+    description: Reports and analytics
+  - name: Integrations
+    description: Third-party integrations
+  - name: Portal
+    description: Client portal (public)
+  - name: Webhooks
+    description: Inbound webhooks from external services
+
+paths:
+
+  # ── Auth ────────────────────────────────────────────────────────────────────
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user account
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: Arjun Mehta
+                email:
+                  type: string
+                  format: email
+                  example: arjun@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: securepassword123
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already in use
+
+  # ── Organizations ────────────────────────────────────────────────────────────
+
+  /api/organizations:
+    post:
+      tags: [Organizations]
+      summary: Create a new organization (workspace)
+      operationId: createOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Acme Engineering
+      responses:
+        "201":
+          description: Organization created; user is set as OWNER
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Users ────────────────────────────────────────────────────────────────────
+
+  /api/users:
+    get:
+      tags: [Users]
+      summary: List all org members
+      operationId: listUsers
+      responses:
+        "200":
+          description: List of org members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      operationId: updateCurrentUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                image:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Projects ─────────────────────────────────────────────────────────────────
+
+  /api/projects:
+    get:
+      tags: [Projects]
+      summary: List all active org projects
+      operationId: listProjects
+      responses:
+        "200":
+          description: List of projects (excludes archived and personal)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Projects]
+      summary: Create a new project
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectInput"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/projects/{projectId}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      tags: [Projects]
+      summary: Get a project by ID
+      operationId: getProject
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Projects]
+      summary: Update a project
+      operationId: updateProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectInput"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Projects]
+      summary: Delete a project
+      operationId: deleteProject
+      responses:
+        "200":
+          description: Project deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/projects/{projectId}/health:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      tags: [Projects, AI]
+      summary: Get AI-generated project health score
+      operationId: getProjectHealth
+      responses:
+        "200":
+          description: AI health analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectHealth"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Tasks ────────────────────────────────────────────────────────────────────
+
+  /api/projects/{projectId}/tasks:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      tags: [Tasks]
+      summary: List tasks in a project
+      operationId: listProjectTasks
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TaskStatus"
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Tasks]
+      summary: Create a task in a project
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskInput"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/tasks/{taskId}:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+    get:
+      tags: [Tasks]
+      summary: Get a task by ID
+      operationId: getTask
+      responses:
+        "200":
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Tasks]
+      summary: Update a task
+      operationId: updateTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskInput"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      operationId: deleteTask
+      responses:
+        "200":
+          description: Task deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/tasks/{taskId}/move:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+    patch:
+      tags: [Tasks]
+      summary: Move a task to a new status/position (Kanban drag-drop)
+      operationId: moveTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: "#/components/schemas/TaskStatus"
+                position:
+                  type: integer
+                  minimum: 0
+      responses:
+        "200":
+          description: Task moved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/tasks/upcoming:
+    get:
+      tags: [Tasks]
+      summary: Get tasks due today and tomorrow for the current user
+      operationId: getUpcomingTasks
+      responses:
+        "200":
+          description: Upcoming tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Sprints ──────────────────────────────────────────────────────────────────
+
+  /api/projects/{projectId}/sprints:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+    get:
+      tags: [Sprints]
+      summary: List sprints for a project
+      operationId: listSprints
+      responses:
+        "200":
+          description: List of sprints
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sprint"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Sprints]
+      summary: Create a sprint
+      operationId: createSprint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, startDate, endDate]
+              properties:
+                name:
+                  type: string
+                  example: Sprint 4
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                goal:
+                  type: string
+      responses:
+        "201":
+          description: Created sprint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sprint"
+
+  # ── Channels ─────────────────────────────────────────────────────────────────
+
+  /api/channels:
+    get:
+      tags: [Channels]
+      summary: List org channels
+      operationId: listChannels
+      responses:
+        "200":
+          description: List of channels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Channel"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Channels]
+      summary: Create a channel
+      operationId: createChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: general
+                isPrivate:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: Created channel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Channel"
+
+  /api/channels/{channelId}/messages:
+    parameters:
+      - $ref: "#/components/parameters/ChannelId"
+    get:
+      tags: [Channels]
+      summary: Get channel messages
+      operationId: getChannelMessages
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      tags: [Channels]
+      summary: Send a message to a channel
+      operationId: sendChannelMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  example: Hello team!
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /api/channels/{channelId}/sse:
+    parameters:
+      - $ref: "#/components/parameters/ChannelId"
+    get:
+      tags: [Channels]
+      summary: Subscribe to real-time channel messages via SSE
+      operationId: channelSSE
+      responses:
+        "200":
+          description: SSE stream — text/event-stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  # ── Meetings ─────────────────────────────────────────────────────────────────
+
+  /api/meetings:
+    get:
+      tags: [Meetings]
+      summary: List org meetings
+      operationId: listMeetings
+      responses:
+        "200":
+          description: List of meetings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Meeting"
+    post:
+      tags: [Meetings]
+      summary: Schedule a meeting
+      operationId: createMeeting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, startTime, endTime]
+              properties:
+                title:
+                  type: string
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+                description:
+                  type: string
+                attendeeIds:
+                  type: array
+                  items:
+                    type: string
+                projectId:
+                  type: string
+                generateMeetLink:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: Meeting created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meeting"
+
+  # ── Notifications ─────────────────────────────────────────────────────────────
+
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: Get current user notifications
+      operationId: listNotifications
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /api/notifications/sse:
+    get:
+      tags: [Notifications]
+      summary: Subscribe to real-time user notifications via SSE
+      operationId: notificationsSSE
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      responses:
+        "200":
+          description: All notifications marked read
+
+  # ── Attendance ────────────────────────────────────────────────────────────────
+
+  /api/attendance:
+    get:
+      tags: [Attendance]
+      summary: Get attendance records
+      operationId: listAttendance
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: userId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceRecord"
+    post:
+      tags: [Attendance]
+      summary: Clock in or clock out
+      operationId: clockAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [clock-in, clock-out]
+      responses:
+        "200":
+          description: Attendance record updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+
+  # ── Rewards ───────────────────────────────────────────────────────────────────
+
+  /api/rewards:
+    get:
+      tags: [Rewards]
+      summary: Get current user rewards summary (points, badges, rank)
+      operationId: getRewards
+      responses:
+        "200":
+          description: Rewards summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardsSummary"
+
+  /api/rewards/redeem:
+    post:
+      tags: [Rewards]
+      summary: Redeem a coupon using points
+      operationId: redeemCoupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [couponId]
+              properties:
+                couponId:
+                  type: string
+      responses:
+        "200":
+          description: Coupon redeemed
+        "400":
+          description: Insufficient points or coupon invalid
+
+  # ── AI ────────────────────────────────────────────────────────────────────────
+
+  /api/ai/assistant:
+    post:
+      tags: [AI]
+      summary: Send a message to the AI assistant (streaming)
+      operationId: aiAssistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  example: What tasks are overdue in my projects?
+                history:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, assistant]
+                      content:
+                        type: string
+      responses:
+        "200":
+          description: Streaming text response
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/ai/insights:
+    post:
+      tags: [AI]
+      summary: Generate AI project insights (streaming)
+      operationId: aiInsights
+      responses:
+        "200":
+          description: Streaming insights text
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/ai/standup:
+    post:
+      tags: [AI]
+      summary: Generate AI standup summary (streaming)
+      operationId: aiStandup
+      responses:
+        "200":
+          description: Streaming standup text
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/ai/reports:
+    post:
+      tags: [AI]
+      summary: Generate an AI project report (streaming)
+      operationId: aiReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, type]
+              properties:
+                projectId:
+                  type: string
+                type:
+                  type: string
+                  enum: [weekly, sprint, executive, technical]
+      responses:
+        "200":
+          description: Streaming report text
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/ai/search:
+    post:
+      tags: [AI]
+      summary: AI-powered semantic search across workspace content
+      operationId: aiSearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  example: login bug
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sourceType:
+                          type: string
+                          enum: [TASK, DOCUMENT, MESSAGE]
+                        sourceId:
+                          type: string
+                        content:
+                          type: string
+                        score:
+                          type: number
+
+  # ── Dashboard ─────────────────────────────────────────────────────────────────
+
+  /api/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Get dashboard metrics and chart data
+      operationId: getDashboard
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Admin ─────────────────────────────────────────────────────────────────────
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List org users (admin)
+      operationId: adminListUsers
+      responses:
+        "200":
+          description: All users with roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Admin]
+      summary: Create a new user in the org
+      operationId: adminCreateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, role]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [OWNER, ADMIN, MANAGER, MEMBER]
+      responses:
+        "201":
+          description: User created
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/users/{userId}/role:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      tags: [Admin]
+      summary: Change a user's role
+      operationId: changeUserRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+      responses:
+        "200":
+          description: Role updated
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/roles:
+    get:
+      tags: [Admin]
+      summary: List custom roles
+      operationId: listRoles
+      responses:
+        "200":
+          description: Custom roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+    post:
+      tags: [Admin]
+      summary: Create a custom role
+      operationId: createRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, permissions]
+              properties:
+                name:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Role created
+
+  # ── Portal ────────────────────────────────────────────────────────────────────
+
+  /api/portal/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Portal]
+      summary: Get client portal data (no auth required)
+      operationId: getPortal
+      security: []
+      responses:
+        "200":
+          description: Public project data for client
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project:
+                    $ref: "#/components/schemas/Project"
+                  tasks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Task"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Webhooks ──────────────────────────────────────────────────────────────────
+
+  /api/webhooks/github:
+    post:
+      tags: [Webhooks]
+      summary: Receive GitHub webhook events
+      operationId: githubWebhook
+      security: []
+      parameters:
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Webhook received
+
+  /api/webhooks/slack:
+    post:
+      tags: [Webhooks]
+      summary: Receive Slack webhook events
+      operationId: slackWebhook
+      security: []
+      responses:
+        "200":
+          description: Webhook received
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+        image:
+          type: string
+          nullable: true
+        orgRole:
+          type: string
+          enum: [OWNER, ADMIN, MANAGER, MEMBER]
+        createdAt:
+          type: string
+          format: date-time
+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, ON_HOLD, COMPLETED, ARCHIVED]
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        budget:
+          type: number
+          nullable: true
+        budgetSpent:
+          type: number
+        healthScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        isArchived:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Q4 Platform Rewrite
+        description:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, ON_HOLD, COMPLETED, ARCHIVED]
+          default: ACTIVE
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          default: MEDIUM
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        budget:
+          type: number
+        templateId:
+          type: string
+
+    UpdateProjectInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, ON_HOLD, COMPLETED, ARCHIVED]
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        budget:
+          type: number
+        budgetSpent:
+          type: number
+        isArchived:
+          type: boolean
+
+    ProjectHealth:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        grade:
+          type: string
+          enum: [A, B, C, D, F]
+        summary:
+          type: string
+        breakdown:
+          type: object
+          properties:
+            onTimeRate:
+              type: number
+            budgetStatus:
+              type: string
+              enum: [on_track, at_risk, over_budget]
+            teamVelocity:
+              type: number
+            blockerCount:
+              type: integer
+            completionRate:
+              type: number
+        risks:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        position:
+          type: integer
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+        storyPoints:
+          type: integer
+          nullable: true
+        tags:
+          type: string
+          description: "JSON array string e.g. '[\"bug\",\"urgent\"]'"
+        projectId:
+          type: string
+        assigneeId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TaskStatus:
+      type: string
+      enum: [TODO, IN_PROGRESS, IN_REVIEW, DONE]
+
+    CreateTaskInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        dueDate:
+          type: string
+          format: date-time
+        assigneeId:
+          type: string
+        storyPoints:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateTaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        dueDate:
+          type: string
+          format: date-time
+        assigneeId:
+          type: string
+        storyPoints:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+
+    Sprint:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        name:
+          type: string
+        status:
+          type: string
+          enum: [PLANNED, ACTIVE, COMPLETED]
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        goal:
+          type: string
+          nullable: true
+        velocity:
+          type: integer
+          nullable: true
+
+    Channel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        name:
+          type: string
+        isPrivate:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        content:
+          type: string
+        channelId:
+          type: string
+        senderId:
+          type: string
+        sender:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+          format: date-time
+
+    Meeting:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        meetLink:
+          type: string
+          nullable: true
+        projectId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        type:
+          type: string
+          enum: [TASK_ASSIGNED, TASK_DUE, TASK_OVERDUE, MEETING_INVITE, MEETING_REMINDER, HEALTH_ALERT, MENTION, COMMENT_ADDED, SYSTEM]
+        title:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, URGENT]
+        createdAt:
+          type: string
+          format: date-time
+
+    AttendanceRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        date:
+          type: string
+          format: date
+        clockIn:
+          type: string
+          format: date-time
+          nullable: true
+        clockOut:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [PRESENT, ABSENT, LATE, HALF_DAY]
+        durationMinutes:
+          type: integer
+          nullable: true
+
+    RewardsSummary:
+      type: object
+      properties:
+        balance:
+          type: integer
+          description: Spendable points balance
+        lifetime:
+          type: integer
+          description: All-time points earned
+        rank:
+          type: integer
+          nullable: true
+        badges:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              description:
+                type: string
+              icon:
+                type: string
+              earnedAt:
+                type: string
+                format: date-time
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: cuid
+        name:
+          type: string
+        permissions:
+          type: string
+          description: JSON array of permission strings
+
+    DashboardData:
+      type: object
+      properties:
+        totalTasks:
+          type: integer
+        completedTasks:
+          type: integer
+        overdueTasks:
+          type: integer
+        activeProjects:
+          type: integer
+        completionTrend:
+          type: array
+          description: 14-day daily completion counts
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              count:
+                type: integer
+        teamActivity:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: string
+              name:
+                type: string
+              tasksDone:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: cuid
+      description: Project CUID
+
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: cuid
+      description: Task CUID
+
+    ChannelId:
+      name: channelId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: cuid
+      description: Channel CUID
+
+  responses:
+    BadRequest:
+      description: Bad request — missing or invalid fields
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Name is required"
+
+    Unauthorized:
+      description: Not authenticated — session required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Unauthorized"
+
+    Forbidden:
+      description: Authenticated but insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Forbidden"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Not found"
+
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth v5 JWT session cookie (HttpOnly). Set automatically after login.
+
+security:
+  - CookieAuth: []

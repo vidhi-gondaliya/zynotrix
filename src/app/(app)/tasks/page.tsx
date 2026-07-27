@@ -419,13 +419,20 @@ function TeamPanel() {
       <BulkBar selected={selected} onClear={() => setSelected(new Set())} onAction={handleBulkAction} />
 
       {/* Quick filter tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-2xl w-fit"
+      <div className="flex items-center gap-1 p-1 rounded-[14px] w-fit"
         style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
         {QUICK_TABS.map(({ key, label }) => (
           <button key={key} onClick={() => setQuick(key)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150
-              ${quick === key ? "text-foreground shadow-xs" : "text-muted hover:text-foreground"}`}
-            style={quick === key ? { background: "var(--bg-card)" } : {}}>
+            className="px-3.5 py-1.5 rounded-[10px] text-[12px] font-semibold transition-all duration-150"
+            style={quick === key ? {
+              background: "linear-gradient(135deg, rgba(99,102,241,0.20), rgba(139,92,246,0.15))",
+              color: "var(--accent)",
+              border: "1px solid rgba(99,102,241,0.30)",
+              boxShadow: "0 1px 6px rgba(99,102,241,0.15)",
+            } : {
+              color: "var(--text-muted)",
+              border: "1px solid transparent",
+            }}>
             {label}
           </button>
         ))}
@@ -471,68 +478,113 @@ function TeamPanel() {
         <EmptyState icon={<CheckSquare className="w-6 h-6" />} title="No tasks found"
           description={hasFilters ? "Try adjusting your filters." : "Tasks will appear here once created in your projects."} />
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+        <div className="rounded-[18px] overflow-hidden"
+          style={{ border: "1px solid var(--border)", background: "var(--bg-card)", boxShadow: "var(--shadow-xs), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
           {/* Select-all header */}
           <div className="flex items-center gap-3 px-5 py-2.5"
             style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
             <button onClick={toggleAll} aria-label="Select all tasks"
-              className="shrink-0 w-4 h-4 rounded flex items-center justify-center transition-colors"
+              className="shrink-0 w-4 h-4 rounded-[4px] flex items-center justify-center transition-all"
               style={{
-                background: allSelected ? "var(--accent)" : someSelected ? "var(--accent-muted)" : "var(--bg-card)",
+                background: allSelected ? "var(--accent)" : someSelected ? "var(--accent-muted)" : "transparent",
                 border: `1.5px solid ${allSelected || someSelected ? "var(--accent)" : "var(--border-strong)"}`,
               }}>
               {allSelected ? <CheckSquare className="w-2.5 h-2.5 text-white" />
                 : someSelected ? <Minus className="w-2.5 h-2.5" style={{ color: "var(--accent)" }} />
                 : null}
             </button>
-            <span className="text-[11px] font-semibold" style={{ color: "var(--text-subtle)" }}>
-              {allSelected ? "Deselect all" : "Select all"}
+            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--text-subtle)" }}>
+              {allSelected ? "Deselect all" : `${filtered.length} task${filtered.length !== 1 ? "s" : ""}`}
             </span>
           </div>
 
           {filtered.map((task, i) => {
             const overdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE";
             const isSelected = selected.has(task.id);
+            const PRIORITY_COLORS: Record<string, string> = {
+              URGENT: "#F43F5E", HIGH: "#FBBF24", MEDIUM: "#818CF8", LOW: "#6B7280"
+            };
+            const prColor = PRIORITY_COLORS[task.priority] ?? "#818CF8";
             return (
-              <motion.div key={task.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
-                <div className={`flex items-center gap-4 px-5 py-3.5 transition-colors cursor-pointer group
-                  ${i < filtered.length - 1 ? "border-b" : ""} ${overdue ? "border-l-2 border-l-danger pl-4" : ""}
-                  ${isSelected ? "bg-accent/5" : "hover:bg-card-hover"}`}
-                  style={{ borderColor: "var(--border)" }}>
+              <motion.div key={task.id} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.015 }}>
+                <div
+                  className="relative flex items-center gap-4 px-5 py-3.5 transition-all cursor-pointer group"
+                  style={{
+                    borderBottom: i < filtered.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                    background: isSelected ? "rgba(99,102,241,0.05)" : undefined,
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
+                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  {/* Priority accent bar */}
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full"
+                    style={{
+                      background: overdue ? "#F43F5E" : task.status === "DONE" ? "#22C55E" : prColor,
+                      opacity: isSelected ? 1 : 0.5,
+                      transition: "opacity 0.15s",
+                    }} />
+
                   {/* Checkbox */}
                   <button onClick={() => toggleTask(task.id)} aria-label={`Select task: ${task.title}`}
-                    className="shrink-0 w-4 h-4 rounded flex items-center justify-center transition-all"
+                    className="shrink-0 w-4 h-4 rounded-[4px] flex items-center justify-center transition-all"
                     style={{
-                      background: isSelected ? "var(--accent)" : "var(--bg-elevated)",
+                      background: isSelected ? "var(--accent)" : "transparent",
                       border: `1.5px solid ${isSelected ? "var(--accent)" : "var(--border-strong)"}`,
                     }}>
                     {isSelected && <Square className="w-2.5 h-2.5 text-white fill-white" />}
                   </button>
 
-                  <Link href={`/projects/${task.projectId}/board`} className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_DOT[task.status] ?? "#6B7280" }} />
+                  <Link href={`/projects/${task.projectId}/board`} className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Status icon */}
+                    <div className="shrink-0">
+                      {STATUS_ICON[task.status] ?? STATUS_ICON.TODO}
+                    </div>
+
+                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${task.status === "DONE" ? "line-through text-muted" : "text-foreground"}`}>
+                      <p className="text-[13px] font-semibold truncate"
+                        style={{
+                          color: task.status === "DONE" ? "var(--text-muted)" : "var(--text-foreground)",
+                          textDecoration: task.status === "DONE" ? "line-through" : "none",
+                          letterSpacing: "-0.01em",
+                        }}>
                         {task.title}
                       </p>
                       {task.project && (
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className="w-2 h-2 rounded-sm" style={{ background: task.project.color }} />
-                          <span className="text-[11px] text-subtle">{task.project.name}</span>
+                          <div className="w-1.5 h-1.5 rounded-full" style={{ background: task.project.color }} />
+                          <span className="text-[10.5px] font-medium" style={{ color: "var(--text-subtle)" }}>
+                            {task.project.name}
+                          </span>
                         </div>
                       )}
                     </div>
-                    <div className="hidden sm:flex items-center gap-3 shrink-0">
-                      <Badge variant={PRIORITY_BADGE[task.priority] ?? "default"} size="sm">{task.priority}</Badge>
+
+                    {/* Metadata */}
+                    <div className="hidden sm:flex items-center gap-2.5 shrink-0">
+                      {/* Priority dot+label */}
+                      <span
+                        className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: `${prColor}18`,
+                          color: prColor,
+                          border: `1px solid ${prColor}30`,
+                        }}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: prColor }} />
+                        {task.priority}
+                      </span>
+
                       {task.dueDate && (
-                        <span className={`flex items-center gap-1 text-[11px] font-semibold ${overdue ? "text-danger" : "text-muted"}`}>
+                        <span className="flex items-center gap-1 text-[11px] font-semibold"
+                          style={{ color: overdue ? "var(--danger)" : "var(--text-muted)" }}>
                           {overdue ? <AlertCircle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
                           {format(new Date(task.dueDate), "MMM d")}
                         </span>
                       )}
+
                       {task.assignee
                         ? <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />
-                        : <div className="w-6 h-6 rounded-full border border-dashed" style={{ borderColor: "var(--border-strong)" }} />}
+                        : <div className="w-5 h-5 rounded-full border border-dashed" style={{ borderColor: "var(--border-strong)" }} />}
                     </div>
                   </Link>
                 </div>
@@ -557,30 +609,42 @@ function TasksContent() {
       <NLTaskCreator open={showNL} onClose={() => setShowNL(false)} onCreated={() => setRefreshKey((k) => k + 1)} />
 
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-lg font-black text-foreground">Tasks</h1>
-          <p className="text-xs text-muted mt-0.5">Personal + Team tasks in one place</p>
+          <h1 className="text-[22px] font-black tracking-[-0.03em]"
+            style={{
+              background: "linear-gradient(120deg, var(--text-foreground) 30%, var(--accent) 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+            }}>
+            My Tasks
+          </h1>
+          <p className="text-[12px] mt-0.5" style={{ color: "var(--text-subtle)" }}>
+            Personal &amp; team tasks in one place
+          </p>
         </div>
-        {/* Controls */}
         <div className="flex items-center gap-2">
           <button onClick={() => setShowNL(true)}
-            className="flex items-center gap-2 h-9 px-4 rounded-xl text-sm font-bold text-white transition-all"
-            style={{ background: "linear-gradient(135deg,#9D6BFF,#00CFFF)", boxShadow: "0 4px 14px rgba(157,107,255,0.35)" }}>
+            className="flex items-center gap-2 h-9 px-4 rounded-[12px] text-[13px] font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
+              boxShadow: "0 4px 20px rgba(139,92,246,0.40), inset 0 1px 0 rgba(255,255,255,0.20)",
+            }}>
             <Wand2 className="w-3.5 h-3.5" /> AI Create
           </button>
-          <div className="flex items-center gap-1 p-1 rounded-xl"
+          <div className="flex items-center gap-1 p-1 rounded-[10px]"
             style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
             <button onClick={() => setView("hybrid")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
-                ${view === "hybrid" ? "text-foreground" : "text-muted hover:text-foreground"}`}
-              style={view === "hybrid" ? { background: "var(--bg-card)", boxShadow: "var(--shadow-xs)" } : {}}>
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
+              style={view === "hybrid"
+                ? { background: "var(--bg-card)", color: "var(--text-foreground)", boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }
+                : { color: "var(--text-muted)" }}>
               <User2 className="w-3.5 h-3.5" /> Hybrid
             </button>
             <button onClick={() => setView("team")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
-                ${view === "team" ? "text-foreground" : "text-muted hover:text-foreground"}`}
-              style={view === "team" ? { background: "var(--bg-card)", boxShadow: "var(--shadow-xs)" } : {}}>
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
+              style={view === "team"
+                ? { background: "var(--bg-card)", color: "var(--text-foreground)", boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }
+                : { color: "var(--text-muted)" }}>
               <Users className="w-3.5 h-3.5" /> Team Only
             </button>
           </div>

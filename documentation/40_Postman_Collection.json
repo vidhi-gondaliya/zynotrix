@@ -1,0 +1,1172 @@
+{
+  "info": {
+    "name": "ZYNOTRIX API",
+    "description": "Complete Postman collection for the ZYNOTRIX Task Management API.\n\nSetup:\n1. Set the `baseUrl` variable to your server URL (default: http://localhost:3000)\n2. Log in via the 'Register' or use an existing account\n3. Authenticate by visiting the app in a browser — cookies will be shared if using Postman's cookie jar\n\nNote: All authenticated endpoints require the NextAuth session cookie.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "channelId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "meetingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sprintId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "portalToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication and registration endpoints",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Arjun Mehta\",\n  \"email\": \"arjun@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "description": "Create a new user account. After registration, create a workspace via POST /api/organizations."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (NextAuth Credentials)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/callback/credentials",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "callback", "credentials"]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "arjun@example.com" },
+                { "key": "password", "value": "securepassword123" },
+                { "key": "csrfToken", "value": "{{csrfToken}}" },
+                { "key": "callbackUrl", "value": "{{baseUrl}}/dashboard" },
+                { "key": "json", "value": "true" }
+              ]
+            },
+            "description": "NextAuth credentials login. Requires CSRF token. Use the browser flow for easier testing."
+          },
+          "response": []
+        },
+        {
+          "name": "Get CSRF Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/csrf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "csrf"]
+            },
+            "description": "Get CSRF token required for login form submission."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "session"]
+            },
+            "description": "Get the current session. Returns user data if authenticated."
+          },
+          "response": []
+        },
+        {
+          "name": "Sign Out",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/signout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signout"]
+            },
+            "description": "Sign out the current user and invalidate the session."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "description": "Workspace management",
+      "item": [
+        {
+          "name": "Create Workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Engineering\"\n}"
+            },
+            "description": "Create a new organization. The calling user becomes OWNER."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User profile and listing",
+      "item": [
+        {
+          "name": "List Org Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "List all members in the current organization."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Get the current authenticated user's profile."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Current User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Arjun Mehta\",\n  \"image\": \"https://example.com/avatar.jpg\"\n}"
+            },
+            "description": "Update the current user's name or avatar URL."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "description": "Project CRUD and management",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"]
+            },
+            "description": "List all active (non-archived, non-personal) projects in the organization."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q4 Platform Rewrite\",\n  \"description\": \"Modernize the backend infrastructure\",\n  \"status\": \"ACTIVE\",\n  \"priority\": \"HIGH\",\n  \"startDate\": \"2026-08-01T00:00:00.000Z\",\n  \"endDate\": \"2026-10-31T00:00:00.000Z\",\n  \"budget\": 50000\n}"
+            },
+            "description": "Create a new project. Requires projects:create permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            },
+            "description": "Get a single project by ID. Set the projectId variable first."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q4 Platform Rewrite v2\",\n  \"status\": \"ON_HOLD\"\n}"
+            },
+            "description": "Update project fields. Requires projects:edit permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            },
+            "description": "Delete a project. Requires projects:delete permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "health"]
+            },
+            "description": "Get AI-generated health score for a project. Uses Claude AI."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "description": "Task CRUD and Kanban operations",
+      "item": [
+        {
+          "name": "List Project Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "tasks"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "TODO",
+                  "disabled": true,
+                  "description": "Filter by status: TODO, IN_PROGRESS, IN_REVIEW, DONE"
+                }
+              ]
+            },
+            "description": "List all tasks in a project. Optionally filter by status."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "tasks"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Fix authentication redirect bug\",\n  \"description\": \"Users are redirected to /login even when already logged in\",\n  \"status\": \"TODO\",\n  \"priority\": \"HIGH\",\n  \"dueDate\": \"2026-08-15T00:00:00.000Z\",\n  \"storyPoints\": 3,\n  \"tags\": [\"bug\", \"auth\"]\n}"
+            },
+            "description": "Create a task in a project. Auto-assigns position. Sends notification if assigneeId provided."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "description": "Get a single task by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"assigneeId\": \"user-cuid-here\"\n}"
+            },
+            "description": "Update task fields. Moving to DONE triggers point award."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "description": "Delete a task. Requires tasks:delete permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Move Task (Kanban)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/move",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "move"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"position\": 2\n}"
+            },
+            "description": "Move a task to a new Kanban column and/or position. Used by drag-and-drop."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "upcoming"]
+            },
+            "description": "Get tasks assigned to the current user due today or tomorrow."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task Activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/activity",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "activity"]
+            },
+            "description": "Get the activity log for a task (status changes, assignments, etc.)."
+          },
+          "response": []
+        },
+        {
+          "name": "Log Time on Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/time",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}", "time"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minutes\": 90,\n  \"description\": \"Implemented OAuth callback handler\"\n}"
+            },
+            "description": "Log time spent on a task."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sprints",
+      "description": "Sprint planning and tracking",
+      "item": [
+        {
+          "name": "List Sprints",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/sprints",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "sprints"]
+            },
+            "description": "List all sprints for a project."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sprint",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/sprints",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "sprints"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sprint 5\",\n  \"startDate\": \"2026-08-01T00:00:00.000Z\",\n  \"endDate\": \"2026-08-14T00:00:00.000Z\",\n  \"goal\": \"Complete authentication module\"\n}"
+            },
+            "description": "Create a new sprint."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Sprint",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/sprints/{{sprintId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "sprints", "{{sprintId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "description": "Update sprint (start, complete, or modify)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Channels & Chat",
+      "description": "Channel management and messaging",
+      "item": [
+        {
+          "name": "List Channels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/channels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "channels"]
+            },
+            "description": "List all org channels the user has access to."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Channel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/channels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "channels"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"frontend-team\",\n  \"isPrivate\": false\n}"
+            },
+            "description": "Create a new channel."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Channel Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/{{channelId}}/messages?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "channels", "{{channelId}}", "messages"],
+              "query": [
+                { "key": "limit", "value": "50" }
+              ]
+            },
+            "description": "Get the latest messages from a channel."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Channel Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/{{channelId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "channels", "{{channelId}}", "messages"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hey team, the deployment is ready for review!\"\n}"
+            },
+            "description": "Send a message to a channel. Broadcasts to SSE subscribers."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Meetings",
+      "description": "Meeting scheduling",
+      "item": [
+        {
+          "name": "List Meetings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/meetings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "meetings"]
+            },
+            "description": "List all org meetings."
+          },
+          "response": []
+        },
+        {
+          "name": "Schedule Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/meetings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "meetings"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sprint 5 Planning\",\n  \"description\": \"Plan tasks for the upcoming sprint\",\n  \"startTime\": \"2026-08-01T10:00:00.000Z\",\n  \"endTime\": \"2026-08-01T11:00:00.000Z\",\n  \"attendeeIds\": [],\n  \"generateMeetLink\": true\n}"
+            },
+            "description": "Schedule a meeting. Set generateMeetLink to true to create a Google Meet link (requires Google OAuth)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "Notification management",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"],
+              "query": [
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Get the current user's recent notifications."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "read-all"]
+            },
+            "description": "Mark all of the current user's notifications as read."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "preferences"]
+            },
+            "description": "Get the current user's notification preferences."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "preferences"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskAssigned\": true,\n  \"taskDue\": true,\n  \"mentionOnly\": false,\n  \"smartFilter\": true,\n  \"minPriority\": \"MEDIUM\",\n  \"dndEnabled\": false\n}"
+            },
+            "description": "Update notification preferences for the current user."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "description": "Clock-in and attendance tracking",
+      "item": [
+        {
+          "name": "Get Attendance Records",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attendance"],
+              "query": [
+                { "key": "date", "value": "2026-07-23", "disabled": true }
+              ]
+            },
+            "description": "Get attendance records. Optionally filter by date."
+          },
+          "response": []
+        },
+        {
+          "name": "Clock In",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attendance"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"clock-in\"\n}"
+            },
+            "description": "Clock in the current user for today. Creates an AttendanceRecord."
+          },
+          "response": []
+        },
+        {
+          "name": "Clock Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attendance"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"clock-out\"\n}"
+            },
+            "description": "Clock out the current user. Updates today's AttendanceRecord with clockOut time."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Rewards",
+      "description": "Points, badges, and coupon redemption",
+      "item": [
+        {
+          "name": "Get Rewards Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/rewards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rewards"]
+            },
+            "description": "Get the current user's points balance, lifetime total, badges, and leaderboard rank."
+          },
+          "response": []
+        },
+        {
+          "name": "Redeem Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/rewards/redeem",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rewards", "redeem"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"couponId\": \"coupon-cuid-here\"\n}"
+            },
+            "description": "Redeem a coupon using the user's point balance. Deducts from balance (not lifetime)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Features",
+      "description": "AI-powered features using Claude",
+      "item": [
+        {
+          "name": "AI Assistant (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/assistant",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "assistant"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What tasks are overdue in my projects?\",\n  \"history\": []\n}"
+            },
+            "description": "Send a message to the AI assistant. Returns a streaming text/plain response."
+          },
+          "response": []
+        },
+        {
+          "name": "AI Insights (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/insights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "insights"]
+            },
+            "description": "Generate AI project insights for the dashboard. Streaming response."
+          },
+          "response": []
+        },
+        {
+          "name": "AI Standup Summary (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/standup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "standup"]
+            },
+            "description": "Generate an AI standup summary from recent task activity."
+          },
+          "response": []
+        },
+        {
+          "name": "AI Report (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "reports"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"type\": \"weekly\"\n}"
+            },
+            "description": "Generate an AI-written project report. Type: weekly, sprint, executive, technical."
+          },
+          "response": []
+        },
+        {
+          "name": "AI Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "search"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"login bug authentication\"\n}"
+            },
+            "description": "Search tasks, documents, and messages using AI semantic matching."
+          },
+          "response": []
+        },
+        {
+          "name": "AI Parse Tasks (NL)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/parse-tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "parse-tasks"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Create a high priority task to fix the auth redirect bug, due next Friday, assigned to Arjun\"\n}"
+            },
+            "description": "Parse natural language text into structured task data."
+          },
+          "response": []
+        },
+        {
+          "name": "AI Meeting Notes",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/meeting-notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "meeting-notes"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meetingId\": \"{{meetingId}}\",\n  \"transcript\": \"We discussed the auth bug and decided to fix it by end of week...\"\n}"
+            },
+            "description": "Generate meeting notes and action items from a transcript."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Dashboard metrics",
+      "item": [
+        {
+          "name": "Get Dashboard Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dashboard"]
+            },
+            "description": "Get all dashboard metrics: task counts, completion trend, team activity."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Administrative operations (requires ADMIN or OWNER role)",
+      "item": [
+        {
+          "name": "List Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "description": "List all org users with full details. Requires admin:access permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Team Member\",\n  \"email\": \"member@example.com\",\n  \"password\": \"temporarypassword123\",\n  \"role\": \"MEMBER\"\n}"
+            },
+            "description": "Create a new user directly in the org without an invitation email."
+          },
+          "response": []
+        },
+        {
+          "name": "Change User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/USER_ID_HERE/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", "USER_ID_HERE", "role"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"MANAGER\"\n}"
+            },
+            "description": "Change a user's role in the organization."
+          },
+          "response": []
+        },
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "roles"]
+            },
+            "description": "List custom roles defined for the organization."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Custom Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "roles"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Project Lead\",\n  \"permissions\": [\"tasks:create\", \"tasks:edit\", \"tasks:assign\", \"projects:edit\"]\n}"
+            },
+            "description": "Create a custom role with specific permissions."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reward Configs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/rewards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "rewards"]
+            },
+            "description": "Get reward configuration matrix (action × role × points)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Client Portal",
+      "description": "Public client portal access (no authentication required)",
+      "item": [
+        {
+          "name": "Get Portal Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/portal/{{portalToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "portal", "{{portalToken}}"]
+            },
+            "description": "Get project data for a client portal. No authentication required. Token-based access."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Integrations & Webhooks",
+      "description": "Integration tests and inbound webhooks",
+      "item": [
+        {
+          "name": "Test Slack Integration",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integrations/slack/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "integrations", "slack", "test"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"webhookUrl\": \"https://hooks.slack.com/services/xxx\"\n}"
+            },
+            "description": "Test a Slack webhook URL by sending a test message."
+          },
+          "response": []
+        },
+        {
+          "name": "GitHub Webhook Receiver",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Hub-Signature-256", "value": "sha256=xxx" },
+              { "key": "X-GitHub-Event", "value": "pull_request" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/github",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "github"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"opened\",\n  \"pull_request\": {\n    \"number\": 42,\n    \"title\": \"Fix auth redirect\",\n    \"html_url\": \"https://github.com/org/repo/pull/42\"\n  }\n}"
+            },
+            "description": "Simulate a GitHub webhook. Requires valid HMAC signature in X-Hub-Signature-256."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
