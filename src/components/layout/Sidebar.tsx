@@ -380,7 +380,7 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className="hidden lg:flex flex-col fixed left-0 top-0 h-full z-[var(--z-sidebar)] overflow-hidden"
+        className="sidebar-shell hidden lg:flex flex-col fixed left-0 top-0 h-full z-[var(--z-sidebar)] overflow-hidden"
         style={{
           width: collapsed ? "var(--sidebar-w-collapsed)" : "var(--sidebar-w)",
           background: "var(--bg-sidebar)",
@@ -406,7 +406,7 @@ export function Sidebar() {
           <motion.aside
             initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 400, damping: 38 }}
-            className="fixed left-0 top-0 h-full z-[var(--z-modal)] flex flex-col lg:hidden overflow-hidden"
+            className="sidebar-shell fixed left-0 top-0 h-full z-[var(--z-modal)] flex flex-col lg:hidden overflow-hidden"
             style={{ width: "var(--sidebar-w)", background: "var(--bg-sidebar)", borderRight: "1px solid var(--border)" }}
           >
             {sidebarContent}

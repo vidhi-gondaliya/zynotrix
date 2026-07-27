@@ -76,61 +76,62 @@ function HealthRing({ score }: { score: number }) {
   );
 }
 
-// ── Focus metric card ──────────────────────────────────────────────────────────
+// ── Focus metric card — gradient-filled like Fincheck ─────────────────────────
 function FocusMetric({
-  label, value, icon: Icon, color, href, badge, index,
+  label, value, icon: Icon, gradient, shadowColor, href, trend, index,
 }: {
   label: string; value: number; icon: React.ElementType;
-  color: string; href: string; badge?: string; index: number;
+  gradient: string; shadowColor: string; href: string; trend?: string; index: number;
 }) {
-  const animated = useCountUp(value, 1000, 100 + index * 80);
+  const animated = useCountUp(value, 1000, 80 + index * 80);
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.06 + index * 0.05, ease: [0.16, 1, 0.3, 1] }}>
+      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: 0.06 + index * 0.06, ease: [0.16, 1, 0.3, 1] }}>
       <Link href={href}>
         <div
-          className="relative rounded-[16px] p-4 cursor-pointer overflow-hidden transition-all duration-200 group"
+          className="relative rounded-[20px] p-5 cursor-pointer overflow-hidden transition-all duration-250"
           style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+            background: gradient,
+            boxShadow: `0 8px 28px ${shadowColor}, 0 2px 8px rgba(0,0,0,0.12)`,
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = color + "55";
-            (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px ${color}20, inset 0 1px 0 rgba(255,255,255,0.06)`;
-            (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
+            (e.currentTarget as HTMLElement).style.transform = "translateY(-5px)";
+            (e.currentTarget as HTMLElement).style.boxShadow = `0 18px 40px ${shadowColor}, 0 4px 12px rgba(0,0,0,0.18)`;
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.04)";
             (e.currentTarget as HTMLElement).style.transform = "none";
-          }}>
-          {/* Top accent line — full width, colored gradient */}
-          <div className="absolute top-0 left-0 right-0 h-[2.5px]"
-            style={{ background: `linear-gradient(90deg, transparent, ${color}cc 30%, ${color}aa 70%, transparent)` }} />
-          <div className="flex items-start justify-between mb-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg, ${color}22, ${color}10)`,
-                border: `1px solid ${color}28`,
-                boxShadow: `0 0 16px ${color}18`,
-              }}>
-              <Icon className="w-4.5 h-4.5" style={{ color }} />
+            (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 28px ${shadowColor}, 0 2px 8px rgba(0,0,0,0.12)`;
+          }}
+        >
+          {/* Decorative blobs */}
+          <div className="absolute -right-5 -top-5 w-28 h-28 rounded-full pointer-events-none"
+            style={{ background: "rgba(255,255,255,0.12)" }} />
+          <div className="absolute -right-10 -bottom-10 w-36 h-36 rounded-full pointer-events-none"
+            style={{ background: "rgba(255,255,255,0.07)" }} />
+
+          {/* Top row: icon + trend */}
+          <div className="relative z-10 flex items-start justify-between mb-5">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.22)" }}>
+              <Icon className="w-5 h-5 text-white" strokeWidth={2} />
             </div>
-            {badge && (
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
-                style={{ background: color + "18", color, border: `1px solid ${color}28` }}>
-                {badge}
+            {trend && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-white"
+                style={{ background: "rgba(255,255,255,0.20)" }}>
+                {trend}
               </span>
             )}
           </div>
-          <p className="text-[32px] font-black leading-none tabular-nums tracking-[-0.05em]"
-            style={{ color }}>
+
+          {/* Number */}
+          <p className="relative z-10 text-[40px] font-black leading-none tabular-nums tracking-[-0.06em] text-white">
             {animated}
           </p>
-          <p className="text-[11.5px] font-semibold mt-2" style={{ color: "var(--text-muted)" }}>{label}</p>
+          <p className="relative z-10 text-[12px] font-semibold mt-1.5" style={{ color: "rgba(255,255,255,0.72)" }}>
+            {label}
+          </p>
         </div>
       </Link>
     </motion.div>
@@ -417,16 +418,26 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* ── Focus Metrics Strip ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <FocusMetric label="Active Tasks" value={data.activeTasks} icon={Activity}
-            color="var(--accent)" href="/tasks?filter=mine" index={0} />
+            gradient="linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)"
+            shadowColor="rgba(6,182,212,0.35)"
+            href="/tasks?filter=mine" trend="Live" index={0} />
           <FocusMetric label="Overdue" value={data.overdueTasks} icon={AlertTriangle}
-            color={data.overdueTasks > 0 ? "#FF4466" : "#00F090"} href="/tasks?filter=overdue"
-            badge={data.overdueTasks > 0 ? "!" : "✓"} index={1} />
+            gradient={data.overdueTasks > 0
+              ? "linear-gradient(135deg, #F43F5E 0%, #BE185D 100%)"
+              : "linear-gradient(135deg, #10B981 0%, #059669 100%)"}
+            shadowColor={data.overdueTasks > 0 ? "rgba(244,63,94,0.35)" : "rgba(16,185,129,0.35)"}
+            href="/tasks?filter=overdue"
+            trend={data.overdueTasks > 0 ? "Action" : "Clear"} index={1} />
           <FocusMetric label="In Review" value={data.reviewTasks} icon={Eye}
-            color="#FFC107" href="/tasks?filter=review" index={2} />
+            gradient="linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
+            shadowColor="rgba(245,158,11,0.35)"
+            href="/tasks?filter=review" trend="Pending" index={2} />
           <FocusMetric label="Total Tasks" value={data.totalTasks} icon={CheckSquare}
-            color="var(--text-subtle)" href="/tasks" index={3} />
+            gradient="linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)"
+            shadowColor="rgba(139,92,246,0.35)"
+            href="/tasks" index={3} />
         </div>
 
         {/* ── Main Content Row: Priority Feed + Health ── */}
