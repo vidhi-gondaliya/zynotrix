@@ -31,20 +31,23 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
     <div className="flex flex-col h-full">
       {/* ── Project sub-header ───────────────────────────── */}
       <div
-        className="relative flex items-center gap-3 px-5 py-2 overflow-hidden"
+        className="relative flex items-center gap-3 px-5 overflow-hidden"
         style={{
           background: "var(--bg-sidebar)",
           borderBottom: "1px solid var(--border)",
-          minHeight: "48px",
+          minHeight: 54,
         }}
       >
-        {/* Ambient project color glow */}
+        {/* Project color ambient glow */}
         {project && (
-          <div
-            className="absolute left-0 top-0 bottom-0 w-[3px]"
-            style={{ background: project.color }}
-          />
+          <>
+            <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+              style={{ background: project.color }} />
+            <div className="absolute left-0 top-0 bottom-0 w-24 pointer-events-none"
+              style={{ background: `linear-gradient(90deg, ${project.color}18, transparent)` }} />
+          </>
         )}
+
         {/* Back */}
         <Link
           href="/projects"
@@ -68,15 +71,19 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
         {project && (
           <div className="flex items-center gap-2 shrink-0">
             <div
-              className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center"
-              style={{ background: project.color + "22" }}
+              className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${project.color}30, ${project.color}15)`,
+                border: `1px solid ${project.color}35`,
+                boxShadow: `0 0 12px ${project.color}22`,
+              }}
             >
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: project.color }} />
+              <div className="w-3 h-3 rounded-sm" style={{
+                background: project.color,
+                boxShadow: `0 0 6px ${project.color}80`,
+              }} />
             </div>
-            <span
-              className="text-[13px] font-bold"
-              style={{ color: "var(--text-foreground)" }}
-            >
+            <span className="text-[13.5px] font-bold" style={{ color: "var(--text-foreground)" }}>
               {project.name}
             </span>
           </div>
@@ -85,29 +92,40 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
         {/* Divider */}
         <div className="w-px h-5 shrink-0" style={{ background: "var(--border)" }} />
 
-        {/* View toggle */}
+        {/* View toggle — pill style */}
         <div
-          className="flex items-center gap-0.5 p-1 rounded-xl"
+          className="flex items-center gap-1 p-1 rounded-xl"
           style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
         >
           {views.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
+            const pColor = project?.color ?? "var(--accent)";
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all duration-150"
                 style={{
-                  background: active ? "var(--bg-card)" : "transparent",
+                  background: active
+                    ? "var(--bg-card)"
+                    : "transparent",
                   color: active ? "var(--text-foreground)" : "var(--text-muted)",
-                  boxShadow: active ? "var(--shadow-xs)" : "none",
-                  borderBottom: active ? `2px solid var(--accent)` : "2px solid transparent",
+                  boxShadow: active
+                    ? `var(--shadow-xs), 0 0 0 1px ${pColor}25`
+                    : "none",
+                  borderBottom: active ? `2px solid ${pColor}` : "2px solid transparent",
                 }}
                 onMouseEnter={(e) => {
-                  if (!active) (e.currentTarget as HTMLElement).style.color = "var(--text-foreground)";
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.color = "var(--text-foreground)";
+                    (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)";
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  if (!active) (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                  }
                 }}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -118,7 +136,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
         </div>
 
         {/* Settings */}
-        <Link href={`/projects/${projectId}/settings`} className="shrink-0">
+        <Link href={`/projects/${projectId}/settings`} className="ml-auto shrink-0">
           <button
             className="p-2 rounded-xl transition-all"
             style={

@@ -95,19 +95,24 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
         className="relative rounded-[16px] overflow-hidden mb-2.5 select-none"
         style={{
           background: isArchived
-            ? "linear-gradient(135deg, rgba(100,116,139,0.18) 0%, rgba(100,116,139,0.08) 100%)"
-            : `linear-gradient(135deg, ${accent}28 0%, ${accent}10 100%)`,
-          border: `1.5px solid ${isArchived ? "rgba(100,116,139,0.25)" : `${accent}40`}`,
-          boxShadow: isArchived ? "none" : `0 2px 16px ${accent}18`,
+            ? "rgba(100,116,139,0.09)"
+            : `linear-gradient(135deg, ${accent}22 0%, ${accent}0a 100%)`,
+          border: `1px solid ${isArchived ? "rgba(100,116,139,0.20)" : `${accent}38`}`,
+          boxShadow: isArchived
+            ? "none"
+            : `0 2px 20px ${accent}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
         }}
       >
         {/* Top accent stripe */}
         <div
-          className="absolute top-0 left-0 right-0 h-[3px]"
+          className="absolute top-0 left-0 right-0"
           style={{
+            height: 2.5,
             background: isArchived
-              ? "linear-gradient(90deg, transparent, rgba(100,116,139,0.5), transparent)"
-              : `linear-gradient(90deg, ${accent}00, ${accent}, ${accent}00)`,
+              ? "linear-gradient(90deg, transparent, rgba(100,116,139,0.45), transparent)"
+              : `linear-gradient(90deg, ${accent}00, ${accent}dd, ${accent}00)`,
           }}
         />
 
@@ -217,13 +222,18 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
           className="flex-1 min-h-[120px] rounded-2xl p-2 flex flex-col gap-2 transition-all duration-200"
           style={{
             background: isOver
-              ? `${accent}12`
+              ? `${accent}16`
               : isArchived
               ? "rgba(100,116,139,0.04)"
-              : "rgba(0,0,0,0.02)",
-            border: `1.5px ${isOver ? "solid" : "dashed"} ${isOver ? accent + "40" : "transparent"}`,
-            boxShadow: isOver ? `inset 0 0 32px ${accent}10` : "none",
-            opacity: isArchived ? 0.75 : 1,
+              : "var(--kanban-col-body-bg)",
+            border: isOver
+              ? `1.5px solid ${accent}55`
+              : "1.5px dashed transparent",
+            boxShadow: isOver
+              ? `inset 0 0 40px ${accent}12, 0 0 0 1px ${accent}28`
+              : "none",
+            opacity: isArchived ? 0.78 : 1,
+            transition: "all 0.15s ease",
           }}
         >
           <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>

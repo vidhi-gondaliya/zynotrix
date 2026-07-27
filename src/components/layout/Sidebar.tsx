@@ -130,12 +130,17 @@ export function Sidebar() {
       <Link
         href={item.href}
         title={collapsed ? item.label : undefined}
-        className="relative flex items-center gap-2.5 rounded-[10px] transition-all duration-100 group"
+        className="relative flex items-center gap-2.5 rounded-[10px] transition-all duration-150 group"
         style={{
-          padding: collapsed ? "8px 10px" : "8px 10px",
+          padding: "8px 10px",
           justifyContent: collapsed ? "center" : undefined,
           color: active ? "var(--accent)" : "var(--text-secondary)",
-          background: active ? "var(--accent-muted)" : "transparent",
+          background: active
+            ? "var(--accent-muted)"
+            : "transparent",
+          boxShadow: active
+            ? `inset 0 0 0 1px var(--accent-glow), 0 2px 12px var(--accent-glow)`
+            : "none",
           fontSize: "13.5px",
           fontWeight: active ? 700 : 500,
           lineHeight: 1,
@@ -145,7 +150,11 @@ export function Sidebar() {
           <motion.div
             layoutId="nav-rail"
             className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full"
-            style={{ height: "60%", background: "var(--accent)" }}
+            style={{
+              height: "60%",
+              background: "var(--accent)",
+              boxShadow: "0 0 8px var(--accent)",
+            }}
             transition={{ type: "spring", stiffness: 600, damping: 48 }}
           />
         )}
@@ -217,20 +226,29 @@ export function Sidebar() {
 
       {/* ── Brand ─────────────────────────────────────────────── */}
       <div
-        className="flex items-center gap-2.5 shrink-0"
+        className="relative flex items-center gap-2.5 shrink-0 overflow-hidden"
         style={{
           height: 64,
           padding: "0 12px",
           borderBottom: "1px solid var(--border-subtle)",
         }}
       >
-        <Link href="/dashboard" className="flex items-center gap-2.5 flex-1 min-w-0 overflow-hidden">
+        {/* Aurora glow behind brand */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 140% 120% at 30% 50%, rgba(99,102,241,0.22) 0, transparent 65%), radial-gradient(ellipse 80% 80% at 80% 20%, rgba(167,139,250,0.14) 0, transparent 55%)",
+            backgroundSize: "200% 200%",
+            animation: "aurora-shift 10s ease-in-out infinite",
+          }}
+        />
+        <Link href="/dashboard" className="relative flex items-center gap-2.5 flex-1 min-w-0 overflow-hidden">
           <div
-            className="shrink-0 rounded-[10px] flex items-center justify-center"
+            className="shrink-0 rounded-[11px] flex items-center justify-center"
             style={{
               width: 34, height: 34,
-              background: "linear-gradient(135deg, var(--accent) 0%, #A78BFA 100%)",
-              boxShadow: "0 0 18px var(--accent-glow)",
+              background: "linear-gradient(135deg, #6366F1 0%, #A78BFA 100%)",
+              boxShadow: "0 0 20px rgba(99,102,241,0.55), 0 4px 12px rgba(0,0,0,0.30)",
             }}
           >
             <Zap className="w-[15px] h-[15px] text-white" strokeWidth={2.5} />
@@ -245,7 +263,7 @@ export function Sidebar() {
                 <span
                   className="text-[16px] font-black tracking-[-0.04em] whitespace-nowrap leading-none"
                   style={{
-                    background: "linear-gradient(120deg, var(--text-foreground) 20%, var(--accent) 100%)",
+                    background: "linear-gradient(120deg, var(--text-foreground) 15%, var(--accent) 85%)",
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
                   }}
                 >

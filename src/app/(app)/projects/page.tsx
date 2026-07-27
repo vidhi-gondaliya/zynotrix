@@ -56,25 +56,29 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
       <Link href={`/projects/${project.id}/board`} className="block group">
-        <div className="relative overflow-hidden rounded-[16px] transition-all duration-200"
+        <div className="relative overflow-hidden rounded-[18px] transition-all duration-200"
           style={{
             background: "var(--bg-card)",
             border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-xs)",
+            boxShadow: "var(--shadow-xs), inset 0 1px 0 rgba(255,255,255,0.04)",
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-md)";
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
-            (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+            (e.currentTarget as HTMLElement).style.boxShadow = `var(--shadow-md), 0 0 0 1px ${project.color}28, inset 0 1px 0 rgba(255,255,255,0.05)`;
+            (e.currentTarget as HTMLElement).style.borderColor = `${project.color}40`;
+            (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-xs)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-xs), inset 0 1px 0 rgba(255,255,255,0.04)";
             (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
             (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
           }}>
 
-          {/* Color header strip */}
-          <div className="h-1" style={{ background: project.color }} />
+          {/* Gradient top accent */}
+          <div className="h-[3px]"
+            style={{ background: `linear-gradient(90deg, ${project.color}55 0%, ${project.color} 40%, ${project.color}88 70%, ${project.color}22 100%)` }} />
+          {/* Ambient glow from project color */}
+          <div className="absolute top-0 left-0 right-0 h-16 pointer-events-none"
+            style={{ background: `linear-gradient(180deg, ${project.color}10, transparent)` }} />
 
           <div className="p-5">
             {/* Top row: icon + status + arrow */}

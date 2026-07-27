@@ -39,6 +39,12 @@
   --z-sidebar: 30;
   --z-modal:   50;
   --z-toast:   60;
+
+  /* Kanban card glass tokens (light mode: solid white) */
+  --kanban-card-bg:          #FFFFFF;
+  --kanban-card-bg-urgent:   rgba(244,63,94,0.04);
+  --kanban-card-blur:        0px;
+  --kanban-col-body-bg:      rgba(0,0,0,0.025);
 }
 
 /* ── LIGHT THEME ─────────────────────────────────────────────────── */
@@ -103,13 +109,19 @@
 /* ── DARK THEME ──────────────────────────────────────────────────── */
 [data-theme="dark"] {
   /* Grounds — deep navy-black with controlled indigo undertone */
-  --bg-base:        #06070F;
-  --bg-elevated:    #0C0D1E;
-  --bg-sidebar:     #07081A;
-  --bg-card:        #0F1022;
-  --bg-card-hover:  #151728;
-  --bg-overlay:     rgba(6,7,15,0.96);
-  --bg-input:       #0C0D1E;
+  --bg-base:        #050611;
+  --bg-elevated:    #0A0B1C;
+  --bg-sidebar:     #060719;
+  --bg-card:        #0D0F22;
+  --bg-card-hover:  #131526;
+  --bg-overlay:     rgba(5,6,17,0.97);
+  --bg-input:       #0A0B1C;
+
+  /* Kanban card glass tokens (dark mode: translucent glass) */
+  --kanban-card-bg:          rgba(13,15,34,0.82);
+  --kanban-card-bg-urgent:   rgba(244,63,94,0.09);
+  --kanban-card-blur:        14px;
+  --kanban-col-body-bg:      rgba(255,255,255,0.018);
 
   /* Structural lines — crisp, not muddy */
   --border:         rgba(255,255,255,0.055);
@@ -148,13 +160,13 @@
   --info-muted:     rgba(96,165,250,0.10);
 
   /* Elevation shadows — strong depth in dark */
-  --shadow-xs:    0 1px 3px rgba(0,0,0,0.60);
-  --shadow-sm:    0 2px 10px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.45);
-  --shadow-md:    0 6px 24px rgba(0,0,0,0.70), 0 2px 6px rgba(0,0,0,0.50);
-  --shadow-lg:    0 12px 44px rgba(0,0,0,0.80), 0 4px 12px rgba(0,0,0,0.60);
-  --shadow-float: 0 28px 80px rgba(0,0,0,0.90), 0 8px 24px rgba(0,0,0,0.65);
-  --shadow-glow:  0 0 0 1px rgba(129,140,248,0.28), 0 8px 32px rgba(129,140,248,0.18);
-  --shadow-glow-btn: 0 4px 24px rgba(129,140,248,0.40), inset 0 1px 0 rgba(255,255,255,0.12);
+  --shadow-xs:    0 1px 3px rgba(0,0,0,0.65);
+  --shadow-sm:    0 2px 12px rgba(0,0,0,0.60), 0 1px 3px rgba(0,0,0,0.50);
+  --shadow-md:    0 6px 28px rgba(0,0,0,0.75), 0 2px 8px rgba(0,0,0,0.55);
+  --shadow-lg:    0 12px 48px rgba(0,0,0,0.85), 0 4px 14px rgba(0,0,0,0.65);
+  --shadow-float: 0 28px 88px rgba(0,0,0,0.95), 0 8px 28px rgba(0,0,0,0.70);
+  --shadow-glow:  0 0 0 1px rgba(129,140,248,0.30), 0 8px 36px rgba(129,140,248,0.22);
+  --shadow-glow-btn: 0 4px 28px rgba(129,140,248,0.48), inset 0 1px 0 rgba(255,255,255,0.14);
 
   color-scheme: dark;
 }
@@ -163,13 +175,17 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     /* Grounds */
-    --bg-base:        #06070F;
-    --bg-elevated:    #0C0D1E;
-    --bg-sidebar:     #07081A;
-    --bg-card:        #0F1022;
-    --bg-card-hover:  #151728;
-    --bg-overlay:     rgba(6,7,15,0.96);
-    --bg-input:       #0C0D1E;
+    --bg-base:        #050611;
+    --bg-elevated:    #0A0B1C;
+    --bg-sidebar:     #060719;
+    --bg-card:        #0D0F22;
+    --bg-card-hover:  #131526;
+    --bg-overlay:     rgba(5,6,17,0.97);
+    --bg-input:       #0A0B1C;
+    --kanban-card-bg:          rgba(13,15,34,0.82);
+    --kanban-card-bg-urgent:   rgba(244,63,94,0.09);
+    --kanban-card-blur:        14px;
+    --kanban-col-body-bg:      rgba(255,255,255,0.018);
     --border:         rgba(255,255,255,0.055);
     --border-subtle:  rgba(255,255,255,0.025);
     --border-strong:  rgba(255,255,255,0.10);
@@ -201,8 +217,13 @@
     --shadow-md:    0 6px 24px rgba(0,0,0,0.70), 0 2px 6px rgba(0,0,0,0.50);
     --shadow-lg:    0 12px 44px rgba(0,0,0,0.80), 0 4px 12px rgba(0,0,0,0.60);
     --shadow-float: 0 28px 80px rgba(0,0,0,0.90), 0 8px 24px rgba(0,0,0,0.65);
-    --shadow-glow:  0 0 0 1px rgba(129,140,248,0.28), 0 8px 32px rgba(129,140,248,0.18);
-    --shadow-glow-btn: 0 4px 24px rgba(129,140,248,0.40), inset 0 1px 0 rgba(255,255,255,0.12);
+    --shadow-xs:    0 1px 3px rgba(0,0,0,0.65);
+    --shadow-sm:    0 2px 12px rgba(0,0,0,0.60), 0 1px 3px rgba(0,0,0,0.50);
+    --shadow-md:    0 6px 28px rgba(0,0,0,0.75), 0 2px 8px rgba(0,0,0,0.55);
+    --shadow-lg:    0 12px 48px rgba(0,0,0,0.85), 0 4px 14px rgba(0,0,0,0.65);
+    --shadow-float: 0 28px 88px rgba(0,0,0,0.95), 0 8px 28px rgba(0,0,0,0.70);
+    --shadow-glow:  0 0 0 1px rgba(129,140,248,0.30), 0 8px 36px rgba(129,140,248,0.22);
+    --shadow-glow-btn: 0 4px 28px rgba(129,140,248,0.48), inset 0 1px 0 rgba(255,255,255,0.14);
     color-scheme: dark;
   }
 }
@@ -306,13 +327,13 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Dark card with glass finish */
   [data-theme="dark"] .card {
-    background: linear-gradient(145deg, rgba(15,16,34,1) 0%, rgba(12,13,30,1) 100%);
-    border-color: rgba(255,255,255,0.065);
-    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.04);
+    background: linear-gradient(145deg, rgba(14,16,36,1) 0%, rgba(10,11,26,1) 100%);
+    border-color: rgba(255,255,255,0.060);
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.045);
   }
   [data-theme="dark"] .card:hover {
-    border-color: rgba(129,140,248,0.18);
-    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05);
+    border-color: rgba(129,140,248,0.22);
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(129,140,248,0.08);
   }
 
   /* ── ELEVATED PANEL (dropdowns, modals) ──────────────────────── */
@@ -616,9 +637,68 @@ h1, h2, h3, h4, h5, h6 {
     position: fixed;
     inset: 0;
     z-index: 40;
-    background: rgba(0,0,0,0.50);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* ── GLASS SURFACE ─────────────────────────────────────────────── */
+  .glass {
+    backdrop-filter: blur(16px) saturate(1.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .glass-card {
+    backdrop-filter: blur(var(--kanban-card-blur, 0)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--kanban-card-blur, 0)) saturate(1.4);
+  }
+
+  /* ── AURORA BACKGROUND ─────────────────────────────────────────── */
+  .aurora-bg {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(99,102,241,0.22) 0, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 70%, rgba(167,139,250,0.15) 0, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 10%,  rgba(251,191,36,0.10) 0, transparent 50%);
+    background-size: 200% 200%;
+    animation: aurora-shift 12s ease-in-out infinite;
+  }
+  [data-theme="dark"] .aurora-bg {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(99,102,241,0.32) 0, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 70%, rgba(167,139,250,0.20) 0, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 10%,  rgba(251,191,36,0.12) 0, transparent 50%);
+  }
+
+  /* ── ANIMATED GRADIENT TEXT ─────────────────────────────────────── */
+  .aurora-text {
+    background: linear-gradient(120deg, #818CF8, #C084FC, #FBBF24, #818CF8);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-flow 5s ease-in-out infinite;
+  }
+
+  /* ── GLOWING BADGE ──────────────────────────────────────────────── */
+  .badge-glow { animation: glow-pulse 2.5s ease-in-out infinite; }
+
+  /* ── CARD ENTER ANIMATION ───────────────────────────────────────── */
+  .card-enter { animation: card-enter 0.28s var(--ease-out) both; }
+
+  /* ── SHIMMER TEXT ───────────────────────────────────────────────── */
+  .shimmer-text {
+    background: linear-gradient(
+      90deg,
+      var(--text-muted) 25%,
+      var(--text-foreground) 50%,
+      var(--text-muted) 75%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 2.5s ease-in-out infinite;
   }
 
   /* ── LIVE INDICATOR ──────────────────────────────────────────── */
@@ -689,6 +769,28 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes floatY {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-4px); }
+}
+@keyframes aurora-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes gradient-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.70; }
+  50%       { opacity: 1.00; }
+}
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes border-glow {
+  0%, 100% { box-shadow: 0 0 6px var(--accent-glow); }
+  50%       { box-shadow: 0 0 18px var(--accent-glow), 0 0 32px var(--accent-glow); }
 }
 
 /* ════════════════════════════════════════════════════════════════════

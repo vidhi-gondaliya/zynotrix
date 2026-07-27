@@ -91,38 +91,46 @@ function FocusMetric({
       transition={{ delay: 0.06 + index * 0.05, ease: [0.16, 1, 0.3, 1] }}>
       <Link href={href}>
         <div
-          className="relative rounded-[16px] p-4 cursor-pointer transition-all duration-200 group"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+          className="relative rounded-[16px] p-4 cursor-pointer overflow-hidden transition-all duration-200 group"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+          }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = color + "50";
-            (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 28px ${color}16`;
-            (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+            (e.currentTarget as HTMLElement).style.borderColor = color + "55";
+            (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px ${color}20, inset 0 1px 0 rgba(255,255,255,0.06)`;
+            (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "none";
+            (e.currentTarget as HTMLElement).style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.04)";
             (e.currentTarget as HTMLElement).style.transform = "none";
           }}>
-          {/* Top accent line */}
-          <div className="absolute top-0 left-4 right-4 h-[1px] rounded-b-full"
-            style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }} />
+          {/* Top accent line — full width, colored gradient */}
+          <div className="absolute top-0 left-0 right-0 h-[2.5px]"
+            style={{ background: `linear-gradient(90deg, transparent, ${color}cc 30%, ${color}aa 70%, transparent)` }} />
           <div className="flex items-start justify-between mb-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: color + "15" }}>
-              <Icon className="w-4 h-4" style={{ color }} />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${color}22, ${color}10)`,
+                border: `1px solid ${color}28`,
+                boxShadow: `0 0 16px ${color}18`,
+              }}>
+              <Icon className="w-4.5 h-4.5" style={{ color }} />
             </div>
             {badge && (
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md"
-                style={{ background: color + "18", color }}>
+              <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                style={{ background: color + "18", color, border: `1px solid ${color}28` }}>
                 {badge}
               </span>
             )}
           </div>
-          <p className="text-[30px] font-black leading-none tabular-nums tracking-[-0.04em]"
+          <p className="text-[32px] font-black leading-none tabular-nums tracking-[-0.05em]"
             style={{ color }}>
             {animated}
           </p>
-          <p className="text-[11px] font-semibold mt-1.5" style={{ color: "var(--text-muted)" }}>{label}</p>
+          <p className="text-[11.5px] font-semibold mt-2" style={{ color: "var(--text-muted)" }}>{label}</p>
         </div>
       </Link>
     </motion.div>
@@ -255,13 +263,18 @@ export default function DashboardPage() {
 
       {/* ── Ambient atmosphere ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div style={{ position: "absolute", top: "-15%", left: "-8%", width: 560, height: 560,
-          background: "radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)", filter: "blur(48px)" }} />
-        <div style={{ position: "absolute", bottom: "0%", right: "-5%", width: 480, height: 480,
-          background: "radial-gradient(circle, rgba(0,207,255,0.055) 0%, transparent 70%)", filter: "blur(48px)" }} />
+        <div style={{ position: "absolute", top: "-18%", left: "-10%", width: 640, height: 640,
+          background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)", filter: "blur(56px)",
+          animation: "floatY 8s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: "10%", right: "-6%", width: 440, height: 440,
+          background: "radial-gradient(circle, rgba(167,139,250,0.09) 0%, transparent 65%)", filter: "blur(48px)",
+          animation: "floatY 11s ease-in-out infinite reverse" }} />
+        <div style={{ position: "absolute", bottom: "-5%", right: "10%", width: 520, height: 520,
+          background: "radial-gradient(circle, rgba(251,191,36,0.06) 0%, transparent 65%)", filter: "blur(52px)",
+          animation: "floatY 9s ease-in-out infinite 2s" }} />
         <div style={{ position: "absolute", inset: 0,
-          backgroundImage: "linear-gradient(rgba(157,107,255,0.022) 1px, transparent 1px),linear-gradient(90deg, rgba(157,107,255,0.022) 1px, transparent 1px)",
-          backgroundSize: "48px 48px" }} />
+          backgroundImage: "linear-gradient(rgba(129,140,248,0.028) 1px, transparent 1px),linear-gradient(90deg, rgba(129,140,248,0.028) 1px, transparent 1px)",
+          backgroundSize: "52px 52px" }} />
       </div>
 
       <div className="relative z-10 p-6 space-y-5">
@@ -296,15 +309,24 @@ export default function DashboardPage() {
         {/* ── Greeting ── */}
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1"
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.20em] mb-1.5"
               style={{ color: "var(--text-subtle)" }}>
               {getGreeting()} · {format(new Date(), "EEEE, MMMM d")}
             </p>
-            <h1 className="text-[34px] font-black tracking-[-0.045em] leading-none"
-              style={{ color: "var(--text-foreground)" }}>{firstName}</h1>
-            <p className="text-[13px] mt-1.5" style={{ color: "var(--text-muted)" }}>
+            <h1
+              className="text-[36px] font-black tracking-[-0.05em] leading-none"
+              style={{
+                background: "linear-gradient(120deg, var(--text-foreground) 30%, var(--accent) 75%, #C084FC 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              {firstName}
+            </h1>
+            <p className="text-[13px] mt-2" style={{ color: "var(--text-muted)" }}>
               {data.overdueTasks > 0 ? (
-                <><span style={{ color: "#FF4466", fontWeight: 700 }}>{data.overdueTasks} task{data.overdueTasks !== 1 ? "s" : ""} overdue</span> — your team may be blocked</>
+                <><span style={{ color: "#F43F5E", fontWeight: 700 }}>{data.overdueTasks} task{data.overdueTasks !== 1 ? "s" : ""} overdue</span> — your team may be blocked</>
               ) : (
                 <>All caught up · <span style={{ color: "var(--success)", fontWeight: 700 }}>{data.completionRate}%</span> completion rate</>
               )}
@@ -312,13 +334,16 @@ export default function DashboardPage() {
           </div>
           <div className="hidden md:flex items-center gap-2 shrink-0 pb-1">
             <button onClick={() => setShowNLCreator(true)}
-              className="flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-bold text-white transition-all hover:-translate-y-px"
-              style={{ background: "linear-gradient(135deg, var(--accent), #A78BFA)", boxShadow: "var(--shadow-glow-btn)" }}>
+              className="flex items-center gap-2 h-10 px-5 rounded-xl text-[13px] font-bold text-white transition-all hover:-translate-y-0.5 hover:brightness-110"
+              style={{
+                background: "linear-gradient(135deg, #6366F1, #A78BFA)",
+                boxShadow: "0 4px 24px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18)",
+              }}>
               <Wand2 className="w-3.5 h-3.5" /> Create with Colliq
             </button>
             <Link href="/ai/assistant">
-              <button className="flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-bold transition-all hover:-translate-y-px"
-                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-foreground)" }}>
+              <button className="flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-bold transition-all hover:-translate-y-0.5"
+                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-strong)", color: "var(--text-foreground)" }}>
                 <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} /> Ask Colliq
               </button>
             </Link>
@@ -328,13 +353,17 @@ export default function DashboardPage() {
         {/* ── Colliq Briefing ── */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
           className="relative rounded-[18px] overflow-hidden"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(99,102,241,0.06)",
+          }}>
           {/* Accent bar */}
-          <div className="absolute top-0 left-0 right-0 h-[1.5px]"
-            style={{ background: "linear-gradient(90deg, transparent, var(--accent) 25%, #A78BFA 65%, transparent)" }} />
+          <div className="absolute top-0 left-0 right-0 h-[2px]"
+            style={{ background: "linear-gradient(90deg, transparent, #6366F1 20%, #A78BFA 50%, #C084FC 80%, transparent)" }} />
           {/* Corner glow */}
-          <div className="absolute -top-8 right-0 w-48 h-48 pointer-events-none"
-            style={{ background: "radial-gradient(circle, rgba(157,107,255,0.07) 0%, transparent 70%)" }} />
+          <div className="absolute -top-10 right-0 w-56 h-56 pointer-events-none"
+            style={{ background: "radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 65%)" }} />
 
           <div className="relative z-10 flex items-start gap-4 px-5 py-4">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"

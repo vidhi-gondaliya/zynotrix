@@ -82,14 +82,20 @@ export function Header({ onOpenCommand }: HeaderProps) {
       {/* Page identity */}
       <div className="flex flex-col justify-center flex-1 min-w-0">
         <h1
-          className="text-[14px] font-bold leading-none truncate"
-          style={{ color: "var(--text-foreground)", letterSpacing: "-0.02em" }}
+          className="text-[15px] font-black leading-none truncate"
+          style={{
+            letterSpacing: "-0.03em",
+            background: "linear-gradient(120deg, var(--text-foreground) 40%, var(--accent) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
         >
           {title}
         </h1>
         {sub && (
           <p
-            className="hidden sm:block text-[11px] leading-none mt-0.5 truncate"
+            className="hidden sm:block text-[11px] leading-none mt-[3px] truncate"
             style={{ color: "var(--text-subtle)" }}
           >
             {sub}
