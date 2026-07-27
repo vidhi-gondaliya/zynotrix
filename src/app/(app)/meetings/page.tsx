@@ -373,18 +373,25 @@ function MeetingCard({ meeting, index }: { meeting: Meeting; index: number }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
-      className="flex gap-3 p-4 rounded-2xl transition-all"
+      transition={{ delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+      className="flex gap-3 p-4 rounded-[16px] transition-all"
       style={{
         background: "var(--bg-card)",
-        border: `1px solid ${live ? "rgba(0,240,144,0.25)" : "var(--border)"}`,
-        boxShadow: live ? "0 0 20px rgba(0,240,144,0.08)" : "none",
-        opacity: past ? 0.65 : 1,
+        border: `1px solid ${live ? "rgba(34,197,94,0.30)" : "var(--border)"}`,
+        boxShadow: live ? "0 4px 24px rgba(34,197,94,0.10)" : "var(--shadow-xs)",
+        opacity: past ? 0.60 : 1,
       }}>
       {/* Date block */}
-      <div className="w-12 shrink-0 flex flex-col items-center justify-center rounded-xl py-2"
-        style={{ background: past ? "var(--bg-elevated)" : "var(--accent-muted)" }}>
-        <span className="text-[9px] font-black uppercase" style={{ color: past ? "var(--text-subtle)" : "var(--accent)" }}>
+      <div className="w-12 shrink-0 flex flex-col items-center justify-center rounded-[12px] py-2"
+        style={{
+          background: past
+            ? "var(--bg-elevated)"
+            : live
+            ? "linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.08))"
+            : "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.08))",
+          border: `1px solid ${past ? "var(--border)" : live ? "rgba(34,197,94,0.25)" : "rgba(245,158,11,0.25)"}`,
+        }}>
+        <span className="text-[9px] font-black uppercase" style={{ color: past ? "var(--text-subtle)" : live ? "#22C55E" : "#F59E0B" }}>
           {format(start, "MMM")}
         </span>
         <span className="text-lg font-black leading-none" style={{ color: past ? "var(--text-muted)" : "var(--text-foreground)" }}>
@@ -495,7 +502,11 @@ export default function MeetingsPage() {
         <div className="flex items-center justify-between px-6 py-4 shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}>
           <div>
-            <h1 className="text-lg font-black text-foreground">Meetings</h1>
+            <h1 className="text-lg font-black" style={{
+              background: "linear-gradient(135deg, var(--text-foreground) 0%, #F59E0B 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.025em",
+            }}>Meetings</h1>
             <p className="text-xs text-muted">{upcoming.length} upcoming</p>
           </div>
           <div className="flex items-center gap-2">
@@ -521,8 +532,11 @@ export default function MeetingsPage() {
               <FileText className="w-3.5 h-3.5" style={{ color: "#9D6BFF" }} /> AI Notes
             </button>
             <button onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105"
-              style={{ background: "var(--accent)", boxShadow: "0 4px 20px var(--accent-muted)" }}>
+              className="flex items-center gap-2 px-4 py-2 rounded-[12px] text-sm font-bold text-white transition-all"
+              style={{
+                background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+                boxShadow: "0 4px 16px rgba(245,158,11,0.40)",
+              }}>
               <Plus className="w-4 h-4" /> New Meeting
             </button>
           </div>
