@@ -167,7 +167,11 @@ export default function ImportExportPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-black" style={{ color: "var(--text-foreground)" }}>Import / Export</h1>
+        <h1 className="text-2xl font-black" style={{
+          background: "linear-gradient(135deg, var(--text-foreground) 0%, #34D399 100%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          letterSpacing: "-0.03em",
+        }}>Import / Export</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Transfer your data in CSV or JSON format</p>
       </div>
 

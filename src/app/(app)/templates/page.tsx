@@ -87,7 +87,11 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-foreground">Project Templates</h1>
+          <h1 className="text-2xl font-black" style={{
+            background: "linear-gradient(135deg, var(--text-foreground) 0%, #F59E0B 100%)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            letterSpacing: "-0.03em",
+          }}>Project Templates</h1>
           <p className="text-sm text-muted mt-1">Start fast with pre-built task lists and workflows</p>
         </div>
         <button onClick={() => setCreating(true)}

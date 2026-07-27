@@ -184,8 +184,12 @@ export default function AIHealthPage() {
             <Heart className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-foreground">Project Health</h1>
-            <p className="text-xs text-subtle">AI-powered risk detection + manual health scoring</p>
+            <h1 className="text-xl font-black" style={{
+              background: "linear-gradient(135deg, var(--text-foreground) 0%, #FB923C 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.03em",
+            }}>Project Health</h1>
+            <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>AI-powered risk detection + manual health scoring</p>
           </div>
         </div>
 

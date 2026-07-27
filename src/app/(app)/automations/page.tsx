@@ -211,7 +211,11 @@ export default function AutomationsPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-black" style={{ color: "var(--text-foreground)" }}>Automations</h1>
+          <h1 className="text-2xl font-black" style={{
+            background: "linear-gradient(135deg, var(--text-foreground) 0%, #8B5CF6 100%)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            letterSpacing: "-0.03em",
+          }}>Automations</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
             Write rules in plain English — AI handles the rest
           </p>
@@ -226,14 +230,15 @@ export default function AutomationsPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total",      value: automations.length,                                  color: "#9D6BFF" },
-          { label: "Active",     value: active.length,                                        color: "#00F090" },
-          { label: "Total Runs", value: automations.reduce((s, a) => s + a.runCount, 0),     color: "#00CFFF" },
+          { label: "Total",      value: automations.length,                              gradient: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)", shadow: "rgba(139,92,246,0.35)" },
+          { label: "Active",     value: active.length,                                   gradient: "linear-gradient(135deg, #22C55E 0%, #15803D 100%)", shadow: "rgba(34,197,94,0.35)" },
+          { label: "Total Runs", value: automations.reduce((s, a) => s + a.runCount, 0), gradient: "linear-gradient(135deg, #06B6D4 0%, #0284C7 100%)", shadow: "rgba(6,182,212,0.35)" },
         ].map((s) => (
-          <div key={s.label} className="rounded-2xl p-4 text-center"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)" }}>
-            <div className="text-2xl font-black mb-1" style={{ color: s.color }}>{s.value}</div>
-            <div className="text-xs" style={{ color: "var(--text-muted)" }}>{s.label}</div>
+          <div key={s.label} className="relative rounded-[16px] p-4 text-center overflow-hidden"
+            style={{ background: s.gradient, boxShadow: `0 4px 20px ${s.shadow}` }}>
+            <div className="absolute -right-3 -top-3 w-16 h-16 rounded-full" style={{ background: "rgba(255,255,255,0.10)" }} />
+            <div className="text-[26px] font-black text-white relative z-10">{s.value}</div>
+            <div className="text-[11px] font-semibold text-white/80 relative z-10">{s.label}</div>
           </div>
         ))}
       </div>

@@ -446,7 +446,11 @@ export default function AdminPage() {
             <ShieldCheck className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-foreground">Admin Panel</h1>
+            <h1 className="text-xl font-black" style={{
+              background: "linear-gradient(135deg, var(--text-foreground) 0%, #F43F5E 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.03em",
+            }}>Admin Panel</h1>
             <p className="text-xs text-subtle">{users.length} users · {roles.length} roles</p>
           </div>
         </div>

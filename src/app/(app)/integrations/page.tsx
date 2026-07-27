@@ -241,7 +241,11 @@ export default function IntegrationsPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black" style={{ color: "var(--text-foreground)" }}>Integrations</h1>
+          <h1 className="text-2xl font-black" style={{
+            background: "linear-gradient(135deg, var(--text-foreground) 0%, #06B6D4 100%)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            letterSpacing: "-0.03em",
+          }}>Integrations</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
             Connect Colliq to your existing tools for real-time sync and automation.
           </p>

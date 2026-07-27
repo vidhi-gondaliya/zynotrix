@@ -60,7 +60,11 @@ export default function AuditPage() {
             <Shield className="w-4 h-4" style={{ color: "var(--accent)" }} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-foreground">Audit Log</h1>
+            <h1 className="text-xl font-black" style={{
+              background: "linear-gradient(135deg, var(--text-foreground) 0%, #6B7280 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.03em",
+            }}>Audit Log</h1>
             <p className="text-xs text-muted mt-0.5">Track every change in your workspace</p>
           </div>
         </div>

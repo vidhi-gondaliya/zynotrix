@@ -208,15 +208,19 @@ export default function NotificationsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "var(--accent-muted)", color: "var(--accent)" }}
+              className="w-10 h-10 rounded-[14px] flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #6366F1 0%, #A78BFA 100%)", boxShadow: "0 4px 16px rgba(99,102,241,0.35)" }}
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2
                 className="text-[17px] font-black leading-none"
-                style={{ color: "var(--text-foreground)", letterSpacing: "-0.025em" }}
+                style={{
+                  background: "linear-gradient(135deg, var(--text-foreground) 0%, #A78BFA 100%)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  letterSpacing: "-0.03em",
+                }}
               >
                 Notifications
               </h2>
