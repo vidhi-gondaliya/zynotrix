@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createNotification } from "@/lib/notifications";
 import { isRateLimited } from "@/lib/rate-limit";
+import { sendNewMemberNotification } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
@@ -58,6 +59,27 @@ export async function POST(req: NextRequest) {
       data: { organizationId: invite.organizationId, userId: user.id, role: invite.role },
     });
     await (prisma as any).invitation.update({ where: { id: invite.id }, data: { accepted: true } });
+
+    // Notify org owners that a new member has joined
+    try {
+      const org = await prisma.organization.findUnique({
+        where: { id: invite.organizationId },
+        select: { name: true },
+      });
+      const owners = await prisma.organizationMember.findMany({
+        where: { organizationId: invite.organizationId, role: "OWNER" },
+        include: { user: { select: { email: true, name: true } } },
+      });
+      for (const owner of owners) {
+        await sendNewMemberNotification(
+          owner.user.email,
+          owner.user.name ?? "Owner",
+          user.name ?? "",
+          normalEmail,
+          org?.name ?? "your workspace"
+        );
+      }
+    } catch { /* non-fatal — don't block registration */ }
   }
 
   // Add user to general channel

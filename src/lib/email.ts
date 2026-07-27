@@ -79,6 +79,43 @@ export async function sendInvitationEmail(
   });
 }
 
+export async function sendNewMemberNotification(
+  ownerEmail: string,
+  ownerName: string,
+  newUserName: string,
+  newUserEmail: string,
+  orgName: string
+) {
+  const link = `${BASE_URL()}/settings/organization`;
+  await baseEmail({
+    from: FROM(),
+    to: ownerEmail,
+    subject: `New member joined ${orgName}: ${newUserName}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        <div style="margin-bottom:24px">
+          <span style="font-size:18px;font-weight:900;letter-spacing:-0.04em;color:#0a0a14">COLLIQ</span>
+          <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-top:2px">by Zynotrix</span>
+        </div>
+        <h1 style="font-size:22px;font-weight:800;color:#0a0a14;margin:0 0 8px">New member joined your workspace</h1>
+        <p style="font-size:14px;color:#6b7280;margin:0 0 20px;line-height:1.6">
+          Hi ${ownerName}, a new member has just joined <strong style="color:#0a0a14">${orgName}</strong> on Colliq.
+        </p>
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:16px;margin-bottom:24px">
+          <p style="font-size:15px;font-weight:700;color:#0a0a14;margin:0 0 4px">${newUserName || "New User"}</p>
+          <p style="font-size:13px;color:#7c3aed;margin:0">${newUserEmail}</p>
+        </div>
+        <a href="${link}" style="display:inline-block;background:linear-gradient(135deg,#4f52d9,#7c3aed);color:#fff;font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none">
+          View Members
+        </a>
+        <p style="font-size:12px;color:#9ca3af;margin:24px 0 0;line-height:1.6">
+          You're receiving this because you're an owner of <strong>${orgName}</strong> on Colliq.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendTaskAssignedEmail(
   email: string,
   taskTitle: string,

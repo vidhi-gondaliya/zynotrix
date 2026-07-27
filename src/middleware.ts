@@ -5,14 +5,16 @@ export default auth((req) => {
   const isLoggedIn  = !!req.auth;
   const { pathname } = req.nextUrl;
 
-  const isAuthPage       = pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isAuthPage       = pathname.startsWith("/login") || pathname.startsWith("/register")
+    || pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password");
   const isWorkspacePage  = pathname.startsWith("/create-workspace");
   const isApiRoute       = pathname.startsWith("/api");
   const isPortal         = pathname.startsWith("/portal");
+  const isPublicPage     = pathname === "/privacy" || pathname === "/terms";
   const isRoot           = pathname === "/";
 
-  // Always allow API routes and public portal
-  if (isApiRoute || isPortal) return NextResponse.next();
+  // Always allow API routes, public portal, and public static pages
+  if (isApiRoute || isPortal || isPublicPage) return NextResponse.next();
 
   // Root: unauthenticated users go to login; logged-in users can view the landing page
   if (isRoot) {

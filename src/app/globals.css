@@ -10,9 +10,9 @@
 
 /* ── LAYOUT TOKENS ───────────────────────────────────────────────── */
 :root {
-  --sidebar-w:            196px;
-  --sidebar-w-collapsed:  48px;
-  --header-h:             56px;
+  --sidebar-w:            260px;
+  --sidebar-w-collapsed:  56px;
+  --header-h:             60px;
   --content-max-w:        1400px;
 
   /* Page gutter — every page + header share this horizontal padding */
@@ -218,8 +218,8 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "ss01", "cv02", "cv03", "cv04";
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 body {

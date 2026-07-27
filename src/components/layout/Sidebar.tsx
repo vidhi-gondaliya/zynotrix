@@ -130,14 +130,14 @@ export function Sidebar() {
       <Link
         href={item.href}
         title={collapsed ? item.label : undefined}
-        className="relative flex items-center gap-2 rounded-[8px] transition-all duration-100 group"
+        className="relative flex items-center gap-2.5 rounded-[10px] transition-all duration-100 group"
         style={{
-          padding: collapsed ? "5px 7px" : "5px 8px",
+          padding: collapsed ? "8px 10px" : "8px 10px",
           justifyContent: collapsed ? "center" : undefined,
-          color: active ? "var(--accent)" : "var(--text-muted)",
+          color: active ? "var(--accent)" : "var(--text-secondary)",
           background: active ? "var(--accent-muted)" : "transparent",
-          fontSize: "12.5px",
-          fontWeight: active ? 600 : 400,
+          fontSize: "13.5px",
+          fontWeight: active ? 700 : 500,
           lineHeight: 1,
         }}
       >
@@ -145,16 +145,16 @@ export function Sidebar() {
           <motion.div
             layoutId="nav-rail"
             className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full"
-            style={{ height: "55%", background: "var(--accent)" }}
+            style={{ height: "60%", background: "var(--accent)" }}
             transition={{ type: "spring", stiffness: 600, damping: 48 }}
           />
         )}
         {!active && (
-          <span className="absolute inset-0 rounded-[8px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "var(--bg-card-hover)" }} />
+          <span className="absolute inset-0 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "var(--bg-card-hover)" }} />
         )}
 
-        <span className="relative z-10 shrink-0 flex items-center justify-center" style={{ width: 16, height: 16 }}>
-          <item.icon className="w-[14px] h-[14px]" />
+        <span className="relative z-10 shrink-0 flex items-center justify-center" style={{ width: 18, height: 18 }}>
+          <item.icon className="w-[16px] h-[16px]" strokeWidth={active ? 2.2 : 1.8} />
         </span>
 
         <AnimatePresence initial={false}>
@@ -202,7 +202,7 @@ export function Sidebar() {
           }}
         />
         <span
-          className="text-[9.5px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap shrink-0"
+          className="text-[11px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap shrink-0"
           style={{ color: hasActive ? "var(--accent)" : isOpen ? "var(--text-muted)" : "var(--text-subtle)" }}
         >
           {section.label}
@@ -217,23 +217,23 @@ export function Sidebar() {
 
       {/* ── Brand ─────────────────────────────────────────────── */}
       <div
-        className="flex items-center gap-2 shrink-0"
+        className="flex items-center gap-2.5 shrink-0"
         style={{
-          height: 52,
-          padding: "0 10px",
+          height: 64,
+          padding: "0 12px",
           borderBottom: "1px solid var(--border-subtle)",
         }}
       >
-        <Link href="/dashboard" className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+        <Link href="/dashboard" className="flex items-center gap-2.5 flex-1 min-w-0 overflow-hidden">
           <div
-            className="shrink-0 rounded-[8px] flex items-center justify-center"
+            className="shrink-0 rounded-[10px] flex items-center justify-center"
             style={{
-              width: 28, height: 28,
+              width: 34, height: 34,
               background: "linear-gradient(135deg, var(--accent) 0%, #A78BFA 100%)",
-              boxShadow: "0 0 14px var(--accent-glow)",
+              boxShadow: "0 0 18px var(--accent-glow)",
             }}
           >
-            <Zap className="w-[13px] h-[13px] text-white" strokeWidth={2.5} />
+            <Zap className="w-[15px] h-[15px] text-white" strokeWidth={2.5} />
           </div>
           <AnimatePresence initial={false}>
             {!collapsed && (
@@ -243,7 +243,7 @@ export function Sidebar() {
                 className="flex flex-col overflow-hidden"
               >
                 <span
-                  className="text-[14px] font-black tracking-[-0.04em] whitespace-nowrap leading-none"
+                  className="text-[16px] font-black tracking-[-0.04em] whitespace-nowrap leading-none"
                   style={{
                     background: "linear-gradient(120deg, var(--text-foreground) 20%, var(--accent) 100%)",
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
@@ -251,7 +251,7 @@ export function Sidebar() {
                 >
                   COLLIQ
                 </span>
-                <span className="text-[8.5px] font-semibold tracking-widest uppercase whitespace-nowrap leading-none mt-0.5"
+                <span className="text-[9px] font-semibold tracking-widest uppercase whitespace-nowrap leading-none mt-0.5"
                   style={{ color: "var(--text-subtle)" }}>
                   by Zynotrix
                 </span>
@@ -332,10 +332,10 @@ export function Sidebar() {
                 transition={{ duration: 0.12 }}
                 className="flex-1 min-w-0 overflow-hidden"
               >
-                <p className="text-[11.5px] font-semibold leading-none truncate whitespace-nowrap" style={{ color: "var(--text-foreground)" }}>
+                <p className="text-[13px] font-bold leading-none truncate whitespace-nowrap" style={{ color: "var(--text-foreground)" }}>
                   {session?.user?.name?.split(" ")[0] ?? session?.user?.email?.split("@")[0]}
                 </p>
-                <p className="text-[9.5px] font-semibold mt-0.5 truncate whitespace-nowrap uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>
+                <p className="text-[10px] font-semibold mt-0.5 truncate whitespace-nowrap uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>
                   {userRole}
                 </p>
               </motion.div>
