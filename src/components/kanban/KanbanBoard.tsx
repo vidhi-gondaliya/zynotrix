@@ -599,16 +599,11 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
         onDragEnd={handleDragEnd}
       >
         <div
-          className="flex gap-4 p-6 overflow-x-auto pb-10 relative"
+          className="flex gap-5 px-6 pt-5 pb-14 overflow-x-auto relative"
           style={{
             minHeight: "calc(100vh - 200px)",
-            backgroundImage: `
-              radial-gradient(ellipse at 8% 25%, ${canvasColor}18 0%, transparent 50%),
-              radial-gradient(ellipse at 88% 72%, ${canvasColor}10 0%, transparent 45%),
-              radial-gradient(ellipse at 50% 100%, ${canvasColor}08 0%, transparent 40%),
-              radial-gradient(circle, rgba(79,82,217,0.10) 1px, transparent 1px)
-            `,
-            backgroundSize: "100% 100%, 100% 100%, 100% 100%, 22px 22px",
+            backgroundImage: `radial-gradient(circle, rgba(99,102,241,0.055) 1px, transparent 1px)`,
+            backgroundSize: "28px 28px",
           }}
         >
           {columns.map((col) => (

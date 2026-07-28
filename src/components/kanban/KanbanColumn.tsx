@@ -90,47 +90,35 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
   return (
     <div className={`flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-[52px]" : "w-[300px]"}`}>
 
-      {/* ── Column header ──────────────────────────────────────────── */}
-      <div
-        className="relative rounded-[16px] overflow-hidden mb-2.5 select-none"
-        style={{
-          background: isArchived
-            ? "rgba(100,116,139,0.09)"
-            : `linear-gradient(135deg, ${accent}28 0%, ${accent}10 100%)`,
-          border: `1px solid ${isArchived ? "rgba(100,116,139,0.20)" : `${accent}45`}`,
-          boxShadow: isArchived
-            ? "none"
-            : `0 4px 24px ${accent}18, inset 0 1px 0 rgba(255,255,255,0.10)`,
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}
-      >
-        {/* Top accent stripe */}
-        <div
-          className="absolute top-0 left-0 right-0"
-          style={{
-            height: 2.5,
-            background: isArchived
-              ? "linear-gradient(90deg, transparent, rgba(100,116,139,0.45), transparent)"
-              : `linear-gradient(90deg, ${accent}00, ${accent}dd, ${accent}00)`,
-          }}
-        />
+      {/* ── Column header — architectural runway ───────────────────── */}
+      <div className="select-none mb-1">
+        <div className="flex items-center gap-2 px-1 py-2">
 
-        <div className="flex items-center gap-2 px-3.5 py-3">
-          {/* Collapse */}
+          {/* Collapse toggle */}
           <button
             onClick={(e) => { e.stopPropagation(); setCollapsed((c) => !c); }}
-            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-            style={{ color: accent, opacity: 0.7 }}
+            className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all"
+            style={{ color: accent, opacity: 0.38 }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "0.90";
+              (e.currentTarget as HTMLElement).style.background = `${accent}12`;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "0.38";
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+            }}
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} />
           </button>
 
-          {/* Icon */}
-          {StatusIcon
-            ? <StatusIcon className="w-3.5 h-3.5 shrink-0" style={{ color: accent }} />
-            : <div className="w-2 h-2 rounded-full shrink-0" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
-          }
+          {/* Status LED — the only decoration */}
+          <div
+            className="w-[7px] h-[7px] rounded-full shrink-0"
+            style={{
+              background: isArchived ? "#94A3B8" : accent,
+              boxShadow: isArchived ? "none" : `0 0 7px ${accent}CC, 0 0 14px ${accent}55`,
+            }}
+          />
 
           {!collapsed && (
             <>
@@ -146,8 +134,8 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
                       if (e.key === "Escape") { setEditing(false); setEditValue(displayLabel); }
                     }}
                     onBlur={confirmEdit}
-                    className="flex-1 bg-transparent outline-none text-[11px] font-black uppercase tracking-widest"
-                    style={{ color: accent }}
+                    className="flex-1 bg-transparent outline-none text-[11px] font-black uppercase"
+                    style={{ color: accent, letterSpacing: "0.10em" }}
                   />
                   <button onClick={confirmEdit} style={{ color: "var(--success)" }}><Check className="w-3 h-3" /></button>
                   <button onClick={() => { setEditing(false); setEditValue(displayLabel); }} style={{ color: "var(--text-subtle)" }}><X className="w-3 h-3" /></button>
@@ -155,15 +143,15 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
               ) : (
                 <div className="flex-1 flex items-center gap-1 min-w-0 group/label">
                   <span
-                    className="text-[11.5px] font-black uppercase tracking-widest truncate"
-                    style={{ color: isArchived ? "#94A3B8" : accent, letterSpacing: "0.10em" }}
+                    className="text-[11px] font-black uppercase truncate"
+                    style={{ color: isArchived ? "#94A3B8" : accent, letterSpacing: "0.12em" }}
                   >
                     {displayLabel}
                   </span>
                   {onRename && (
                     <button
                       onClick={startEdit}
-                      className="opacity-0 group-hover/label:opacity-60 hover:!opacity-100 p-0.5 rounded"
+                      className="opacity-0 group-hover/label:opacity-50 hover:!opacity-100 p-0.5 rounded shrink-0"
                       style={{ color: accent }}
                       title="Rename"
                     >
@@ -174,14 +162,13 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
               )}
 
               {/* Count + add */}
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 <span
-                  className="text-[11px] font-black min-w-[24px] h-6 px-2 flex items-center justify-center rounded-full"
+                  className="text-[10px] font-black min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full tabular-nums"
                   style={{
-                    background: wipLimit && tasks.length > wipLimit ? "rgba(244,63,94,0.18)" : `${accent}28`,
-                    color: wipLimit && tasks.length > wipLimit ? "#F43F5E" : isArchived ? "#94A3B8" : accent,
-                    border: `1px solid ${wipLimit && tasks.length > wipLimit ? "rgba(244,63,94,0.35)" : accent + "40"}`,
-                    boxShadow: wipLimit && tasks.length > wipLimit ? "none" : `0 0 8px ${accent}20`,
+                    background: wipLimit && tasks.length > wipLimit ? "rgba(239,68,68,0.12)" : `${accent}12`,
+                    color: wipLimit && tasks.length > wipLimit ? "#EF4444" : isArchived ? "#94A3B8" : accent,
+                    border: `1px solid ${wipLimit && tasks.length > wipLimit ? "rgba(239,68,68,0.25)" : `${accent}25`}`,
                   }}
                 >
                   {tasks.length}{wipLimit ? `/${wipLimit}` : ""}
@@ -190,9 +177,15 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
                   <button
                     onClick={(e) => { e.stopPropagation(); onAddTask(status); }}
                     className="w-5 h-5 rounded-md flex items-center justify-center transition-all"
-                    style={{ color: `${accent}80` }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = `${accent}25`; (e.currentTarget as HTMLElement).style.color = accent; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = `${accent}80`; }}
+                    style={{ color: `${accent}55` }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = `${accent}14`;
+                      (e.currentTarget as HTMLElement).style.color = accent;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "transparent";
+                      (e.currentTarget as HTMLElement).style.color = `${accent}55`;
+                    }}
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -201,8 +194,26 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
             </>
           )}
 
-          {collapsed && <span className="text-[10px] font-black" style={{ color: accent }}>{tasks.length}</span>}
+          {collapsed && (
+            <span className="text-[10px] font-black tabular-nums" style={{ color: accent }}>
+              {tasks.length}
+            </span>
+          )}
         </div>
+
+        {/* Runway — gradient line extending left→right, fading to nothing */}
+        {!collapsed && (
+          <div
+            style={{
+              height: 1,
+              marginLeft: 6,
+              marginBottom: 10,
+              background: isArchived
+                ? "linear-gradient(90deg, rgba(148,163,184,0.45), transparent)"
+                : `linear-gradient(90deg, ${accent} 0%, ${accent}66 25%, ${accent}18 60%, transparent 100%)`,
+            }}
+          />
+        )}
       </div>
 
       {/* ── Column body ────────────────────────────────────────────── */}
