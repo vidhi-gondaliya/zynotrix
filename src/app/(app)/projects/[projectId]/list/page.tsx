@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Calendar, AlertCircle, Search, ChevronDown, X } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { Plus, Calendar, AlertCircle, Search, ChevronDown, X, CheckSquare } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
 import { TaskModal } from "@/components/kanban/TaskModal";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import type { Task, TaskStatus } from "@/types";
@@ -95,163 +93,236 @@ export default function TaskListPage({ params }: { params: { projectId: string }
 
   if (loading) return <div className="p-6"><SkeletonList count={5} /></div>;
 
+  const PRIORITY_COLOR: Record<string, string> = {
+    URGENT: "#F43F5E", HIGH: "#FBBF24", MEDIUM: "#60A5FA", LOW: "#6B7280",
+  };
+  const STATUS_COLOR: Record<string, string> = {
+    BACKLOG: "#6B7280", TODO: "#60A5FA", IN_PROGRESS: "#818CF8", REVIEW: "#FBBF24", DONE: "#22C55E",
+  };
+
   return (
-    <div className="p-6">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 flex-wrap mb-4">
+    <div className="flex flex-col h-full">
+      {/* Toolbar — sticky */}
+      <div className="sticky top-0 z-10 flex items-center gap-2 flex-wrap px-6 py-3"
+        style={{
+          background: "var(--bg-overlay)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid var(--border-subtle)",
+        }}>
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-subtle pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--text-subtle)" }} />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tasks…"
-            className="pl-9 pr-3 py-1.5 rounded-xl text-xs font-medium w-44 outline-none"
-            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-foreground)" }}
+            className="pl-9 pr-3 py-1.5 rounded-xl text-xs font-medium w-44 outline-none transition-all"
+            style={{
+              background: "var(--bg-elevated)", color: "var(--text-foreground)",
+              border: `1px solid ${search ? "rgba(99,102,241,0.40)" : "var(--border)"}`,
+              boxShadow: search ? "0 0 0 3px rgba(99,102,241,0.08)" : "none",
+            }}
           />
         </div>
 
-        {/* Status dropdown */}
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-xl text-xs font-semibold outline-none appearance-none cursor-pointer"
-          style={{
-            background: statusFilter ? "var(--accent-muted)" : "var(--bg-elevated)",
-            color: statusFilter ? "var(--accent)" : "var(--text-muted)",
-            border: `1px solid ${statusFilter ? "var(--accent-glow)" : "var(--border)"}`,
-          }}>
-          <option value="">All Status</option>
-          <option value="BACKLOG">Backlog</option>
-          <option value="TODO">To Do</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="REVIEW">In Review</option>
-          <option value="DONE">Completed</option>
-        </select>
+        {/* Status filter pills */}
+        <div className="flex items-center gap-1">
+          {["", "BACKLOG", "TODO", "IN_PROGRESS", "REVIEW", "DONE"].map((s) => {
+            const active = statusFilter === s;
+            const color = s ? STATUS_COLOR[s] : "var(--accent)";
+            return (
+              <button key={s} onClick={() => setStatusFilter(s)}
+                className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                style={{
+                  background: active ? (s ? `${color}18` : "var(--accent-muted)") : "transparent",
+                  color: active ? color : "var(--text-subtle)",
+                  border: active ? `1px solid ${color}35` : "1px solid transparent",
+                }}>
+                {s ? s.replace(/_/g, " ") : "All"}
+              </button>
+            );
+          })}
+        </div>
 
-        {/* Priority dropdown */}
-        <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-xl text-xs font-semibold outline-none appearance-none cursor-pointer"
-          style={{
-            background: priorityFilter ? "var(--accent-muted)" : "var(--bg-elevated)",
-            color: priorityFilter ? "var(--accent)" : "var(--text-muted)",
-            border: `1px solid ${priorityFilter ? "var(--accent-glow)" : "var(--border)"}`,
-          }}>
-          <option value="">All Priority</option>
-          <option value="URGENT">Urgent</option>
-          <option value="HIGH">High</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="LOW">Low</option>
-        </select>
+        {/* Priority filter pills */}
+        <div className="flex items-center gap-1">
+          {["", "URGENT", "HIGH", "MEDIUM", "LOW"].map((p) => {
+            const active = priorityFilter === p;
+            const color = p ? PRIORITY_COLOR[p] : "var(--accent)";
+            return (
+              <button key={p} onClick={() => setPriorityFilter(p)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                style={{
+                  background: active ? `${color}18` : "transparent",
+                  color: active ? color : "var(--text-subtle)",
+                  border: active ? `1px solid ${color}35` : "1px solid transparent",
+                }}>
+                {p && <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />}
+                {p || "All Priorities"}
+              </button>
+            );
+          })}
+        </div>
 
         {hasFilters && (
           <button onClick={() => { setSearch(""); setStatusFilter(""); setPriorityFilter(""); }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-muted hover:text-danger hover:bg-danger/10 transition-colors">
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
+            style={{ color: "var(--danger)", background: "rgba(244,63,94,0.06)" }}>
             <X className="w-3 h-3" /> Clear
           </button>
         )}
 
-        <span className="ml-auto text-xs font-semibold text-subtle">
-          {filtered.length} task{filtered.length !== 1 ? "s" : ""}
-        </span>
-
-        <Button size="sm" icon={<Plus className="w-3.5 h-3.5" />}
-          onClick={() => { setSelectedTask(null); setShowModal(true); }}>
-          New Task
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[11px] font-semibold" style={{ color: "var(--text-subtle)" }}>
+            {filtered.length} task{filtered.length !== 1 ? "s" : ""}
+          </span>
+          <button
+            onClick={() => { setSelectedTask(null); setShowModal(true); }}
+            className="flex items-center gap-1.5 h-8 px-4 rounded-xl text-xs font-bold text-white transition-all"
+            style={{
+              background: "linear-gradient(135deg, #6366F1, #A78BFA)",
+              boxShadow: "0 4px 16px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "none"; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.18)"; }}>
+            <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+            New Task
+          </button>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl overflow-hidden"
-        style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-        <table className="w-full text-sm">
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)" }}>
-              <th className="text-left px-5 py-3 w-[40%]">
-                <SortButton label="Task" active={sortKey === "title"} onClick={() => cycleSort("title")} />
-              </th>
-              <th className="text-left px-4 py-3">
-                <SortButton label="Status" active={sortKey === "status"} onClick={() => cycleSort("status")} />
-              </th>
-              <th className="text-left px-4 py-3">
-                <SortButton label="Priority" active={sortKey === "priority"} onClick={() => cycleSort("priority")} />
-              </th>
-              <th className="text-left px-4 py-3 hidden md:table-cell">
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>Assignee</span>
-              </th>
-              <th className="text-left px-4 py-3 hidden sm:table-cell">
-                <SortButton label="Due" active={sortKey === "dueDate"} onClick={() => cycleSort("dueDate")} />
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <AnimatePresence initial={false}>
-              {filtered.map((task, i) => {
-                const overdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE";
-                return (
-                  <motion.tr key={task.id}
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ delay: i * 0.015 }}
-                    className="cursor-pointer transition-colors hover:bg-card-hover"
-                    style={i < filtered.length - 1 ? { borderBottom: "1px solid var(--border)" } : {}}
-                    onClick={() => { setSelectedTask(task); setShowModal(true); }}>
+      <div className="flex-1 overflow-auto px-6 py-4">
+        <div className="rounded-[18px] overflow-hidden"
+          style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-[1]">
+              <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
+                <th className="text-left px-5 py-3 w-[40%]">
+                  <SortButton label="Task" active={sortKey === "title"} onClick={() => cycleSort("title")} />
+                </th>
+                <th className="text-left px-4 py-3">
+                  <SortButton label="Status" active={sortKey === "status"} onClick={() => cycleSort("status")} />
+                </th>
+                <th className="text-left px-4 py-3">
+                  <SortButton label="Priority" active={sortKey === "priority"} onClick={() => cycleSort("priority")} />
+                </th>
+                <th className="text-left px-4 py-3 hidden md:table-cell">
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>Assignee</span>
+                </th>
+                <th className="text-left px-4 py-3 hidden sm:table-cell">
+                  <SortButton label="Due" active={sortKey === "dueDate"} onClick={() => cycleSort("dueDate")} />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence initial={false}>
+                {filtered.map((task, i) => {
+                  const overdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE";
+                  const priColor = PRIORITY_COLOR[task.priority] ?? "#6B7280";
+                  const stColor = STATUS_COLOR[task.status] ?? "#6B7280";
+                  return (
+                    <motion.tr key={task.id}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: i * 0.012 }}
+                      className="cursor-pointer group"
+                      style={i < filtered.length - 1 ? { borderBottom: "1px solid var(--border-subtle)" } : {}}
+                      onClick={() => { setSelectedTask(task); setShowModal(true); }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
 
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        {overdue && <AlertCircle className="w-3 h-3 text-danger shrink-0" />}
-                        <span className={`font-semibold ${task.status === "DONE" ? "line-through text-muted" : "text-foreground"}`}>
-                          {task.title}
-                        </span>
-                      </div>
-                      {task.description && (
-                        <p className="text-[11px] text-subtle mt-0.5 truncate max-w-xs">{task.description}</p>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <Badge variant={STATUS_BADGE[task.status] ?? "default"} size="sm" dot>
-                        {task.status.replace(/_/g, " ")}
-                      </Badge>
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <Badge variant={PRIORITY_BADGE[task.priority] ?? "default"} size="sm">
-                        {task.priority}
-                      </Badge>
-                    </td>
-
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      {task.assignee ? (
-                        <div className="flex items-center gap-2">
-                          <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />
-                          <span className="text-xs text-muted">{task.assignee.name?.split(" ")[0]}</span>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          {/* Priority color indicator */}
+                          <div className="w-[3px] h-8 rounded-full shrink-0" style={{ background: priColor, opacity: 0.7 }} />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              {overdue && <AlertCircle className="w-3 h-3 shrink-0" style={{ color: "var(--danger)" }} />}
+                              <span className={`text-[13px] font-semibold leading-tight ${task.status === "DONE" ? "line-through opacity-40" : ""}`}
+                                style={{ color: "var(--text-foreground)" }}>
+                                {task.title}
+                              </span>
+                            </div>
+                            {task.description && (
+                              <p className="text-[11px] mt-0.5 truncate max-w-xs" style={{ color: "var(--text-subtle)" }}>{task.description}</p>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <span className="text-xs text-subtle">—</span>
-                      )}
-                    </td>
+                      </td>
 
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      {task.dueDate ? (
-                        <span className={`flex items-center gap-1 text-xs font-semibold ${overdue ? "text-danger" : "text-muted"}`}>
-                          <Calendar className="w-3 h-3" />
-                          {format(new Date(task.dueDate), "MMM d")}
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
+                          style={{ background: `${stColor}14`, color: stColor, border: `1px solid ${stColor}28` }}>
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: stColor }} />
+                          {task.status.replace(/_/g, " ")}
                         </span>
-                      ) : (
-                        <span className="text-xs text-subtle">—</span>
-                      )}
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </AnimatePresence>
-          </tbody>
-        </table>
+                      </td>
 
-        {filtered.length === 0 && (
-          <div className="py-14 text-center">
-            <p className="text-sm text-muted font-semibold">No tasks found</p>
-            {hasFilters && <p className="text-xs text-subtle mt-1">Try adjusting your filters</p>}
-          </div>
-        )}
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
+                          style={{ background: `${priColor}14`, color: priColor, border: `1px solid ${priColor}28` }}>
+                          {task.priority}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3.5 hidden md:table-cell">
+                        {task.assignee ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />
+                            <span className="text-[12px] font-medium" style={{ color: "var(--text-muted)" }}>{task.assignee.name?.split(" ")[0]}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[12px]" style={{ color: "var(--text-subtle)" }}>—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3.5 hidden sm:table-cell">
+                        {task.dueDate ? (
+                          <span className={`flex items-center gap-1 text-[11px] font-semibold ${overdue ? "text-danger" : ""}`}
+                            style={{ color: overdue ? "var(--danger)" : "var(--text-muted)" }}>
+                            <Calendar className="w-3 h-3" />
+                            {format(new Date(task.dueDate), "MMM d")}
+                          </span>
+                        ) : (
+                          <span className="text-[12px]" style={{ color: "var(--text-subtle)" }}>—</span>
+                        )}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+
+          {filtered.length === 0 && (
+            <div className="py-16 flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+                  <CheckSquare className="w-7 h-7" style={{ color: "var(--text-subtle)" }} />
+                </div>
+                <div className="absolute inset-0 rounded-2xl pointer-events-none"
+                  style={{ background: "radial-gradient(circle at 50% 50%, rgba(99,102,241,0.08) 0%, transparent 65%)" }} />
+              </div>
+              <div className="text-center">
+                <p className="text-[14px] font-bold" style={{ color: "var(--text-foreground)" }}>
+                  {hasFilters ? "No matching tasks" : "No tasks yet"}
+                </p>
+                <p className="text-[12px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  {hasFilters ? "Try adjusting your filters" : "Create your first task to get started"}
+                </p>
+              </div>
+              {!hasFilters && (
+                <button onClick={() => { setSelectedTask(null); setShowModal(true); }}
+                  className="flex items-center gap-2 h-9 px-5 rounded-xl text-[13px] font-bold text-white transition-all"
+                  style={{ background: "linear-gradient(135deg, #6366F1, #A78BFA)", boxShadow: "0 4px 16px rgba(99,102,241,0.35)" }}>
+                  <Plus className="w-3.5 h-3.5" /> New Task
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <TaskModal

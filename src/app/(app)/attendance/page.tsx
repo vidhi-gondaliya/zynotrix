@@ -327,131 +327,281 @@ export default function AttendancePage() {
       {/* ── MY ATTENDANCE VIEW ─────────────────────────────────────────────── */}
       {activeTab === "mine" && (
         <>
-          {/* Clock In/Out card */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl p-6"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground mb-1">Today's Status</p>
-                {todayRecord ? (
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold" style={{
-                      background: STATUS_CONFIG[todayRecord.status]?.bg,
-                      color:      STATUS_CONFIG[todayRecord.status]?.color,
-                    }}>
-                      {STATUS_CONFIG[todayRecord.status]?.label ?? todayRecord.status}
-                    </span>
-                    {todayRecord.clockIn && (
-                      <span className="text-xs text-subtle flex items-center gap-1">
-                        <LogIn className="w-3 h-3 text-success" /> In: {format(new Date(todayRecord.clockIn), "HH:mm")}
-                      </span>
-                    )}
-                    {todayRecord.clockOut && (
-                      <span className="text-xs text-subtle flex items-center gap-1">
-                        <LogOut className="w-3 h-3 text-danger" /> Out: {format(new Date(todayRecord.clockOut), "HH:mm")}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-subtle">Not clocked in yet</p>
+          {/* Clock In/Out — premium card */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="relative rounded-[24px] overflow-hidden"
+            style={{
+              background: isClockedIn
+                ? "linear-gradient(135deg, rgba(52,211,153,0.12) 0%, rgba(5,150,105,0.06) 100%)"
+                : isClockedOut
+                ? "linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(167,139,250,0.05) 100%)"
+                : "var(--bg-card)",
+              border: `1px solid ${isClockedIn ? "rgba(52,211,153,0.30)" : isClockedOut ? "rgba(99,102,241,0.22)" : "var(--border)"}`,
+              boxShadow: isClockedIn
+                ? "0 0 0 1px rgba(52,211,153,0.18), 0 8px 40px rgba(52,211,153,0.12)"
+                : "0 2px 16px rgba(0,0,0,0.06)",
+            }}>
+            {/* Top accent */}
+            <div className="absolute top-0 left-0 right-0 h-[2px]" style={{
+              background: isClockedIn
+                ? "linear-gradient(90deg, transparent, #34D399 30%, #10B981 70%, transparent)"
+                : isClockedOut
+                ? "linear-gradient(90deg, transparent, #6366F1 30%, #A78BFA 70%, transparent)"
+                : "var(--border)",
+            }} />
+            {/* Background orb */}
+            {isClockedIn && (
+              <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full pointer-events-none"
+                style={{ background: "radial-gradient(circle, rgba(52,211,153,0.10) 0%, transparent 65%)", filter: "blur(20px)",
+                  animation: "floatY 6s ease-in-out infinite" }} />
+            )}
+
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 p-6">
+              {/* Left: Clock ring widget */}
+              <div className="relative shrink-0">
+                {/* Animated ring */}
+                <svg width="140" height="140" style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx="70" cy="70" r="58" fill="none"
+                    stroke={isClockedIn ? "rgba(52,211,153,0.15)" : "var(--bg-elevated)"}
+                    strokeWidth="8" />
+                  {isClockedIn && todayRecord?.clockIn && (() => {
+                    const elapsed = (now.getTime() - new Date(todayRecord.clockIn).getTime()) / 1000 / 3600;
+                    const pct = Math.min(elapsed / 8, 1);
+                    const circ = 2 * Math.PI * 58;
+                    return (
+                      <motion.circle cx="70" cy="70" r="58" fill="none"
+                        stroke="#34D399" strokeWidth="8" strokeLinecap="round"
+                        strokeDasharray={circ}
+                        initial={{ strokeDashoffset: circ }}
+                        animate={{ strokeDashoffset: circ - pct * circ }}
+                        transition={{ duration: 1, ease: "easeOut" }} />
+                    );
+                  })()}
+                  {isClockedOut && (() => {
+                    const circ = 2 * Math.PI * 58;
+                    return (
+                      <circle cx="70" cy="70" r="58" fill="none"
+                        stroke="#6366F1" strokeWidth="8" strokeLinecap="round"
+                        strokeDasharray={circ} strokeDashoffset="0" />
+                    );
+                  })()}
+                  {!isClockedIn && !isClockedOut && (
+                    <circle cx="70" cy="70" r="58" fill="none"
+                      stroke="rgba(107,114,128,0.20)" strokeWidth="8" strokeLinecap="round"
+                      strokeDasharray="12 8" />
+                  )}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ transform: "rotate(0deg)" }}>
+                  {isClockedIn ? (
+                    <>
+                      <div className="w-3 h-3 rounded-full mb-1.5" style={{ background: "#34D399", boxShadow: "0 0 12px #34D399", animation: "pulse 2s ease-in-out infinite" }} />
+                      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#34D399" }}>Active</p>
+                      {todayRecord?.clockIn && (
+                        <p className="text-[22px] font-black tabular-nums leading-tight" style={{ color: "#34D399", letterSpacing: "-0.04em" }}>
+                          {Math.floor((now.getTime() - new Date(todayRecord.clockIn).getTime()) / 1000 / 3600).toString().padStart(2,"0")}:
+                          {Math.floor(((now.getTime() - new Date(todayRecord.clockIn).getTime()) / 1000 % 3600) / 60).toString().padStart(2,"0")}h
+                        </p>
+                      )}
+                    </>
+                  ) : isClockedOut ? (
+                    <>
+                      <CheckCircle2 className="w-6 h-6 mb-1" style={{ color: "#6366F1" }} />
+                      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#6366F1" }}>Complete</p>
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-6 h-6 mb-1" style={{ color: "var(--text-subtle)" }} />
+                      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>Not started</p>
+                    </>
+                  )}
+                </div>
+                {/* Pulse ring when active */}
+                {isClockedIn && (
+                  <div className="absolute inset-0 rounded-full pointer-events-none"
+                    style={{ border: "1px solid rgba(52,211,153,0.3)", borderRadius: "50%",
+                      animation: "border-glow 3s ease-in-out infinite" }} />
                 )}
               </div>
-              <div className="flex items-center gap-3">
+
+              {/* Middle: Status info */}
+              <div className="flex-1 text-center md:text-left">
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--text-subtle)" }}>Today&apos;s Status</p>
+                {todayRecord ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 justify-center md:justify-start">
+                      <span className="px-3 py-1.5 rounded-full text-[12px] font-black" style={{
+                        background: STATUS_CONFIG[todayRecord.status]?.bg,
+                        color: STATUS_CONFIG[todayRecord.status]?.color,
+                        border: `1px solid ${STATUS_CONFIG[todayRecord.status]?.color}40`,
+                      }}>
+                        {STATUS_CONFIG[todayRecord.status]?.label ?? todayRecord.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 justify-center md:justify-start">
+                      {todayRecord.clockIn && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: "rgba(52,211,153,0.15)" }}>
+                            <LogIn className="w-3 h-3" style={{ color: "#34D399" }} />
+                          </div>
+                          <div>
+                            <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>In</p>
+                            <p className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>{format(new Date(todayRecord.clockIn), "HH:mm")}</p>
+                          </div>
+                        </div>
+                      )}
+                      {todayRecord.clockOut && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: "rgba(248,113,113,0.15)" }}>
+                            <LogOut className="w-3 h-3" style={{ color: "#F87171" }} />
+                          </div>
+                          <div>
+                            <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Out</p>
+                            <p className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>{format(new Date(todayRecord.clockOut), "HH:mm")}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[14px] font-semibold" style={{ color: "var(--text-muted)" }}>Ready to start your day?</p>
+                )}
+              </div>
+
+              {/* Right: Action */}
+              <div className="shrink-0">
                 {!isClockedIn && !isClockedOut && (
-                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  <motion.button whileTap={{ scale: 0.96 }}
                     onClick={() => clockAction("clock-in")} disabled={actionLoading}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #34D399, #059669)" }}>
-                    <LogIn className="w-4 h-4" /> Clock In
+                    className="relative flex items-center gap-3 px-7 py-4 rounded-2xl font-bold text-white text-[14px] transition-all disabled:opacity-60 overflow-hidden"
+                    style={{ background: "linear-gradient(135deg, #34D399 0%, #059669 100%)", boxShadow: "0 8px 32px rgba(52,211,153,0.40), inset 0 1px 0 rgba(255,255,255,0.20)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 16px 48px rgba(52,211,153,0.50), inset 0 1px 0 rgba(255,255,255,0.20)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "none"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(52,211,153,0.40), inset 0 1px 0 rgba(255,255,255,0.20)"; }}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.18)" }}>
+                      <LogIn className="w-4 h-4" />
+                    </div>
+                    {actionLoading ? "Starting…" : "Clock In"}
                   </motion.button>
                 )}
                 {isClockedIn && (
-                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  <motion.button whileTap={{ scale: 0.96 }}
                     onClick={() => clockAction("clock-out")} disabled={actionLoading}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #F87171, #DC2626)" }}>
-                    <LogOut className="w-4 h-4" /> Clock Out
+                    className="relative flex items-center gap-3 px-7 py-4 rounded-2xl font-bold text-white text-[14px] transition-all disabled:opacity-60"
+                    style={{ background: "linear-gradient(135deg, #F87171 0%, #DC2626 100%)", boxShadow: "0 8px 32px rgba(248,113,113,0.40), inset 0 1px 0 rgba(255,255,255,0.18)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "none"; }}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.18)" }}>
+                      <LogOut className="w-4 h-4" />
+                    </div>
+                    {actionLoading ? "Clocking out…" : "Clock Out"}
                   </motion.button>
                 )}
                 {isClockedOut && (
-                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-success"
-                    style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.3)" }}>
-                    <CheckCircle2 className="w-4 h-4" /> Day Complete
+                  <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl"
+                    style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.20)" }}>
+                    <CheckCircle2 className="w-6 h-6" style={{ color: "#6366F1" }} />
+                    <div className="text-center">
+                      <p className="text-[13px] font-bold" style={{ color: "#6366F1" }}>Day Complete</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: "var(--text-subtle)" }}>Great work today!</p>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </motion.div>
 
-          {/* Stats row */}
+          {/* Stats row — gradient cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Present",  value: present,  color: "#34D399" },
-              { label: "Absent",   value: absent,   color: "#F87171" },
-              { label: "Late",     value: late,     color: "#FBBF24" },
-              { label: "Half Day", value: halfDay,  color: "#60A5FA" },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-xl p-4"
-                style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
-                <p className="text-xs text-subtle mt-0.5">{stat.label}</p>
-              </div>
+              { label: "Present",  value: present,  gradient: "linear-gradient(135deg, #34D399 0%, #059669 100%)", shadow: "rgba(52,211,153,0.35)" },
+              { label: "Absent",   value: absent,   gradient: "linear-gradient(135deg, #F87171 0%, #DC2626 100%)", shadow: "rgba(248,113,113,0.35)" },
+              { label: "Late",     value: late,     gradient: "linear-gradient(135deg, #FBBF24 0%, #D97706 100%)", shadow: "rgba(251,191,36,0.35)" },
+              { label: "Half Day", value: halfDay,  gradient: "linear-gradient(135deg, #60A5FA 0%, #2563EB 100%)", shadow: "rgba(96,165,250,0.35)" },
+            ].map((stat, i) => (
+              <motion.div key={stat.label}
+                initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.08 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                className="relative rounded-[18px] p-5 overflow-hidden"
+                style={{ background: stat.gradient, boxShadow: `0 6px 24px ${stat.shadow}` }}>
+                <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.10)" }} />
+                <div className="absolute -right-8 -bottom-8 w-28 h-28 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.06)" }} />
+                <p className="relative z-10 text-[36px] font-black leading-none tabular-nums tracking-[-0.05em] text-white">{stat.value}</p>
+                <p className="relative z-10 text-[11px] font-semibold mt-1.5" style={{ color: "rgba(255,255,255,0.72)" }}>{stat.label}</p>
+              </motion.div>
             ))}
           </div>
 
-          {/* Month selector + Calendar */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          {/* Month selector + Calendar heatmap */}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            className="rounded-[20px] overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-accent" />
-                {format(currentMonth, "MMMM yyyy")}
-              </h2>
-              <div className="flex gap-1">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: "rgba(52,211,153,0.10)" }}>
+                  <Calendar className="w-3.5 h-3.5" style={{ color: "#34D399" }} />
+                </div>
+                <div>
+                  <h2 className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>{format(currentMonth, "MMMM yyyy")}</h2>
+                  <p className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Attendance heatmap</p>
+                </div>
+              </div>
+              <div className="flex gap-1 items-center">
                 <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                  className="p-1.5 rounded-lg hover:bg-card-hover text-muted hover:text-foreground transition-colors text-xs font-bold">‹</button>
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition-colors"
+                  style={{ color: "var(--text-muted)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>‹</button>
                 <button onClick={() => setCurrentMonth(new Date())}
-                  className="px-2.5 py-1 rounded-lg hover:bg-card-hover text-xs font-semibold text-subtle hover:text-foreground transition-colors">Today</button>
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors"
+                  style={{ background: "var(--bg-elevated)", color: "var(--text-subtle)" }}>Today</button>
                 <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                  className="p-1.5 rounded-lg hover:bg-card-hover text-muted hover:text-foreground transition-colors text-xs font-bold">›</button>
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition-colors"
+                  style={{ color: "var(--text-muted)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>›</button>
               </div>
             </div>
-            <div className="p-4">
+            <div className="p-5">
               <div className="grid grid-cols-7 mb-2">
                 {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
-                  <div key={d} className="text-center text-[10px] font-bold text-subtle py-1">{d}</div>
+                  <div key={d} className="text-center text-[9px] font-bold uppercase tracking-wider py-1" style={{ color: "var(--text-subtle)" }}>{d}</div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7 gap-1.5">
                 {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
                 {days.map((day) => {
                   const rec = records.find((r) => isSameDay(new Date(r.date), day));
                   const cfg = rec ? STATUS_CONFIG[rec.status] : null;
                   const today = isToday(day);
                   return (
-                    <div key={day.toISOString()}
-                      className="aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-semibold relative"
+                    <motion.div key={day.toISOString()}
+                      whileHover={{ scale: 1.08 }}
+                      className="aspect-square flex flex-col items-center justify-center rounded-xl text-[11px] font-bold relative"
                       style={{
-                        background: cfg ? cfg.bg : today ? "var(--accent-muted)" : "transparent",
-                        border: today ? "1.5px solid var(--accent)" : "1px solid transparent",
-                        color: cfg ? cfg.color : today ? "var(--accent)" : "var(--text-muted)",
+                        background: cfg
+                          ? `linear-gradient(135deg, ${cfg.bg}, ${cfg.color}08)`
+                          : today ? "var(--accent-muted)" : "var(--bg-elevated)",
+                        border: today
+                          ? "1.5px solid var(--accent)"
+                          : cfg ? `1px solid ${cfg.color}35` : "1px solid transparent",
+                        color: cfg ? cfg.color : today ? "var(--accent)" : "var(--text-subtle)",
+                        boxShadow: cfg ? `0 0 12px ${cfg.color}18` : today ? "0 0 12px rgba(99,102,241,0.25)" : "none",
                       }}>
                       <span>{format(day, "d")}</span>
-                      {cfg && <span className="text-[8px] mt-0.5 font-bold opacity-80">{cfg.label.charAt(0)}</span>}
-                    </div>
+                      {cfg && <span className="text-[7px] font-black opacity-90 leading-none mt-0.5">{cfg.label.charAt(0)}</span>}
+                    </motion.div>
                   );
                 })}
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4 px-5 py-3" style={{ borderTop: "1px solid var(--border)" }}>
+            <div className="flex flex-wrap items-center gap-3 px-5 py-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
               {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                 <div key={k} className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-sm" style={{ background: v.color }} />
-                  <span className="text-[10px] text-subtle">{v.label}</span>
+                  <div className="w-2 h-2 rounded-sm" style={{ background: v.color, boxShadow: `0 0 4px ${v.color}80` }} />
+                  <span className="text-[10px] font-semibold" style={{ color: "var(--text-subtle)" }}>{v.label}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Recent records */}
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
@@ -521,16 +671,17 @@ export default function AttendancePage() {
             const totAbsent  = teamRecords.filter((r) => r.status === "ABSENT").length;
             const totLate    = teamRecords.filter((r) => r.status === "LATE").length;
             return (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: "Total Members",  value: teamMembers.length, color: "var(--accent)" },
-                  { label: "Present (total)",value: totPresent,          color: "#34D399" },
-                  { label: "Absent (total)", value: totAbsent,           color: "#F87171" },
-                  { label: "Late (total)",   value: totLate,             color: "#FBBF24" },
+                  { label: "Team Members",   value: teamMembers.length, gradient: "linear-gradient(135deg, #818CF8 0%, #6366F1 100%)", shadow: "rgba(99,102,241,0.35)" },
+                  { label: "Present (total)",value: totPresent,          gradient: "linear-gradient(135deg, #34D399 0%, #059669 100%)", shadow: "rgba(52,211,153,0.35)" },
+                  { label: "Absent (total)", value: totAbsent,           gradient: "linear-gradient(135deg, #F87171 0%, #DC2626 100%)", shadow: "rgba(248,113,113,0.35)" },
+                  { label: "Late (total)",   value: totLate,             gradient: "linear-gradient(135deg, #FBBF24 0%, #D97706 100%)", shadow: "rgba(251,191,36,0.35)" },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                    <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
-                    <p className="text-[11px] text-subtle mt-0.5">{s.label}</p>
+                  <div key={s.label} className="relative rounded-[18px] p-5 overflow-hidden" style={{ background: s.gradient, boxShadow: `0 6px 24px ${s.shadow}` }}>
+                    <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.10)" }} />
+                    <p className="relative z-10 text-[32px] font-black leading-none tabular-nums text-white">{s.value}</p>
+                    <p className="relative z-10 text-[11px] font-semibold mt-1" style={{ color: "rgba(255,255,255,0.72)" }}>{s.label}</p>
                   </div>
                 ))}
               </div>

@@ -328,7 +328,7 @@ export default function SprintPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
         );
       })}
 
