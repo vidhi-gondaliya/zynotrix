@@ -262,7 +262,7 @@ function AiBrief({ text, loading }: { text: string; loading: boolean }) {
   }
   if (!text) return <p className="text-[12.5px]" style={{ color: "var(--text-subtle)" }}>Generating your brief…</p>;
 
-  const lines = text.split("\n").map(l => l.replace(/^[•·\-]\s*/, "").trim()).filter(Boolean);
+  const lines = text.split("\n").map(l => l.replace(/^[•·\-]\s*/, "").replace(/\*\*/g, "").trim()).filter(Boolean);
   return (
     <div className="space-y-2.5">
       {lines.map((line, i) => (
@@ -272,6 +272,70 @@ function AiBrief({ text, loading }: { text: string; loading: boolean }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/* ── Next action hero card ─────────────────────────────────────────────────── */
+function NextActionCard({ task, urgentCount }: { task: TaskWithProject; urgentCount: number }) {
+  const isOv = !!(task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE");
+  const pri  = PRI[task.priority] ?? PRI.MEDIUM;
+  const railColor = isOv ? "#EF4444" : pri.color;
+  const daysLate  = isOv && task.dueDate ? differenceInDays(new Date(), new Date(task.dueDate)) : 0;
+  const overdueLabel = daysLate === 0 ? "due today" : `${daysLate}d overdue`;
+
+  return (
+    <section>
+      <Label text="Your next action" className="mb-3" />
+      <div
+        className="rounded-2xl p-5"
+        style={{
+          border: `1px solid ${railColor}30`,
+          background: "var(--bg-card)",
+          boxShadow: `inset 3px 0 0 ${railColor}`,
+        }}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-[16px] font-black leading-tight tracking-[-0.02em] mb-1.5"
+            style={{ color: "var(--text-foreground)" }}>
+            {task.title}
+          </p>
+          {task.project && (
+            <p className="text-[11px] mb-3" style={{ color: "var(--text-muted)" }}>
+              {task.project.name}
+              {isOv && (
+                <span className="ml-2 font-bold" style={{ color: "#EF4444" }}>
+                  · {overdueLabel}
+                </span>
+              )}
+            </p>
+          )}
+          <p className="text-[12px] leading-relaxed mb-4" style={{ color: "var(--text-subtle)" }}>
+            {isOv
+              ? "This task is overdue and may be blocking your sprint. Complete or reassign it to unblock your team."
+              : urgentCount > 0
+              ? "Highest priority item on your board. Your team is watching."
+              : "Top item in your current sprint. Completing it keeps your project on track."}
+          </p>
+          <div className="flex items-center gap-2">
+            {task.project && (
+              <a
+                href={`/projects/${task.project.id}/board`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-white transition-opacity hover:opacity-80"
+                style={{ background: railColor }}
+              >
+                Open task →
+              </a>
+            )}
+            <span
+              className="px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase"
+              style={{ background: `${railColor}12`, color: railColor, letterSpacing: "0.08em" }}
+            >
+              {pri.label}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -411,68 +475,9 @@ export default function DashboardPage() {
           <div className="space-y-9">
 
             {/* YOUR NEXT ACTION — hero card */}
-            {actionFeed.length > 0 && (() => {
-              const top = actionFeed[0];
-              const isOv = !!(top.dueDate && isPast(new Date(top.dueDate)) && top.status !== "DONE");
-              const pri = PRI[top.priority] ?? PRI.MEDIUM;
-              const railColor = isOv ? "#EF4444" : pri.color;
-              return (
-                <section>
-                  <Label text="Your next action" className="mb-3" />
-                  <div
-                    className="rounded-2xl p-5 relative overflow-hidden"
-                    style={{
-                      border: `1px solid ${railColor}30`,
-                      background: "var(--bg-card)",
-                      boxShadow: `inset 3px 0 0 ${railColor}`,
-                    }}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[16px] font-black leading-tight tracking-[-0.02em] mb-1.5"
-                          style={{ color: "var(--text-foreground)" }}>
-                          {top.title}
-                        </p>
-                        {top.project && (
-                          <p className="text-[11px] mb-3" style={{ color: "var(--text-muted)" }}>
-                            {top.project.name}
-                            {isOv && top.dueDate && (
-                              <span className="ml-2 font-bold" style={{ color: "#EF4444" }}>
-                                · {differenceInDays(new Date(), new Date(top.dueDate))}d overdue
-                              </span>
-                            )}
-                          </p>
-                        )}
-                        <p className="text-[12px] leading-relaxed mb-4" style={{ color: "var(--text-subtle)" }}>
-                          {isOv
-                            ? "This task is overdue and may be blocking your sprint. Complete or reassign it to unblock your team."
-                            : urgentCount > 0
-                            ? "Highest priority item on your board. Your team is watching."
-                            : "Top item in your current sprint. Completing it keeps your project on track."}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {top.project && (
-                            <a
-                              href={`/projects/${top.project.id}/board`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-white transition-opacity hover:opacity-80"
-                              style={{ background: railColor }}
-                            >
-                              Open task →
-                            </a>
-                          )}
-                          <span
-                            className="px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wide"
-                            style={{ background: `${railColor}12`, color: railColor, letterSpacing: "0.08em" }}
-                          >
-                            {pri.label}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              );
-            })()}
+            {actionFeed.length > 0 && (
+              <NextActionCard task={actionFeed[0]} urgentCount={urgentCount} />
+            )}
 
             {/* REQUIRES ACTION */}
             {actionFeed.length > 1 && (
