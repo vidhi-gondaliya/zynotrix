@@ -33,13 +33,6 @@ interface Project {
 
 type TaskWithProject = Task & { project?: { id: string; name: string; color: string } };
 
-/* ── Helpers ───────────────────────────────────────────────────────────────── */
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-}
-
 /* ── The Signal Bar — Colliq's signature identity element ─────────────────── */
 /* All projects shown as a proportional colored strip. At a glance: portfolio   */
 /* health. Width encodes task volume. Color encodes project identity.           */
@@ -155,25 +148,74 @@ function ActionRow({ task, index }: { task: TaskWithProject; index: number }) {
   );
 }
 
-/* ── Week task row ─────────────────────────────────────────────────────────── */
-function WeekRow({ task }: { task: TaskWithProject }) {
-  const isOverdue = !!(task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "DONE");
-  const pri = PRI[task.priority];
-  const railColor = isOverdue ? "#EF4444" : pri?.color ?? "#94A3B8";
+/* ── Relative time helper ──────────────────────────────────────────────────── */
+function relTime(dateStr: string): string {
+  const diff  = Date.now() - new Date(dateStr).getTime();
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 1) return "just now";
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+/* ── Status verb ───────────────────────────────────────────────────────────── */
+function statusVerb(s: string): string {
+  if (s === "DONE")        return "completed";
+  if (s === "REVIEW")      return "submitted for review";
+  if (s === "IN_PROGRESS") return "started";
+  if (s === "BACKLOG")     return "added to backlog";
+  return "updated";
+}
+
+/* ── Activity row — "Changed while you were away" ─────────────────────────── */
+function ActivityRow({ task, index }: { task: TaskWithProject; index: number }) {
+  const actor = task.assignee?.name ?? "Someone";
   return (
-    <div className="flex items-center gap-3 py-[7px] cursor-pointer"
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.65"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+    <div
+      className="flex items-center gap-3 px-4 py-3 transition-colors cursor-pointer"
+      style={{ borderTop: index === 0 ? "none" : "1px solid var(--border-subtle)" }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}
     >
-      <span className="w-[3px] h-3 rounded-full shrink-0" style={{ background: railColor }} />
-      <p className="flex-1 text-[12.5px] font-medium truncate" style={{ color: "var(--text-foreground)" }}>
-        {task.title}
-      </p>
-      {task.dueDate && (
-        <span className="text-[10px] shrink-0 font-medium" style={{ color: isOverdue ? "#EF4444" : "var(--text-subtle)" }}>
-          {format(new Date(task.dueDate), "MMM d")}
+      <div
+        className="w-1.5 h-1.5 rounded-full shrink-0"
+        style={{ background: (task.project as { color?: string } | undefined)?.color ?? "var(--accent)" }}
+      />
+      <p className="flex-1 text-[12.5px] truncate" style={{ color: "var(--text-foreground)" }}>
+        <span className="font-semibold" style={{ color: "var(--text-subtle)" }}>
+          {actor.split(" ")[0]}
         </span>
-      )}
+        {" "}
+        <span style={{ color: "var(--text-muted)" }}>{statusVerb(task.status)}</span>
+        {" "}
+        <span>{task.title}</span>
+      </p>
+      <span className="text-[10px] shrink-0 tabular-nums" style={{ color: "var(--text-subtle)" }}>
+        {relTime(task.updatedAt)}
+      </span>
+    </div>
+  );
+}
+
+/* ── Risk row — "Risk watch" ───────────────────────────────────────────────── */
+function RiskRow({ alert, index }: { alert: { severity: string; title: string; detail: string; projectColor?: string }; index: number }) {
+  const isCritical = alert.severity === "critical";
+  return (
+    <div
+      className="flex items-start gap-3 px-4 py-3"
+      style={{ borderTop: index === 0 ? "none" : "1px solid var(--border-subtle)" }}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
+        style={{ background: isCritical ? "#EF4444" : "#F59E0B" }}
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-[12.5px] font-semibold leading-snug" style={{ color: "var(--text-foreground)" }}>
+          {alert.title}
+        </p>
+        <p className="text-[11px] mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>
+          {alert.detail}
+        </p>
+      </div>
     </div>
   );
 }
@@ -236,12 +278,11 @@ function AiBrief({ text, loading }: { text: string; loading: boolean }) {
 /* ══ PAGE ════════════════════════════════════════════════════════════════════ */
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  useSession(); // keep session provider active for auth
   const { ask }           = useClaude();
 
   const [analyticsData,    setAnalyticsData]    = useState<AnalyticsData | null>(null);
   const [upcomingToday,    setUpcomingToday]    = useState<TaskWithProject[]>([]);
-  const [upcomingTomorrow, setUpcomingTomorrow] = useState<TaskWithProject[]>([]);
   const [projects,         setProjects]         = useState<Project[]>([]);
   const [briefText,        setBriefText]        = useState("");
   const [briefLoading,     setBriefLoading]     = useState(false);
@@ -263,7 +304,6 @@ export default function DashboardPage() {
     ]).then(([d, u, p]) => {
       setAnalyticsData(d);
       setUpcomingToday((u.today ?? []) as TaskWithProject[]);
-      setUpcomingTomorrow((u.tomorrow ?? []) as TaskWithProject[]);
       setProjects(Array.isArray(p) ? p : []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -312,9 +352,6 @@ export default function DashboardPage() {
     t.priority === "URGENT" || (t.dueDate && isPast(new Date(t.dueDate)))
   ).length;
 
-  const todayTasks    = upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED");
-  const tomorrowTasks = upcomingTomorrow.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED");
-  const firstName     = session?.user?.name?.split(" ")[0] ?? "there";
 
   /* ── Skeleton ── */
   if (loading) {
@@ -351,29 +388,20 @@ export default function DashboardPage() {
         {/* ════ SIGNAL BAR ════ */}
         <SignalBar projects={projects} />
 
-        {/* ════ PAGE HEADER ════ */}
-        <div className="flex items-start justify-between mt-8 mb-10">
-          <div>
-            <h1 className="text-[26px] font-black tracking-[-0.03em] leading-none mb-2"
-              style={{ color: "var(--text-foreground)" }}>
-              {greeting()}, {firstName}.
-            </h1>
-            <p className="text-[13.5px]" style={{ color: "var(--text-muted)" }}>
-              {urgentCount > 0
-                ? `${urgentCount} item${urgentCount > 1 ? "s" : ""} need${urgentCount === 1 ? "s" : ""} your attention today.`
-                : d.overdueTasks > 0
-                ? `${d.overdueTasks} task${d.overdueTasks > 1 ? "s" : ""} overdue — worth a look.`
-                : "Everything is on track. Good momentum."}
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-[12px] font-semibold" style={{ color: "var(--text-muted)" }}>
-              {format(new Date(), "EEE, MMM d")}
-            </p>
-            <p className="text-[10.5px] mt-0.5 tabular-nums" style={{ color: "var(--text-subtle)" }}>
-              {d.completedTasks} / {d.totalTasks} tasks · {d.completionRate}% done
-            </p>
-          </div>
+        {/* ════ DATE + STATUS STRIP ════ */}
+        <div className="flex items-center justify-between mt-6 mb-8">
+          <p className="text-[12px] font-semibold" style={{ color: "var(--text-muted)" }}>
+            {format(new Date(), "EEE, MMM d")}
+            {urgentCount > 0 && (
+              <span className="ml-3 text-[10px] font-black px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(239,68,68,0.10)", color: "#EF4444", letterSpacing: "0.06em" }}>
+                {urgentCount} URGENT
+              </span>
+            )}
+          </p>
+          <p className="text-[10.5px] tabular-nums" style={{ color: "var(--text-subtle)" }}>
+            {d.completedTasks}/{d.totalTasks} done · {d.completionRate}%
+          </p>
         </div>
 
         {/* ════ BODY — two column ════ */}
@@ -382,15 +410,79 @@ export default function DashboardPage() {
           {/* ── LEFT ── */}
           <div className="space-y-9">
 
+            {/* YOUR NEXT ACTION — hero card */}
+            {actionFeed.length > 0 && (() => {
+              const top = actionFeed[0];
+              const isOv = !!(top.dueDate && isPast(new Date(top.dueDate)) && top.status !== "DONE");
+              const pri = PRI[top.priority] ?? PRI.MEDIUM;
+              const railColor = isOv ? "#EF4444" : pri.color;
+              return (
+                <section>
+                  <Label text="Your next action" className="mb-3" />
+                  <div
+                    className="rounded-2xl p-5 relative overflow-hidden"
+                    style={{
+                      border: `1px solid ${railColor}30`,
+                      background: "var(--bg-card)",
+                      boxShadow: `inset 3px 0 0 ${railColor}`,
+                    }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[16px] font-black leading-tight tracking-[-0.02em] mb-1.5"
+                          style={{ color: "var(--text-foreground)" }}>
+                          {top.title}
+                        </p>
+                        {top.project && (
+                          <p className="text-[11px] mb-3" style={{ color: "var(--text-muted)" }}>
+                            {top.project.name}
+                            {isOv && top.dueDate && (
+                              <span className="ml-2 font-bold" style={{ color: "#EF4444" }}>
+                                · {differenceInDays(new Date(), new Date(top.dueDate))}d overdue
+                              </span>
+                            )}
+                          </p>
+                        )}
+                        <p className="text-[12px] leading-relaxed mb-4" style={{ color: "var(--text-subtle)" }}>
+                          {isOv
+                            ? "This task is overdue and may be blocking your sprint. Complete or reassign it to unblock your team."
+                            : urgentCount > 0
+                            ? "Highest priority item on your board. Your team is watching."
+                            : "Top item in your current sprint. Completing it keeps your project on track."}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          {top.project && (
+                            <a
+                              href={`/projects/${top.project.id}/board`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-white transition-opacity hover:opacity-80"
+                              style={{ background: railColor }}
+                            >
+                              Open task →
+                            </a>
+                          )}
+                          <span
+                            className="px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wide"
+                            style={{ background: `${railColor}12`, color: railColor, letterSpacing: "0.08em" }}
+                          >
+                            {pri.label}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              );
+            })()}
+
             {/* REQUIRES ACTION */}
-            {actionFeed.length > 0 && (
+            {actionFeed.length > 1 && (
               <section>
                 <div className="flex items-center justify-between mb-3">
-                  <Label text="Requires action" count={actionFeed.length} danger={urgentCount > 0} />
+                  <Label text="Requires action" count={actionFeed.length - 1} danger={urgentCount > 1} />
                 </div>
                 <div className="rounded-2xl overflow-hidden"
                   style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {actionFeed.map((task, i) => <ActionRow key={task.id} task={task} index={i} />)}
+                  {actionFeed.slice(1).map((task, i) => <ActionRow key={task.id} task={task} index={i} />)}
                 </div>
               </section>
             )}
@@ -413,37 +505,36 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* YOUR WEEK */}
-            <section>
-              <Label text="Your week" className="mb-3" />
-              <div className="space-y-5">
-                {todayTasks.length > 0 && (
-                  <div>
-                    <p className="text-[9.5px] font-black uppercase tracking-[0.12em] mb-2"
-                      style={{ color: "var(--text-subtle)" }}>
-                      Today · {todayTasks.length}
-                    </p>
-                    <div style={{ borderLeft: "1px solid var(--border-subtle)", paddingLeft: 12 }}>
-                      {todayTasks.slice(0, 5).map(t => <WeekRow key={t.id} task={t} />)}
-                    </div>
-                  </div>
-                )}
-                {tomorrowTasks.length > 0 && (
-                  <div>
-                    <p className="text-[9.5px] font-black uppercase tracking-[0.12em] mb-2"
-                      style={{ color: "var(--text-subtle)" }}>
-                      Tomorrow · {tomorrowTasks.length}
-                    </p>
-                    <div style={{ borderLeft: "1px solid var(--border-subtle)", paddingLeft: 12 }}>
-                      {tomorrowTasks.slice(0, 4).map(t => <WeekRow key={t.id} task={t} />)}
-                    </div>
-                  </div>
-                )}
-                {todayTasks.length === 0 && tomorrowTasks.length === 0 && (
-                  <p className="text-[13px]" style={{ color: "var(--text-subtle)" }}>No upcoming tasks this week.</p>
-                )}
-              </div>
-            </section>
+            {/* CHANGED WHILE YOU WERE AWAY */}
+            {d.recentTasks && d.recentTasks.length > 0 && (
+              <section>
+                <Label text="Changed while you were away" count={d.recentTasks.length} className="mb-3" />
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                  {(d.recentTasks as TaskWithProject[]).slice(0, 6).map((task, i) => (
+                    <ActivityRow key={task.id} task={task} index={i} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* RISK WATCH */}
+            {d.alerts && d.alerts.length > 0 && (
+              <section>
+                <Label
+                  text="Risk watch"
+                  count={d.alerts.length}
+                  danger={d.criticalAlertCount ? d.criticalAlertCount > 0 : false}
+                  className="mb-3"
+                />
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                  {d.alerts.slice(0, 4).map((alert, i) => (
+                    <RiskRow key={alert.id} alert={alert} index={i} />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           {/* ── RIGHT ── */}
