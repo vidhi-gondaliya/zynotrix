@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { Kanban, List, Settings, ArrowLeft, GanttChartSquare, Zap } from "lucide-react";
+import { LayoutGrid, List, Settings, ArrowLeft, GanttChartSquare, Zap } from "lucide-react";
 import type { Project } from "@/types";
 import { BoardTemplateModal } from "@/components/kanban/BoardTemplateModal";
 
@@ -21,7 +21,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
 
   const views = [
     { href: `/projects/${projectId}/list`,     label: "List",     icon: List             },
-    { href: `/projects/${projectId}/board`,    label: "Board",    icon: Kanban           },
+    { href: `/projects/${projectId}/board`,    label: "Workspace", icon: LayoutGrid       },
     { href: `/projects/${projectId}/timeline`, label: "Timeline", icon: GanttChartSquare },
     { href: `/projects/${projectId}/sprint`,   label: "Sprint",   icon: Zap              },
   ];
