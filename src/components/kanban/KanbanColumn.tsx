@@ -223,10 +223,10 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
           className="flex-1 min-h-[160px] rounded-2xl p-2 flex flex-col gap-2 transition-all duration-200"
           style={{
             background: isOver
-              ? `${accent}16`
+              ? `${accent}20`
               : isArchived
               ? "rgba(100,116,139,0.04)"
-              : "var(--kanban-col-body-bg)",
+              : `${accent}0C`,
             border: isOver
               ? `1.5px solid ${accent}55`
               : "1.5px dashed transparent",

@@ -45,8 +45,8 @@
   --kanban-card-bg-urgent:   rgba(220,38,38,0.05);
   --kanban-card-blur:        0px;
   --kanban-col-body-bg:      rgba(79,82,241,0.035);
-  --kanban-card-shadow:      0 2px 10px rgba(13,14,43,0.08), 0 1px 3px rgba(13,14,43,0.05);
-  --kanban-card-border:      rgba(13,14,43,0.09);
+  --kanban-card-shadow:      0 4px 20px rgba(13,14,43,0.13), 0 1px 5px rgba(13,14,43,0.08), 0 0 0 0.5px rgba(13,14,43,0.06);
+  --kanban-card-border:      rgba(13,14,43,0.11);
 }
 
 /* ── LIGHT THEME ─────────────────────────────────────────────────── */

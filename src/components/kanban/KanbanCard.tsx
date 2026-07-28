@@ -134,7 +134,7 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
       <div
         className="absolute left-0 top-0 bottom-0"
         style={{
-          width: 3,
+          width: 5,
           background: isDone
             ? "linear-gradient(180deg, #22C55E, #22C55E66)"
             : isOverdue
@@ -152,7 +152,7 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
       )}
 
       {/* Card body */}
-      <div className="pl-4 pr-3.5 pt-3.5 pb-3 min-w-0">
+      <div className="pl-[18px] pr-3.5 pt-3.5 pb-3 min-w-0">
 
         {/* Risk / overdue badge */}
         {isHighRisk && !isDone && (
