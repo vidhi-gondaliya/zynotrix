@@ -96,11 +96,11 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
         style={{
           background: isArchived
             ? "rgba(100,116,139,0.09)"
-            : `linear-gradient(135deg, ${accent}22 0%, ${accent}0a 100%)`,
-          border: `1px solid ${isArchived ? "rgba(100,116,139,0.20)" : `${accent}38`}`,
+            : `linear-gradient(135deg, ${accent}28 0%, ${accent}10 100%)`,
+          border: `1px solid ${isArchived ? "rgba(100,116,139,0.20)" : `${accent}45`}`,
           boxShadow: isArchived
             ? "none"
-            : `0 2px 20px ${accent}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
+            : `0 4px 24px ${accent}18, inset 0 1px 0 rgba(255,255,255,0.10)`,
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
         }}
@@ -155,8 +155,8 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
               ) : (
                 <div className="flex-1 flex items-center gap-1 min-w-0 group/label">
                   <span
-                    className="text-[11px] font-black uppercase tracking-widest truncate"
-                    style={{ color: isArchived ? "#94A3B8" : accent }}
+                    className="text-[11.5px] font-black uppercase tracking-widest truncate"
+                    style={{ color: isArchived ? "#94A3B8" : accent, letterSpacing: "0.10em" }}
                   >
                     {displayLabel}
                   </span>
@@ -176,11 +176,12 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
               {/* Count + add */}
               <div className="flex items-center gap-1.5 shrink-0">
                 <span
-                  className="text-[11px] font-black min-w-[22px] h-5 px-1.5 flex items-center justify-center rounded-full"
+                  className="text-[11px] font-black min-w-[24px] h-6 px-2 flex items-center justify-center rounded-full"
                   style={{
-                    background: wipLimit && tasks.length > wipLimit ? "rgba(244,63,94,0.18)" : `${accent}30`,
+                    background: wipLimit && tasks.length > wipLimit ? "rgba(244,63,94,0.18)" : `${accent}28`,
                     color: wipLimit && tasks.length > wipLimit ? "#F43F5E" : isArchived ? "#94A3B8" : accent,
-                    border: wipLimit && tasks.length > wipLimit ? "1px solid rgba(244,63,94,0.35)" : "none",
+                    border: `1px solid ${wipLimit && tasks.length > wipLimit ? "rgba(244,63,94,0.35)" : accent + "40"}`,
+                    boxShadow: wipLimit && tasks.length > wipLimit ? "none" : `0 0 8px ${accent}20`,
                   }}
                 >
                   {tasks.length}{wipLimit ? `/${wipLimit}` : ""}
@@ -219,7 +220,7 @@ export function KanbanColumn({ status, label, color, group, tasks, onTaskClick, 
       ) : (
         <div
           ref={setNodeRef}
-          className="flex-1 min-h-[120px] rounded-2xl p-2 flex flex-col gap-2 transition-all duration-200"
+          className="flex-1 min-h-[160px] rounded-2xl p-2 flex flex-col gap-2 transition-all duration-200"
           style={{
             background: isOver
               ? `${accent}16`

@@ -34,18 +34,22 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
       <div
         className="relative flex items-center gap-3 px-4 overflow-hidden shrink-0"
         style={{
-          background: "var(--bg-sidebar)",
+          background: project
+            ? `linear-gradient(135deg, ${pColor}08 0%, var(--bg-sidebar) 60%)`
+            : "var(--bg-sidebar)",
           borderBottom: "1px solid var(--border)",
-          minHeight: 52,
+          minHeight: 56,
         }}
       >
         {/* Ambient color wash */}
         {project && (
           <>
-            <div className="absolute left-0 top-0 bottom-0 w-[3px]"
-              style={{ background: `linear-gradient(180deg, ${pColor}cc, ${pColor}44)` }} />
-            <div className="absolute left-0 top-0 bottom-0 w-32 pointer-events-none"
-              style={{ background: `linear-gradient(90deg, ${pColor}12, transparent)` }} />
+            <div className="absolute left-0 top-0 bottom-0 w-[3.5px]"
+              style={{ background: `linear-gradient(180deg, ${pColor}, ${pColor}55)` }} />
+            <div className="absolute left-0 top-0 bottom-0 w-56 pointer-events-none"
+              style={{ background: `linear-gradient(90deg, ${pColor}14, transparent)` }} />
+            <div className="absolute right-0 top-0 bottom-0 w-32 pointer-events-none"
+              style={{ background: `linear-gradient(270deg, ${pColor}06, transparent)` }} />
           </>
         )}
 
@@ -70,19 +74,26 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
 
         {/* Project identity */}
         {project && (
-          <div className="relative z-10 flex items-center gap-2 shrink-0">
+          <div className="relative z-10 flex items-center gap-2.5 shrink-0">
             <div
-              className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center"
+              className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center"
               style={{
-                background: `linear-gradient(135deg, ${pColor} 0%, ${pColor}88 100%)`,
-                boxShadow: `0 0 12px ${pColor}40`,
+                background: `linear-gradient(135deg, ${pColor} 0%, ${pColor}BB 100%)`,
+                boxShadow: `0 4px 16px ${pColor}45, inset 0 1px 0 rgba(255,255,255,0.25)`,
               }}
             >
-              <div className="w-2.5 h-2.5 rounded-sm bg-white opacity-90" />
+              <div className="w-3 h-3 rounded-sm bg-white opacity-90" />
             </div>
-            <span className="text-[13px] font-bold" style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}>
-              {project.name}
-            </span>
+            <div>
+              <span className="text-[14px] font-black block" style={{ color: "var(--text-foreground)", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                {project.name}
+              </span>
+              {(project as { description?: string }).description && (
+                <span className="text-[10px] block mt-0.5 max-w-[200px] truncate" style={{ color: "var(--text-subtle)" }}>
+                  {(project as { description?: string }).description}
+                </span>
+              )}
+            </div>
           </div>
         )}
 

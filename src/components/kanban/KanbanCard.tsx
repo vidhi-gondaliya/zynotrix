@@ -71,43 +71,43 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
   const subtaskPct   = subtaskTotal > 0 ? Math.round((subtaskDone / subtaskTotal) * 100) : 0;
   const commentCount = task._count?.comments ?? 0;
 
-  // Determine card background
+  // Card background — priority-aware tint
   const cardBg = isCritical
-    ? "linear-gradient(160deg, rgba(244,63,94,0.14) 0%, rgba(190,24,93,0.08) 100%)"
+    ? "linear-gradient(160deg, rgba(244,63,94,0.10) 0%, var(--kanban-card-bg) 55%)"
     : isUrgent && !isDone
-    ? "linear-gradient(160deg, rgba(244,63,94,0.08) 0%, var(--kanban-card-bg) 60%)"
+    ? "linear-gradient(160deg, rgba(244,63,94,0.06) 0%, var(--kanban-card-bg) 50%)"
     : isHigh && !isDone
-    ? "linear-gradient(160deg, rgba(251,191,36,0.06) 0%, var(--kanban-card-bg) 60%)"
+    ? "linear-gradient(160deg, rgba(251,191,36,0.05) 0%, var(--kanban-card-bg) 50%)"
     : isDone
-    ? "linear-gradient(160deg, rgba(34,197,94,0.05) 0%, var(--kanban-card-bg) 60%)"
+    ? "linear-gradient(160deg, rgba(34,197,94,0.04) 0%, var(--kanban-card-bg) 50%)"
     : "var(--kanban-card-bg)";
 
   const cardBorder = searchQuery && searchMatch && !dimmed
-    ? "rgba(251,191,36,0.60)"
+    ? "rgba(251,191,36,0.70)"
     : isCritical
-    ? "rgba(244,63,94,0.55)"
+    ? "rgba(244,63,94,0.45)"
     : isHighRisk
-    ? "rgba(244,63,94,0.38)"
+    ? "rgba(244,63,94,0.30)"
     : isOverdue
-    ? "rgba(244,63,94,0.28)"
+    ? "rgba(244,63,94,0.22)"
     : isDone
-    ? "rgba(34,197,94,0.22)"
+    ? "rgba(34,197,94,0.20)"
     : hovered
-    ? `${railColor}45`
-    : "var(--border)";
+    ? `${railColor}50`
+    : "var(--kanban-card-border)";
 
   const cardShadow = overlay
     ? "0 32px 80px rgba(0,0,0,0.88), 0 8px 28px rgba(0,0,0,0.65)"
     : isCritical
-    ? `0 0 0 1px rgba(244,63,94,0.22), 0 6px 28px rgba(244,63,94,0.20), inset 0 1px 0 rgba(255,255,255,0.04)`
+    ? `0 0 0 1px rgba(244,63,94,0.20), 0 6px 28px rgba(244,63,94,0.18), inset 0 1px 0 rgba(255,255,255,0.06)`
     : hovered && !isDragging
-    ? `0 12px 40px rgba(0,0,0,0.28), 0 0 0 1px ${railColor}35, 0 0 28px ${railGlow}`
-    : "0 1px 4px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.035)";
+    ? `0 12px 40px rgba(0,0,0,0.18), 0 0 0 1px ${railColor}40, 0 0 20px ${railGlow}`
+    : "var(--kanban-card-shadow)";
 
   const cardTransform = overlay
     ? `${CSS.Transform.toString(transform) ?? ""} scale(1.04) rotate(1.5deg)`
     : hovered && !isDragging
-    ? `${CSS.Transform.toString(transform) ?? ""} translateY(-4px)`
+    ? `${CSS.Transform.toString(transform) ?? ""} translateY(-3px)`
     : CSS.Transform.toString(transform) ?? undefined;
 
   return (
@@ -117,7 +117,7 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
       onMouseEnter={() => !overlay && !isDragging && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onContextMenu={e => { e.preventDefault(); onContextMenu?.(e, task); }}
-      className={`glass-card group relative rounded-[14px] cursor-pointer select-none overflow-hidden ${isDragging ? "opacity-20" : ""}`}
+      className={`group relative rounded-[14px] cursor-pointer select-none overflow-hidden ${isDragging ? "opacity-20" : ""}`}
       style={{
         ...style,
         opacity: dimmed ? 0.18 : 1,
@@ -126,21 +126,21 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
         boxShadow: cardShadow,
         transform: cardTransform,
         transition: isDragging ? transition ?? undefined : "all 0.20s cubic-bezier(0.16,1,0.3,1)",
+        backdropFilter: `blur(var(--kanban-card-blur))`,
+        WebkitBackdropFilter: `blur(var(--kanban-card-blur))`,
       }}
     >
-      {/* Top gradient accent line */}
+      {/* Left priority accent rail — the card's strongest visual signal */}
       <div
-        className="absolute top-0 left-0 right-0"
+        className="absolute left-0 top-0 bottom-0"
         style={{
-          height: 2,
+          width: 3,
           background: isDone
-            ? "linear-gradient(90deg, transparent 0%, #22C55E 40%, #10B981 70%, transparent 100%)"
+            ? "linear-gradient(180deg, #22C55E, #22C55E66)"
             : isOverdue
-            ? "linear-gradient(90deg, transparent 0%, #F43F5E 30%, #FB923C 70%, transparent 100%)"
-            : isUrgent
-            ? "linear-gradient(90deg, transparent, #F43F5E 20%, #FB923C 55%, transparent)"
-            : `linear-gradient(90deg, transparent, ${railColor} 30%, ${railColor}cc 70%, transparent)`,
-          opacity: hovered || isCritical ? 1 : 0.75,
+            ? "linear-gradient(180deg, #F43F5E, #F43F5E66)"
+            : `linear-gradient(180deg, ${railColor}, ${railColor}55)`,
+          opacity: hovered || isCritical || isOverdue ? 1 : 0.75,
           transition: "opacity 0.2s ease",
         }}
       />
@@ -148,22 +148,22 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
       {/* Critical glow overlay */}
       {isCritical && (
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(244,63,94,0.10), transparent 65%)" }} />
+          style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(244,63,94,0.08), transparent 65%)" }} />
       )}
 
       {/* Card body */}
-      <div className="px-3.5 pt-3.5 pb-3 min-w-0">
+      <div className="pl-4 pr-3.5 pt-3.5 pb-3 min-w-0">
 
         {/* Risk / overdue badge */}
         {isHighRisk && !isDone && (
-          <div className="flex items-center gap-1.5 mb-2.5">
+          <div className="flex items-center gap-1.5 mb-2">
             <span
               className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
               style={{
                 background: "rgba(244,63,94,0.10)",
                 color: "#F43F5E",
-                border: "1px solid rgba(244,63,94,0.30)",
-                boxShadow: "0 0 10px rgba(244,63,94,0.18)",
+                border: "1px solid rgba(244,63,94,0.28)",
+                boxShadow: "0 0 8px rgba(244,63,94,0.15)",
               }}>
               <AlertCircle className="w-2.5 h-2.5" />
               {daysOverdue > 0 ? `${daysOverdue}d overdue` : "overdue"}
@@ -172,10 +172,10 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
         )}
 
         {/* Title + drag handle */}
-        <div className="flex items-start gap-2 mb-3">
+        <div className="flex items-start gap-2 mb-2.5">
           <p
-            className={`flex-1 text-[13px] font-semibold leading-[1.5] ${isDone ? "line-through opacity-45" : ""}`}
-            style={{ color: "var(--text-foreground)", letterSpacing: "-0.008em" }}
+            className={`flex-1 text-[13.5px] font-semibold leading-[1.45] ${isDone ? "line-through opacity-40" : ""}`}
+            style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}
           >
             {task.title}
           </p>
@@ -202,9 +202,9 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
                 key={tag}
                 className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
                 style={{
-                  background: `${tint}14`,
+                  background: `${tint === "var(--accent)" ? "var(--accent-muted)" : tint + "16"}`,
                   color: tint === "var(--accent)" ? "var(--accent)" : tint,
-                  border: `1px solid ${tint}28`,
+                  border: `1px solid ${tint === "var(--accent)" ? "var(--accent-glow)" : tint + "28"}`,
                 }}
               >
                 {tag}
@@ -221,7 +221,7 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
 
         {/* Subtask progress */}
         {subtaskTotal > 0 && (
-          <div className="mb-3">
+          <div className="mb-2.5">
             <div className="flex items-center justify-between mb-1.5">
               <span className="flex items-center gap-1 text-[10px] font-semibold"
                 style={{ color: subtaskPct === 100 ? "var(--success)" : "var(--text-subtle)" }}>
@@ -261,7 +261,7 @@ export function KanbanCard({ task, onClick, overlay, columnColor, onContextMenu,
           <span
             className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
             style={{
-              background: `${railColor}16`,
+              background: `${railColor}14`,
               color: railColor,
               border: `1px solid ${railColor}30`,
             }}

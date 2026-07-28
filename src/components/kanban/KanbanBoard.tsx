@@ -603,11 +603,12 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
           style={{
             minHeight: "calc(100vh - 200px)",
             backgroundImage: `
-              radial-gradient(ellipse at 10% 30%, ${canvasColor}14 0%, transparent 45%),
-              radial-gradient(ellipse at 85% 70%, ${canvasColor}0A 0%, transparent 40%),
-              radial-gradient(circle, rgba(100,100,120,0.12) 1px, transparent 1px)
+              radial-gradient(ellipse at 8% 25%, ${canvasColor}18 0%, transparent 50%),
+              radial-gradient(ellipse at 88% 72%, ${canvasColor}10 0%, transparent 45%),
+              radial-gradient(ellipse at 50% 100%, ${canvasColor}08 0%, transparent 40%),
+              radial-gradient(circle, rgba(79,82,217,0.10) 1px, transparent 1px)
             `,
-            backgroundSize: "100% 100%, 100% 100%, 20px 20px",
+            backgroundSize: "100% 100%, 100% 100%, 100% 100%, 22px 22px",
           }}
         >
           {columns.map((col) => (
