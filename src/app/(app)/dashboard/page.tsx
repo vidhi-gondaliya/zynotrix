@@ -489,8 +489,11 @@ function SceneHeader({
   );
 }
 
-function HeroSprintRing({ rate, done, total }: { rate: number; done: number; total: number }) {
+function HeroSprintRing({ rate, done, total, dark }: { rate: number; done: number; total: number; dark?: boolean }) {
   const r = 84, cx = 100, cy = 100, circ = 2 * Math.PI * r;
+  const textColor = dark ? "rgba(255,255,255,0.95)" : "var(--text-foreground)";
+  const subColor  = dark ? "rgba(255,255,255,0.45)" : "var(--text-subtle)";
+  const trackColor = dark ? "rgba(255,255,255,0.08)" : "var(--bg-elevated)";
   return (
     <div style={{ textAlign: "center", flexShrink: 0 }}>
       <svg width={200} height={200} style={{ overflow: "visible", display: "block" }}>
@@ -500,7 +503,7 @@ function HeroSprintRing({ rate, done, total }: { rate: number; done: number; tot
             <stop offset="100%" stopColor="#22C55E" />
           </linearGradient>
         </defs>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--bg-elevated)" strokeWidth={13} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackColor} strokeWidth={13} />
         <motion.circle
           cx={cx} cy={cy} r={r} fill="none"
           stroke="url(#hero-ring-g)" strokeWidth={13} strokeLinecap="round"
@@ -508,14 +511,83 @@ function HeroSprintRing({ rate, done, total }: { rate: number; done: number; tot
           initial={{ strokeDashoffset: circ }}
           animate={{ strokeDashoffset: circ * (1 - rate / 100) }}
           transition={{ duration: 1.8, ease: [0.4, 0, 0.2, 1], delay: 0.5 }}
-          style={{ transform: "rotate(-90deg)", transformOrigin: `${cx}px ${cy}px`, filter: "drop-shadow(0 0 12px rgba(99,102,241,0.55))" }}
+          style={{ transform: "rotate(-90deg)", transformOrigin: `${cx}px ${cy}px`, filter: "drop-shadow(0 0 14px rgba(99,102,241,0.7))" }}
         />
-        <text x={cx} y={cy - 12} textAnchor="middle" fill="var(--text-foreground)" fontSize={44} fontWeight={900} style={{ letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums" }}>{rate}</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" fill="var(--text-subtle)" fontSize={11} fontWeight={700} style={{ textTransform: "uppercase", letterSpacing: "0.1em" }}>% complete</text>
-        <text x={cx} y={cy + 26} textAnchor="middle" fill="var(--text-subtle)" fontSize={10} fontWeight={400}>{done} of {total} tasks</text>
+        <text x={cx} y={cy - 12} textAnchor="middle" fill={textColor} fontSize={44} fontWeight={900} style={{ letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums" }}>{rate}</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" fill={subColor} fontSize={11} fontWeight={700} style={{ textTransform: "uppercase", letterSpacing: "0.1em" }}>% complete</text>
+        <text x={cx} y={cy + 26} textAnchor="middle" fill={subColor} fontSize={10} fontWeight={400}>{done} of {total}</text>
       </svg>
-      <p style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-subtle)", marginTop: 6 }}>Sprint Progress</p>
     </div>
+  );
+}
+
+function SprintCommandCenter({
+  rate, done, total, reviewCount, overdueCount, activeCount, topTask,
+}: {
+  rate: number; done: number; total: number;
+  reviewCount: number; overdueCount: number; activeCount: number;
+  topTask?: TaskWithProject;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 24,
+        padding: "28px 28px 24px",
+        width: 300,
+        flexShrink: 0,
+        boxShadow: "0 0 0 1px rgba(255,255,255,0.02), 0 40px 80px rgba(0,0,0,0.5)",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+      {/* Glow behind the ring */}
+      <div aria-hidden style={{
+        position: "absolute", top: 24, right: 24, width: 200, height: 200,
+        background: "radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)",
+        borderRadius: "50%", pointerEvents: "none",
+      }} />
+
+      <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>Current Sprint</p>
+
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        <HeroSprintRing rate={rate} done={done} total={total} dark />
+      </div>
+
+      {/* Micro tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
+        {[
+          { label: "Active",   value: activeCount,  color: "#818CF8" },
+          { label: "Review",   value: reviewCount,  color: "#FBBF24" },
+          { label: "Overdue",  value: overdueCount, color: overdueCount > 0 ? "#EF4444" : "#4ADE80" },
+        ].map(tile => (
+          <div key={tile.label} style={{
+            background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "10px 0",
+            textAlign: "center", border: "1px solid rgba(255,255,255,0.06)",
+          }}>
+            <p style={{ fontSize: 18, fontWeight: 900, color: tile.color, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>{tile.value}</p>
+            <p style={{ fontSize: 8.5, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 2 }}>{tile.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Top urgent task */}
+      {topTask && (
+        <div style={{
+          background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px",
+          border: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          <p style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>Top Priority</p>
+          <p style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(255,255,255,0.88)", lineHeight: 1.35, letterSpacing: "-0.01em" }}>
+            {topTask.title.slice(0, 52)}{topTask.title.length > 52 ? "…" : ""}
+          </p>
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -842,62 +914,112 @@ export default function DashboardPage() {
           <LiveTicker tasks={d.recentTasks as TaskWithProject[]} />
         )}
 
-        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 48px 96px" }}>
+        {/* ══ SCENE 1: HERO — full bleed dark ═══════════════════════════ */}
+        <section style={{
+          background: "linear-gradient(135deg, #0D0E2B 0%, #181c52 55%, #0E1030 100%)",
+          padding: "72px 48px 96px",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Dot-grid texture */}
+          <div aria-hidden style={{
+            position: "absolute", inset: 0, pointerEvents: "none",
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }} />
+          {/* Ambient orb */}
+          <div aria-hidden style={{
+            position: "absolute", top: "-20%", right: "8%",
+            width: 560, height: 560,
+            background: "radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 65%)",
+            borderRadius: "50%", pointerEvents: "none",
+          }} />
+          {/* Bottom fade to page bg */}
+          <div aria-hidden style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: 64,
+            background: "linear-gradient(to bottom, transparent, var(--bg-base))",
+            pointerEvents: "none",
+          }} />
 
-          {/* ══ SCENE 1: HERO ══════════════════════════════════════════ */}
-          <section style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "0 72px", alignItems: "center", padding: "72px 0 80px", minHeight: "38vh" }}>
+          <div style={{ maxWidth: 1240, margin: "0 auto", position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 48 }}>
             {/* Left: Typography */}
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
-                style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 20 }}>
+                style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 24 }}>
                 {format(new Date(), "EEEE, MMMM d")}
               </motion.p>
 
               <motion.h1
-                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                style={{ letterSpacing: "-0.03em", lineHeight: 1.05, color: "var(--text-foreground)", marginBottom: 28 }}>
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                style={{ letterSpacing: "-0.04em", lineHeight: 1.0, marginBottom: 32 }}>
                 <span style={{
                   display: "block",
-                  fontSize: "clamp(38px, 4vw, 60px)",
+                  fontSize: "clamp(40px, 4.5vw, 66px)",
                   fontWeight: ritual.prefixWeight,
+                  color: "rgba(255,255,255,0.55)",
                 }}>
                   {ritual.greeting},
                 </span>
                 <span style={{
                   display: "block",
-                  fontSize: "clamp(38px, 4vw, 60px)",
-                  fontWeight: ritual.nameWeight,
+                  fontSize: "clamp(40px, 4.5vw, 66px)",
+                  fontWeight: 900,
+                  color: "#ffffff",
                 }}>
                   {firstName}.
                 </span>
               </motion.h1>
 
-              <motion.p
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28, duration: 0.4 }}
-                style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.6, color: "var(--text-muted)", maxWidth: 460, marginBottom: 36 }}>
-                {contextSentence}
-              </motion.p>
+              {/* Inline KPI strip */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.45 }}
+                style={{ display: "flex", gap: 32, marginBottom: 40 }}>
+                {[
+                  { label: "Active Projects", value: d.activeProjects },
+                  { label: "Completion",      value: `${d.completionRate}%` },
+                  { label: "Overdue",         value: d.overdueTasks, danger: d.overdueTasks > 0 },
+                ].map(kpi => (
+                  <div key={kpi.label}>
+                    <p style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums",
+                      color: (kpi as { danger?: boolean }).danger ? "#F87171" : "#ffffff" }}>{kpi.value}</p>
+                    <p style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{kpi.label}</p>
+                  </div>
+                ))}
+              </motion.div>
 
               <motion.button
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.42 }}
                 onClick={() => focusRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                style={{ fontSize: 13.5, fontWeight: 700, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0, letterSpacing: "-0.01em" }}>
-                See today's focus →
+                style={{
+                  fontSize: 13, fontWeight: 700, color: "#0D0E2B",
+                  background: "#ffffff", border: "none", cursor: "pointer",
+                  padding: "12px 28px", borderRadius: 100, letterSpacing: "-0.01em",
+                  boxShadow: "0 4px 20px rgba(255,255,255,0.25)",
+                }}>
+                Start Focus Session →
               </motion.button>
             </div>
 
-            {/* Right: Large sprint ring */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-              <HeroSprintRing rate={d.completionRate} done={d.completedTasks} total={d.totalTasks} />
-            </motion.div>
-          </section>
+            {/* Right: Glass SprintCommandCenter */}
+            <SprintCommandCenter
+              rate={d.completionRate}
+              done={d.completedTasks}
+              total={d.totalTasks}
+              reviewCount={d.tasksByStatus?.REVIEW ?? 0}
+              overdueCount={d.overdueTasks}
+              activeCount={d.activeTasks}
+              topTask={actionFeed[0]}
+            />
+          </div>
+        </section>
+
+        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 48px 96px" }}>
 
           {/* Scene divider */}
-          <div style={{ height: "0.5px", background: "var(--border-subtle)", marginBottom: 72 }} />
+          <div style={{ height: "0.5px", background: "var(--border-subtle)", marginBottom: 72, marginTop: 48 }} />
 
           {/* ══ SCENE 2: TODAY'S FOCUS ══════════════════════════════════ */}
           <section ref={focusRef} style={{ marginBottom: 80 }}>
@@ -1044,8 +1166,28 @@ export default function DashboardPage() {
             <SceneHeader label="Colliq Intelligence" icon="◈" />
 
             <div style={{ display: "grid", gridTemplateColumns: hasAlerts ? "1fr 300px" : "1fr", gap: 32, alignItems: "start" }}>
-              {/* Primary insight — editorial large text */}
-              <div style={cardSt}>
+              {/* Primary insight — gradient identity card */}
+              <div style={{
+                background: "linear-gradient(135deg, rgba(79,82,241,0.09) 0%, rgba(99,102,241,0.03) 60%, rgba(34,197,94,0.02) 100%)",
+                border: "1px solid rgba(99,102,241,0.22)",
+                borderRadius: 20, padding: "28px 32px",
+                position: "relative", overflow: "hidden",
+              }}>
+                {/* Ambient glow orb */}
+                <div aria-hidden style={{
+                  position: "absolute", top: -60, right: -60, width: 240, height: 240,
+                  background: "radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 70%)",
+                  borderRadius: "50%", pointerEvents: "none",
+                }} />
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+                  <motion.span
+                    animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 2.4, repeat: Infinity }}
+                    style={{ width: 8, height: 8, borderRadius: "50%", background: "#818CF8", display: "block", boxShadow: "0 0 10px rgba(129,140,248,0.7)", flexShrink: 0 }} />
+                  <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "#818CF8" }}>
+                    COLLIQ INTELLIGENCE · LIVE
+                  </span>
+                </div>
                 <AiInsightBrief text={briefText} loading={briefLoading} onRefresh={() => generateBrief(true)} />
               </div>
 
