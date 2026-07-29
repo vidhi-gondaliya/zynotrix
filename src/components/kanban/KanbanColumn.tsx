@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus, MoreHorizontal, X, CornerDownLeft } from "lucide-react";
+import { Plus, MoreHorizontal, X, CornerDownLeft, Check, Pencil } from "lucide-react";
 import { KanbanCard } from "./KanbanCard";
 import type { Task, TaskStatus } from "@/types";
 
@@ -39,7 +39,24 @@ export function KanbanColumn({
   const [quickTitle,  setQuickTitle]  = useState("");
   const [showQuick,   setShowQuick]   = useState(false);
   const [savingQuick, setSavingQuick] = useState(false);
-  const quickRef = useRef<HTMLInputElement>(null);
+  const [editing,     setEditing]     = useState(false);
+  const [editValue,   setEditValue]   = useState(label ?? (status as string).replace(/_/g, " "));
+  const [showMenu,    setShowMenu]    = useState(false);
+  const quickRef  = useRef<HTMLInputElement>(null);
+  const editRef   = useRef<HTMLInputElement>(null);
+
+  const startEdit = () => {
+    setShowMenu(false);
+    setEditValue(displayLabel);
+    setEditing(true);
+    setTimeout(() => editRef.current?.select(), 40);
+  };
+
+  const confirmEdit = () => {
+    setEditing(false);
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== displayLabel && onRename) onRename(status as string, trimmed);
+  };
 
   const accent       = color ?? DEFAULT_COLORS[status] ?? "#818CF8";
   const displayLabel = label ?? (status as string).replace(/_/g, " ");
@@ -76,44 +93,107 @@ export function KanbanColumn({
 
       {/* ── Column header — pill badge style ──────────────────────── */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          {/* Colored pill */}
-          <span
-            className="px-4 py-[7px] rounded-full text-[12px] font-bold text-white leading-none whitespace-nowrap"
-            style={{
-              background: isArchived ? "#94A3B8" : accent,
-              boxShadow: isArchived ? "none" : `0 4px 12px ${accent}44`,
-            }}
-          >
-            {displayLabel}
-          </span>
+        <div className="flex items-center gap-2 min-w-0">
+          {editing ? (
+            /* Inline rename input */
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <input
+                ref={editRef}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") confirmEdit();
+                  if (e.key === "Escape") { setEditing(false); setEditValue(displayLabel); }
+                }}
+                onBlur={confirmEdit}
+                className="flex-1 min-w-0 rounded-lg px-2 py-1 text-[12px] font-bold outline-none"
+                style={{
+                  background: `${accent}18`,
+                  border: `1.5px solid ${accent}60`,
+                  color: "var(--text-foreground)",
+                }}
+              />
+              <button onClick={confirmEdit} className="p-1 rounded" style={{ color: "#22C55E" }}>
+                <Check className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => { setEditing(false); setEditValue(displayLabel); }}
+                className="p-1 rounded" style={{ color: "var(--text-subtle)" }}>
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Colored pill */}
+              <span
+                className="px-4 py-[7px] rounded-full text-[12px] font-bold text-white leading-none whitespace-nowrap shrink-0"
+                style={{
+                  background: isArchived ? "#94A3B8" : accent,
+                  boxShadow: isArchived ? "none" : `0 4px 12px ${accent}44`,
+                }}
+              >
+                {displayLabel}
+              </span>
 
-          {/* Task count */}
-          <span
-            className="text-[11px] font-bold tabular-nums"
-            style={{ color: overLimit ? "#EF4444" : "var(--text-subtle)" }}
-          >
-            {tasks.length}{wipLimit ? `/${wipLimit}` : ""}
-          </span>
+              {/* Task count */}
+              <span
+                className="text-[11px] font-bold tabular-nums"
+                style={{ color: overLimit ? "#EF4444" : "var(--text-subtle)" }}
+              >
+                {tasks.length}{wipLimit ? `/${wipLimit}` : ""}
+              </span>
+            </>
+          )}
         </div>
 
-        {/* Three-dot menu placeholder */}
-        <button
-          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-          style={{ color: "var(--text-subtle)" }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)";
-            (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "transparent";
-            (e.currentTarget as HTMLElement).style.color = "var(--text-subtle)";
-          }}
-          onClick={() => onRename && onRename(status as string, displayLabel)}
-          title="Column options"
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
+        {/* Three-dot menu with dropdown */}
+        {!editing && (
+          <div className="relative shrink-0">
+            <button
+              className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+              style={{ color: "var(--text-subtle)" }}
+              onClick={() => setShowMenu((v) => !v)}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)";
+                (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "transparent";
+                (e.currentTarget as HTMLElement).style.color = "var(--text-subtle)";
+              }}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {showMenu && (
+              <>
+                {/* Backdrop to close */}
+                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                <div
+                  className="absolute right-0 top-8 z-20 rounded-[12px] py-1 min-w-[140px]"
+                  style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
+                  }}
+                >
+                  {onRename && (
+                    <button
+                      onClick={startEdit}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-semibold text-left transition-colors"
+                      style={{ color: "var(--text-foreground)" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
+                      Rename status
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Column body ────────────────────────────────────────────── */}
