@@ -110,10 +110,10 @@ function VelocityChart({ data }: { data: { date: string; completed: number; crea
   if (!data.length) return (
     <p style={{ color: "var(--text-subtle)", fontSize: 12, textAlign: "center", padding: "40px 0" }}>No trend data yet</p>
   );
-  const formatted = data.map(d => ({
-    ...d,
-    day: format(new Date(d.date + "T00:00:00"), "MMM d"),
-  }));
+  const formatted = data.map(d => {
+    const dt = new Date(d.date);
+    return { ...d, day: isNaN(dt.getTime()) ? d.date : format(dt, "MMM d") };
+  });
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
@@ -329,9 +329,8 @@ function ProjectRoadmap({
       <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
         {rows.map((r, i) => {
           const hc = r.score >= 80 ? "#22C55E" : r.score >= 55 ? "#F59E0B" : r.score > 0 ? "#EF4444" : "#6B7280";
-          const daysLeft = r.deadline
-            ? Math.ceil((new Date(r.deadline).getTime() - Date.now()) / 86400000)
-            : null;
+          const dlMs = r.deadline ? new Date(r.deadline).getTime() : NaN;
+          const daysLeft = !isNaN(dlMs) ? Math.ceil((dlMs - Date.now()) / 86400000) : null;
           return (
             <div key={i} style={{ padding: "13px 18px", borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
@@ -473,11 +472,11 @@ function ActionRow({ task, index }: { task: TaskWithProject; index: number }) {
             {daysLate}D LATE
           </span>
         )}
-        {task.dueDate && !isOverdue && (
+        {task.dueDate && !isOverdue && (() => { const dt = new Date(task.dueDate!); return isNaN(dt.getTime()) ? null : (
           <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-            {format(new Date(task.dueDate), "MMM d")}
+            {format(dt, "MMM d")}
           </span>
-        )}
+        ); })()}
       </div>
     </div>
   );
@@ -485,7 +484,8 @@ function ActionRow({ task, index }: { task: TaskWithProject; index: number }) {
 
 /* ── Relative time ────────────────────────────────────────────────────────── */
 function relTime(dateStr: string): string {
-  const diff  = Date.now() - new Date(dateStr).getTime();
+  const ts = new Date(dateStr).getTime();
+  const diff  = isNaN(ts) ? 0 : Date.now() - ts;
   const hours = Math.floor(diff / 3600000);
   if (hours < 1) return "just now";
   if (hours < 24) return `${hours}h ago`;
