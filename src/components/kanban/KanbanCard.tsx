@@ -1,18 +1,20 @@
 "use client";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, MessageSquare, CheckSquare } from "lucide-react";
+import { MessageSquare, Paperclip, MoreHorizontal } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Task } from "@/types";
-import { format, isPast, differenceInDays } from "date-fns";
 import { useState, useEffect } from "react";
 
 const PRIORITY: Record<string, { color: string; label: string }> = {
-  LOW:    { color: "#94A3B8", label: "Low"    },
-  MEDIUM: { color: "#60A5FA", label: "Medium" },
-  HIGH:   { color: "#F59E0B", label: "High"   },
-  URGENT: { color: "#EF4444", label: "Urgent" },
+  LOW:    { color: "#94A3B8", label: "Low priority"    },
+  MEDIUM: { color: "#60A5FA", label: "Medium priority" },
+  HIGH:   { color: "#F59E0B", label: "High priority"   },
+  URGENT: { color: "#EF4444", label: "Urgent"          },
 };
+
+// Colored dot palette for the bottom-right accent
+const DOT_COLORS = ["#22C55E", "#818CF8", "#F59E0B", "#EF4444", "#06B6D4", "#EC4899"];
 
 interface KanbanCardProps {
   task: Task;
@@ -25,77 +27,76 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({
-  task, onClick, overlay, onContextMenu, searchQuery, dimmed,
+  task, onClick, overlay, columnColor, onContextMenu, searchQuery, dimmed,
 }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
 
   const dndStyle = { transform: CSS.Transform.toString(transform), transition };
 
-  const isOverdue = !!(
-    task.dueDate &&
-    isPast(new Date(task.dueDate)) &&
-    task.status !== "DONE" &&
-    task.status !== "ARCHIVED"
-  );
-  const isDone    = task.status === "DONE" || task.status === "ARCHIVED";
-  const pri       = PRIORITY[task.priority] ?? PRIORITY.MEDIUM;
-  const railColor = isDone ? "#22C55E" : isOverdue ? "#EF4444" : pri.color;
+  const isDone = task.status === "DONE" || task.status === "ARCHIVED";
+  const pri    = PRIORITY[task.priority] ?? PRIORITY.MEDIUM;
 
-  const daysLate  = task.dueDate && isOverdue
-    ? differenceInDays(new Date(), new Date(task.dueDate))
-    : 0;
-
-  const searchMatch = !searchQuery || task.title.toLowerCase().includes(searchQuery.toLowerCase());
-
+  // Category label: first tag → priority label
   let tags: string[] = [];
   try {
     tags = Array.isArray(task.tags)
       ? task.tags
-      : (typeof task.tags === "string" ? JSON.parse(task.tags) : []);
+      : (typeof task.tags === "string" ? JSON.parse(task.tags as string) : []);
   } catch { tags = []; }
+  const categoryLabel = tags[0] ?? pri.label;
+  const categoryColor = columnColor ?? pri.color;
 
-  const [subtaskDone,  setSubtaskDone]  = useState(0);
+  // Deterministic dot color from task id
+  const dotColor = DOT_COLORS[
+    (task.id.charCodeAt(0) + task.id.charCodeAt(task.id.length - 1)) % DOT_COLORS.length
+  ];
+
+  const commentCount = task._count?.comments ?? 0;
+
+  // Subtask count (from localStorage)
   const [subtaskTotal, setSubtaskTotal] = useState(0);
-  const [hovered,      setHovered]      = useState(false);
-
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`subtasks_${task.id}`);
-      if (saved) {
-        const arr = JSON.parse(saved) as { done: boolean }[];
-        setSubtaskTotal(arr.length);
-        setSubtaskDone(arr.filter(s => s.done).length);
-      }
+      if (saved) setSubtaskTotal((JSON.parse(saved) as unknown[]).length);
     } catch {}
   }, [task.id]);
 
-  const subtaskPct   = subtaskTotal > 0 ? Math.round((subtaskDone / subtaskTotal) * 100) : 0;
-  const commentCount = task._count?.comments ?? 0;
+  const [hovered, setHovered] = useState(false);
 
-  // Left glow rail lives entirely in box-shadow — no extra DOM element
-  const railShadow   = `inset 3px 0 0 ${railColor}`;
-  const restShadow   = "var(--kanban-card-shadow)";
-  const hoverShadow  = "0 8px 28px rgba(0,0,0,0.11), 0 2px 6px rgba(0,0,0,0.07)";
-  const overlayShadow = "0 32px 80px rgba(0,0,0,0.80), 0 8px 24px rgba(0,0,0,0.55)";
+  const searchMatch = !searchQuery || task.title.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const boxShadow = overlay
-    ? `${railShadow}, ${overlayShadow}`
-    : hovered && !isDragging
-    ? `${railShadow}, ${hoverShadow}`
-    : `${railShadow}, ${restShadow}`;
-
-  const borderColor = searchQuery && searchMatch && !dimmed
-    ? "rgba(245,158,11,0.60)"
-    : hovered && !isDragging
-    ? `${railColor}30`
-    : "var(--kanban-card-border)";
-
-  const cardTransform = overlay
-    ? `${CSS.Transform.toString(transform) ?? ""} scale(1.025) rotate(0.8deg)`
-    : hovered && !isDragging
-    ? `${CSS.Transform.toString(transform) ?? ""} translateY(-2px)`
-    : CSS.Transform.toString(transform) ?? undefined;
+  const cardStyle: React.CSSProperties = {
+    ...dndStyle,
+    opacity: dimmed ? 0.12 : isDragging ? 0 : 1,
+    background: "var(--bg-card)",
+    border: `1px solid ${
+      searchQuery && searchMatch && !dimmed
+        ? "rgba(245,158,11,0.55)"
+        : hovered && !isDragging
+        ? "var(--border)"
+        : "var(--border)"
+    }`,
+    boxShadow: overlay
+      ? "0 28px 64px rgba(0,0,0,0.70), 0 6px 20px rgba(0,0,0,0.40)"
+      : hovered && !isDragging
+      ? "0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)"
+      : "0 1px 4px rgba(0,0,0,0.04)",
+    transform: overlay
+      ? `${CSS.Transform.toString(transform) ?? ""} rotate(1.5deg) scale(1.03)`
+      : hovered && !isDragging
+      ? `${CSS.Transform.toString(transform) ?? ""} translateY(-2px)`
+      : CSS.Transform.toString(transform) ?? undefined,
+    transition: isDragging
+      ? dndStyle.transition ?? undefined
+      : "box-shadow 0.18s ease, transform 0.18s cubic-bezier(0.16,1,0.3,1), border-color 0.18s ease",
+    borderRadius: 16,
+    cursor: "pointer",
+    userSelect: "none",
+    position: "relative",
+    overflow: "hidden",
+  };
 
   return (
     <div
@@ -103,139 +104,88 @@ export function KanbanCard({
       onClick={() => onClick(task)}
       onMouseEnter={() => !overlay && !isDragging && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onContextMenu={e => { e.preventDefault(); onContextMenu?.(e, task); }}
-      className={`group relative rounded-2xl cursor-pointer select-none ${isDragging ? "opacity-10" : ""}`}
-      style={{
-        ...dndStyle,
-        opacity: dimmed ? 0.10 : 1,
-        background: "var(--kanban-card-bg)",
-        border: `1px solid ${borderColor}`,
-        boxShadow,
-        transform: cardTransform,
-        transition: isDragging
-          ? dndStyle.transition ?? undefined
-          : "box-shadow 0.20s ease, border-color 0.20s ease, transform 0.20s cubic-bezier(0.16,1,0.3,1)",
-        backdropFilter: `blur(var(--kanban-card-blur))`,
-        WebkitBackdropFilter: `blur(var(--kanban-card-blur))`,
-      }}
+      onContextMenu={(e) => { e.preventDefault(); onContextMenu?.(e, task); }}
+      style={cardStyle}
     >
-      {/* Drag handle — ghost until hover */}
+      {/* Drag handle (hidden, on the whole card via dnd-kit) */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-3.5 right-3 cursor-grab active:cursor-grabbing w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-20 hover:!opacity-60 transition-opacity z-10"
-        style={{ color: "var(--text-subtle)" }}
-        onClick={e => e.stopPropagation()}
-      >
-        <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
-          <circle cx="2" cy="2" r="1.4"/><circle cx="6" cy="2" r="1.4"/>
-          <circle cx="2" cy="6" r="1.4"/><circle cx="6" cy="6" r="1.4"/>
-          <circle cx="2" cy="10" r="1.4"/><circle cx="6" cy="10" r="1.4"/>
-        </svg>
-      </div>
+        className="absolute inset-0 z-0"
+        onClick={(e) => e.stopPropagation()}
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      />
 
-      <div style={{ paddingLeft: 18, paddingRight: 40, paddingTop: 15, paddingBottom: 13 }}>
+      <div className="relative z-10 p-4">
+        {/* ── Top row: category label + three-dot ─────────────────── */}
+        <div className="flex items-start justify-between gap-2 mb-2.5">
+          <span
+            className="text-[10.5px] font-bold leading-none"
+            style={{ color: categoryColor }}
+          >
+            {categoryLabel}
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onContextMenu?.(e, task); }}
+            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors opacity-0"
+            style={{
+              color: "var(--text-subtle)",
+              opacity: hovered ? 1 : 0,
+              background: hovered ? "var(--bg-elevated)" : "transparent",
+            }}
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-        {/* Title — primary hierarchy */}
+        {/* ── Title ───────────────────────────────────────────────── */}
         <p
-          className={`text-[13.5px] font-bold leading-[1.45] mb-2.5 ${isDone ? "line-through" : ""}`}
+          className="text-[13.5px] font-bold leading-snug mb-3"
           style={{
             color: isDone ? "var(--text-muted)" : "var(--text-foreground)",
             letterSpacing: "-0.015em",
+            textDecoration: isDone ? "line-through" : "none",
           }}
         >
           {task.title}
         </p>
 
-        {/* Tags — quiet, subordinate */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2.5">
-            {tags.slice(0, 3).map(tag => (
-              <span
-                key={tag}
-                className="text-[9.5px] font-medium px-1.5 py-[3px] rounded-[5px]"
-                style={{ background: "var(--bg-elevated)", color: "var(--text-subtle)" }}
-              >
-                {tag}
-              </span>
-            ))}
-            {tags.length > 3 && (
-              <span
-                className="text-[9.5px] font-medium px-1.5 py-[3px] rounded-[5px]"
-                style={{ background: "var(--bg-elevated)", color: "var(--text-subtle)" }}
-              >
-                +{tags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Subtask progress — only when present */}
-        {subtaskTotal > 0 && (
-          <div className="mb-2.5">
-            <div className="h-[2px] rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${subtaskPct}%`,
-                  background: subtaskPct === 100 ? "#22C55E" : railColor,
-                  transition: "width 0.7s ease",
-                }}
-              />
+        {/* ── Avatars ─────────────────────────────────────────────── */}
+        <div className="flex items-center mb-3">
+          {task.assignee ? (
+            <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />
+          ) : (
+            <div
+              className="w-[22px] h-[22px] rounded-full border-dashed shrink-0"
+              style={{ border: "1.5px dashed var(--border-strong)" }}
+            />
+          )}
+          {task.creator && task.creator.id !== task.assignee?.id && (
+            <div style={{ marginLeft: -6, position: "relative", zIndex: 1 }}>
+              <Avatar name={task.creator.name} image={task.creator.image} size="xs" />
             </div>
-            <span className="text-[9px] font-medium mt-1 block" style={{ color: "var(--text-subtle)" }}>
-              <CheckSquare className="inline w-2.5 h-2.5 mr-0.5 relative -top-px" />
-              {subtaskDone}/{subtaskTotal}
-            </span>
-          </div>
-        )}
-
-        {/* Hairline separator */}
-        <div style={{ height: "0.5px", background: "var(--border-subtle)", margin: "10px 0 10px -2px" }} />
-
-        {/* Footer — secondary hierarchy */}
-        <div className="flex items-center gap-1.5">
-          {/* Assignee */}
-          {task.assignee
-            ? <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />
-            : (
-              <div
-                className="w-[18px] h-[18px] rounded-full border-dashed shrink-0"
-                style={{ border: "1px dashed var(--border-strong)" }}
-              />
-            )
-          }
-
-          {/* Priority */}
-          <div className="flex items-center gap-[5px] ml-0.5">
-            <span className="inline-block w-[4px] h-[4px] rounded-full shrink-0" style={{ background: railColor }} />
-            <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-              {pri.label}
-            </span>
-          </div>
-
-          <div className="flex-1" />
-
-          {/* Comments */}
-          {commentCount > 0 && (
-            <span className="flex items-center gap-[3px] text-[10px]" style={{ color: "var(--text-subtle)" }}>
-              <MessageSquare className="w-[11px] h-[11px]" />
-              <span className="font-medium">{commentCount}</span>
-            </span>
           )}
+        </div>
 
-          {/* Due date */}
-          {task.dueDate && (
-            <span
-              className="flex items-center gap-[3px] text-[10px] font-semibold shrink-0"
-              style={{ color: isOverdue ? "#EF4444" : "var(--text-muted)" }}
-            >
-              <Calendar className="w-[11px] h-[11px]" />
-              {isOverdue && daysLate > 0
-                ? `${daysLate}d late`
-                : format(new Date(task.dueDate), "MMM d")}
-            </span>
-          )}
+        {/* ── Footer: comment + file counts + dot accent ──────────── */}
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-[10.5px] font-semibold"
+            style={{ color: "var(--text-muted)" }}>
+            <MessageSquare className="w-3 h-3" />
+            {commentCount} {commentCount === 1 ? "comment" : "comment"}
+          </span>
+          <span className="flex items-center gap-1 text-[10.5px] font-semibold"
+            style={{ color: "var(--text-muted)" }}>
+            <Paperclip className="w-3 h-3" />
+            {subtaskTotal} {subtaskTotal === 1 ? "file" : "file"}
+          </span>
+
+          {/* Colored accent dot — bottom right */}
+          <div className="ml-auto w-[10px] h-[10px] rounded-full shrink-0"
+            style={{
+              background: dotColor,
+              boxShadow: `0 0 6px ${dotColor}88`,
+            }} />
         </div>
       </div>
     </div>

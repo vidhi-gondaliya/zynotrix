@@ -2,66 +2,36 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
-import { FlowView } from "@/components/project/FlowView";
-import { TaskDetailPanel } from "@/components/kanban/TaskDetailPanel";
-import { TaskModal } from "@/components/kanban/TaskModal";
 import { BoardImportExport } from "@/components/kanban/BoardImportExport";
 import { getBoardColumns } from "@/lib/board-templates";
-import { Sparkles, X, Zap, ArrowLeftRight } from "lucide-react";
+import { Sparkles, X, Zap, ArrowLeftRight, CalendarDays, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import type { Task, TaskStatus } from "@/types";
-
-type Lens = "flow" | "focus" | "board";
-
-const LENSES: { id: Lens; label: string; glyph: string }[] = [
-  { id: "flow",  label: "Flow",  glyph: "⬡" },
-  { id: "focus", label: "Focus", glyph: "◉" },
-  { id: "board", label: "Board", glyph: "▦" },
-];
+import { format } from "date-fns";
 
 export default function BoardPage({ params }: { params: { projectId: string } }) {
-  const router      = useRouter();
-  const searchParams = useSearchParams();
-  const isNewProject = searchParams.get("new") === "1";
+  const router        = useRouter();
+  const searchParams  = useSearchParams();
+  const isNewProject  = searchParams.get("new") === "1";
   const defaultTaskId = searchParams.get("task") ?? undefined;
 
-  const [lens,           setLens]          = useState<Lens>("flow");
-  const [boardKey,       setBoardKey]      = useState(0);
-  const [flowKey,        setFlowKey]       = useState(0);
-  const [project,        setProject]       = useState<{ name: string; description?: string } | null>(null);
+  const [boardKey,         setBoardKey]         = useState(0);
+  const [project,          setProject]          = useState<{ name: string; description?: string; createdAt?: string } | null>(null);
   const [currentBoardConfig, setCurrentBoardConfig] = useState<string | null>(null);
-  const [showAiBanner,   setShowAiBanner]  = useState(isNewProject);
-  const [generatingTasks, setGeneratingTasks] = useState(false);
+  const [showAiBanner,     setShowAiBanner]     = useState(isNewProject);
+  const [generatingTasks,  setGeneratingTasks]  = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
-
-  // Task detail state (for FlowView task clicks)
-  const [selectedTask,   setSelectedTask]  = useState<Task | null>(null);
-  const [showTaskDetail, setShowTaskDetail] = useState(false);
-
-  // Task creation modal (for FlowView "Add task")
-  const [showCreateModal,  setShowCreateModal]  = useState(false);
-  const [createStatus,     setCreateStatus]     = useState<TaskStatus>("TODO");
 
   const loadProject = useCallback(async () => {
     try {
       const res = await fetch(`/api/projects/${params.projectId}`, { cache: "no-store" });
-      const p = await res.json();
+      const p   = await res.json();
       setCurrentBoardConfig(p.boardConfig ?? null);
-      setProject({ name: p.name, description: p.description });
+      setProject({ name: p.name, description: p.description, createdAt: p.createdAt });
     } catch {}
   }, [params.projectId]);
 
   useEffect(() => { loadProject(); }, [loadProject, boardKey]);
-
-  // Auto-open task if passed via URL
-  useEffect(() => {
-    if (!defaultTaskId) return;
-    fetch(`/api/tasks/${defaultTaskId}`)
-      .then(r => r.json())
-      .then((t: Task) => { setSelectedTask(t); setShowTaskDetail(true); })
-      .catch(() => {});
-  }, [defaultTaskId]);
 
   const dismissBanner = () => {
     setShowAiBanner(false);
@@ -91,107 +61,73 @@ export default function BoardPage({ params }: { params: { projectId: string } })
         });
         if (res.ok) created++;
       }
-      toast.success(`✨ ${created} tasks added to your workspace!`);
+      toast.success(`✨ ${created} tasks added to your board!`);
       dismissBanner();
       setBoardKey((k) => k + 1);
-      setFlowKey((k) => k + 1);
     } catch { toast.error("Failed to generate tasks — try again"); }
     finally { setGeneratingTasks(false); }
-  };
-
-  const handleFlowTaskClick = (task: Task) => {
-    setSelectedTask(task);
-    setShowTaskDetail(true);
-  };
-
-  const handleFlowAddTask = (status: string) => {
-    setCreateStatus(status as TaskStatus);
-    setShowCreateModal(true);
-  };
-
-  const handleTaskUpdated = (updated: Task) => {
-    setSelectedTask(updated);
-    setFlowKey(k => k + 1);
-    setBoardKey(k => k + 1);
-  };
-
-  const handleTaskDeleted = () => {
-    setShowTaskDetail(false);
-    setSelectedTask(null);
-    setFlowKey(k => k + 1);
-    setBoardKey(k => k + 1);
-  };
-
-  const handleTaskCreated = (task: Task) => {
-    setShowCreateModal(false);
-    setFlowKey(k => k + 1);
-    setBoardKey(k => k + 1);
   };
 
   return (
     <div className="relative flex flex-col h-full">
 
-      {/* ── Lens switcher ─────────────────────────────────────────── */}
-      <div
-        className="flex items-center gap-1 px-6 pt-4 pb-2 shrink-0"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
-        <div className="flex items-center gap-0.5">
-          {LENSES.map(({ id, label, glyph }) => {
-            const active = lens === id;
-            return (
+      {/* ── Project header ─────────────────────────────────────────── */}
+      {project && (
+        <div className="px-6 pt-5 pb-4 shrink-0"
+          style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold mb-1.5 flex items-center gap-1.5"
+                style={{ color: "var(--text-subtle)" }}>
+                <Globe className="w-3 h-3" />
+                Public · Last updated just now
+              </p>
+              <h1 className="text-[26px] font-black tracking-[-0.03em] leading-none mb-3"
+                style={{ color: "var(--text-foreground)" }}>
+                {project.name}
+              </h1>
+            </div>
+            {project.createdAt && (
+              <div className="text-right shrink-0">
+                <p className="text-[9.5px] font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--text-subtle)" }}>Created On</p>
+                <p className="text-[12px] font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  {format(new Date(project.createdAt), "MMMM d, yyyy")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Toolbar row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1" />
+            <div className="flex items-center gap-1.5">
               <button
-                key={id}
-                onClick={() => setLens(id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all"
+                onClick={() => setShowImportExport(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold transition-all"
                 style={{
-                  color: active ? "var(--accent)" : "var(--text-muted)",
-                  background: active ? "var(--accent-muted)" : "transparent",
-                  border: `1px solid ${active ? "var(--accent-glow)" : "transparent"}`,
-                  letterSpacing: "0.02em",
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-muted)",
                 }}
                 onMouseEnter={(e) => {
-                  if (!active) {
-                    (e.currentTarget as HTMLElement).style.color = "var(--text-foreground)";
-                    (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)";
-                  }
+                  (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-glow)";
                 }}
                 onMouseLeave={(e) => {
-                  if (!active) {
-                    (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                  }
+                  (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
                 }}
               >
-                <span className="opacity-70">{glyph}</span>
-                {label}
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                Import / Export
               </button>
-            );
-          })}
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="flex-1" />
-
-        {/* Import / Export (board lens only) */}
-        {lens === "board" && (
-          <button
-            onClick={() => setShowImportExport(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              color: "var(--text-muted)",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-glow)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
-          >
-            <ArrowLeftRight className="w-3.5 h-3.5" />
-            Import / Export
-          </button>
-        )}
-      </div>
-
-      {/* ── AI task generation banner ─────────────────────────── */}
+      {/* ── AI task generation banner ─────────────────────────────── */}
       <AnimatePresence>
         {showAiBanner && (
           <motion.div
@@ -203,18 +139,15 @@ export default function BoardPage({ params }: { params: { projectId: string } })
             style={{
               background: "linear-gradient(135deg, var(--accent)15, var(--accent)08)",
               border: "1.5px solid var(--accent-glow)",
-              backdropFilter: "blur(12px)",
             }}
           >
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ background: "var(--accent)" }}
-            >
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+              style={{ background: "var(--accent)" }}>
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-black" style={{ color: "var(--text-foreground)" }}>
-                Generate your initial backlog with AI
+                Generate your initial tasks with AI
               </p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                 Claude will create 6–8 starter tasks tailored to &ldquo;{project?.name}&rdquo;
@@ -246,65 +179,22 @@ export default function BoardPage({ params }: { params: { projectId: string } })
         )}
       </AnimatePresence>
 
-      {/* ── Lens content ─────────────────────────────────────────── */}
+      {/* ── Board ─────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto">
-        {lens === "flow" && (
-          <FlowView
-            key={flowKey}
-            projectId={params.projectId}
-            onTaskClick={handleFlowTaskClick}
-            onAddTask={handleFlowAddTask}
-            focusMode={false}
-            refreshKey={flowKey}
-          />
-        )}
-
-        {lens === "focus" && (
-          <FlowView
-            key={`focus-${flowKey}`}
-            projectId={params.projectId}
-            onTaskClick={handleFlowTaskClick}
-            onAddTask={handleFlowAddTask}
-            focusMode={true}
-            refreshKey={flowKey}
-          />
-        )}
-
-        {lens === "board" && (
-          <KanbanBoard
-            key={boardKey}
-            projectId={params.projectId}
-            defaultOpenTaskId={defaultTaskId}
-            myTasksOnly={false}
-          />
-        )}
+        <KanbanBoard
+          key={boardKey}
+          projectId={params.projectId}
+          defaultOpenTaskId={defaultTaskId}
+          myTasksOnly={false}
+        />
       </div>
 
-      {/* ── Task detail panel (for Flow / Focus clicks) ─────────── */}
-      <TaskDetailPanel
-        task={selectedTask}
-        open={showTaskDetail && (lens === "flow" || lens === "focus")}
-        onClose={() => { setShowTaskDetail(false); setSelectedTask(null); }}
-        onUpdate={handleTaskUpdated}
-        onDelete={(_taskId: string) => handleTaskDeleted()}
-        projectId={params.projectId}
-      />
-
-      {/* ── Task creation modal (for Flow / Focus "Add task") ────── */}
-      <TaskModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        projectId={params.projectId}
-        defaultStatus={createStatus}
-        onSave={handleTaskCreated}
-      />
-
-      {/* ── Import / Export panel ───────────────────────────────── */}
+      {/* ── Import / Export panel ─────────────────────────────────── */}
       {showImportExport && project && (
         <BoardImportExport
           projectId={params.projectId}
           projectName={project.name}
-          onImported={() => { setBoardKey((k) => k + 1); setFlowKey((k) => k + 1); }}
+          onImported={() => setBoardKey((k) => k + 1)}
           onClose={() => setShowImportExport(false)}
         />
       )}
