@@ -101,22 +101,15 @@ export function KanbanCard({
   return (
     <div
       ref={overlay ? undefined : setNodeRef}
+      {...(overlay ? {} : attributes)}
+      {...(overlay ? {} : listeners)}
       onClick={() => onClick(task)}
       onMouseEnter={() => !overlay && !isDragging && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onContextMenu={(e) => { e.preventDefault(); onContextMenu?.(e, task); }}
       style={cardStyle}
     >
-      {/* Drag handle (hidden, on the whole card via dnd-kit) */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute inset-0 z-0"
-        onClick={(e) => e.stopPropagation()}
-        style={{ cursor: isDragging ? "grabbing" : "grab" }}
-      />
-
-      <div className="relative z-10 p-4">
+      <div className="p-4">
         {/* ── Top row: category label + three-dot ─────────────────── */}
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <span
@@ -126,6 +119,7 @@ export function KanbanCard({
             {categoryLabel}
           </span>
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onContextMenu?.(e, task); }}
             className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors opacity-0"
             style={{
