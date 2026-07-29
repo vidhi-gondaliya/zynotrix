@@ -1,19 +1,17 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import {
-  Plus, FolderKanban, Clock, CheckCircle2, LayoutGrid, List,
-  Search, X, ArrowUpRight, Building2, Sparkles, TrendingUp,
+  Plus, MoreHorizontal, FileText, MessageSquare,
+  Filter, CalendarDays, Users,
 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Project } from "@/types";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { format, isPast, differenceInDays } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import toast from "react-hot-toast";
 
 const PROJECT_COLORS = [
@@ -21,153 +19,143 @@ const PROJECT_COLORS = [
   "#EF4444", "#EC4899", "#3B82F6", "#F97316",
 ];
 
-const STATUS_CONFIG = {
-  PLANNING:  { label: "Planning",  color: "#60A5FA", bg: "rgba(96,165,250,0.15)"  },
-  ACTIVE:    { label: "Active",    color: "#34D399", bg: "rgba(52,211,153,0.15)"  },
-  ON_HOLD:   { label: "On Hold",   color: "#FBBF24", bg: "rgba(251,191,36,0.15)"  },
-  COMPLETED: { label: "Completed", color: "#A78BFA", bg: "rgba(167,139,250,0.15)" },
-  ARCHIVED:  { label: "Archived",  color: "#6B7280", bg: "rgba(107,114,128,0.10)" },
-};
+const AVATAR_COLORS = ["#6366F1", "#EC4899", "#F59E0B", "#10B981", "#06B6D4", "#A78BFA"];
 
-const FILTERS = [
-  { value: "",          label: "All"       },
-  { value: "ACTIVE",    label: "Active"    },
-  { value: "PLANNING",  label: "Planning"  },
-  { value: "ON_HOLD",   label: "On Hold"   },
-  { value: "COMPLETED", label: "Completed" },
+// Three Kanban columns — ON_HOLD projects surface in "On Going"
+const COLUMNS = [
+  { id: "PLANNING",  label: "Started",   accent: "#60A5FA", statuses: ["PLANNING"] },
+  { id: "ACTIVE",    label: "On Going",  accent: "#818CF8", statuses: ["ACTIVE", "ON_HOLD"] },
+  { id: "COMPLETED", label: "Completed", accent: "#22C55E", statuses: ["COMPLETED"] },
 ];
 
-function healthColor(score: number) {
-  if (score >= 75) return "#34D399";
-  if (score >= 50) return "#FBBF24";
-  return "#FF4466";
+// ── Avatar stack ──────────────────────────────────────────────────────────────
+function AvatarStack({ seed, count }: { seed: string; count: number }) {
+  const shown = Math.min(Math.max(count, 2), 4);
+  return (
+    <div className="flex items-center">
+      {Array.from({ length: shown }).map((_, i) => {
+        const charCode = seed.charCodeAt(i % seed.length) % AVATAR_COLORS.length;
+        return (
+          <div key={i}
+            className="w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center text-[8px] font-bold text-white"
+            style={{
+              background: AVATAR_COLORS[(charCode + i) % AVATAR_COLORS.length],
+              borderColor: "var(--bg-card)",
+              marginLeft: i === 0 ? 0 : -6,
+              zIndex: shown - i,
+              position: "relative",
+            }}>
+            {String.fromCharCode(65 + i)}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
-// ── Project card — grid view ──────────────────────────────────────────────────
+// ── Kanban project card ───────────────────────────────────────────────────────
 function ProjectCard({ project, index }: { project: Project; index: number }) {
-  const status = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.ACTIVE;
+  const progress = project.healthScore ?? 0;
   const taskCount = project._count?.tasks ?? 0;
-  const deadline = project.deadline ? new Date(project.deadline) : null;
-  const daysLeft = deadline ? differenceInDays(deadline, new Date()) : null;
-  const isOverdue = deadline && isPast(deadline);
-  const health = project.healthScore ?? null;
-  const [hovered, setHovered] = useState(false);
+  const commentCount = Math.max(0, taskCount - 1);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: index * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
     >
-      <Link href={`/projects/${project.id}/board`} className="block group">
+      <Link href={`/projects/${project.id}/board`}>
         <div
-          className="relative overflow-hidden rounded-[20px] cursor-pointer"
+          className="rounded-[16px] p-4 cursor-pointer group"
           style={{
             background: "var(--bg-card)",
-            border: `1px solid ${hovered ? project.color + "45" : "var(--border)"}`,
-            boxShadow: hovered
-              ? `0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px ${project.color}28, inset 0 1px 0 rgba(255,255,255,0.06)`
-              : "0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.04)",
-            transform: hovered ? "translateY(-5px)" : "none",
-            transition: "all 0.25s cubic-bezier(0.16,1,0.3,1)",
+            border: "1px solid var(--border)",
+            transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
           }}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.borderColor = project.color + "55";
+            el.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)";
+            el.style.transform = "translateY(-2px)";
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.borderColor = "var(--border)";
+            el.style.boxShadow = "none";
+            el.style.transform = "none";
+          }}
         >
-          {/* Gradient header area */}
-          <div className="relative h-[90px] overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${project.color} 0%, ${project.color}88 60%, ${project.color}44 100%)` }}>
-            {/* Decorative circles */}
-            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full pointer-events-none"
-              style={{ background: "rgba(255,255,255,0.12)" }} />
-            <div className="absolute right-8 bottom-2 w-16 h-16 rounded-full pointer-events-none"
-              style={{ background: "rgba(255,255,255,0.08)" }} />
-            {/* Status chip */}
-            <div className="absolute top-3 right-3">
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-white"
-                style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(8px)" }}>
-                {status.label}
+          {/* Tag chip + overflow button */}
+          <div className="flex items-center justify-between mb-3">
+            <span
+              className="text-[10px] font-bold px-2.5 py-[3px] rounded-full"
+              style={{ background: project.color + "20", color: project.color }}
+            >
+              {project.clientName || "General"}
+            </span>
+            <button
+              onClick={(e) => e.preventDefault()}
+              className="w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-[13px] font-bold mb-1.5 leading-snug truncate"
+            style={{ color: "var(--text-foreground)" }}>
+            {project.name}
+          </h3>
+
+          {/* Description */}
+          {project.description && (
+            <p className="text-[11px] mb-3 line-clamp-2 leading-relaxed"
+              style={{ color: "var(--text-muted)" }}>
+              {project.description}
+            </p>
+          )}
+
+          {/* Progress bar */}
+          <div className="mb-3.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[9.5px] font-semibold uppercase tracking-wide"
+                style={{ color: "var(--text-subtle)" }}>Progress</span>
+              <span className="text-[10px] font-bold" style={{ color: project.color }}>
+                {Math.round(progress)}%
               </span>
             </div>
-            {/* Project icon */}
-            <div className="absolute bottom-3 left-4 flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-[12px] flex items-center justify-center"
-                style={{ background: "rgba(255,255,255,0.22)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.25)" }}>
-                <FolderKanban className="w-4.5 h-4.5 text-white" strokeWidth={2} />
-              </div>
-            </div>
-            {/* Arrow on hover */}
-            <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(255,255,255,0.22)", backdropFilter: "blur(8px)" }}>
-                <ArrowUpRight className="w-3 h-3 text-white" />
-              </div>
+            <div className="h-[5px] rounded-full overflow-hidden"
+              style={{ background: "var(--bg-elevated)" }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ delay: index * 0.05 + 0.25, duration: 0.8, ease: "easeOut" }}
+                className="h-full rounded-full"
+                style={{
+                  background: `linear-gradient(90deg, ${project.color}, ${project.color}99)`,
+                  boxShadow: `0 0 6px ${project.color}44`,
+                }}
+              />
             </div>
           </div>
 
-          {/* Card body */}
-          <div className="p-4">
-            <h3 className="text-[14.5px] font-bold leading-tight mb-0.5 truncate"
-              style={{ color: "var(--text-foreground)", letterSpacing: "-0.02em" }}>
-              {project.name}
-            </h3>
-
-            {project.clientName ? (
-              <p className="text-[11px] font-medium flex items-center gap-1 mb-3" style={{ color: "var(--text-subtle)" }}>
-                <Building2 className="w-3 h-3" /> {project.clientName}
-              </p>
-            ) : (
-              <div className="mb-3" />
-            )}
-
-            {project.description && (
-              <p className="text-[11.5px] leading-relaxed mb-3 line-clamp-2" style={{ color: "var(--text-muted)" }}>
-                {project.description}
-              </p>
-            )}
-
-            {/* Stats row */}
-            <div className="flex items-center gap-3 text-[11px]">
-              <span className="flex items-center gap-1.5 font-semibold" style={{ color: "var(--text-muted)" }}>
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                {taskCount} task{taskCount !== 1 ? "s" : ""}
+          {/* Bottom: avatars + file/comment counts */}
+          <div className="flex items-center justify-between">
+            <AvatarStack seed={project.id} count={taskCount} />
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center gap-1 text-[10px] font-semibold"
+                style={{ color: "var(--text-muted)" }}>
+                <FileText className="w-3 h-3" />
+                {taskCount}
               </span>
-
-              {deadline && (
-                <span className="flex items-center gap-1.5 font-semibold"
-                  style={{ color: isOverdue ? "var(--danger)" : daysLeft !== null && daysLeft <= 7 ? "var(--warning)" : "var(--text-muted)" }}>
-                  <Clock className="w-3.5 h-3.5" />
-                  {isOverdue
-                    ? `${Math.abs(daysLeft!)}d overdue`
-                    : daysLeft === 0 ? "Due today"
-                    : daysLeft !== null && daysLeft <= 7 ? `${daysLeft}d left`
-                    : format(deadline, "MMM d")}
-                </span>
-              )}
-
-              {health !== null && (
-                <span className="flex items-center gap-1 font-bold ml-auto"
-                  style={{ color: healthColor(health) }}>
-                  <TrendingUp className="w-3 h-3" />
-                  {Math.round(health)}%
-                </span>
-              )}
+              <span className="flex items-center gap-1 text-[10px] font-semibold"
+                style={{ color: "var(--text-muted)" }}>
+                <MessageSquare className="w-3 h-3" />
+                {commentCount}
+              </span>
             </div>
-
-            {/* Health bar */}
-            {health !== null && (
-              <div className="mt-3 h-[3px] rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
-                <motion.div className="h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${health}%` }}
-                  transition={{ delay: index * 0.04 + 0.3, duration: 0.7, ease: "easeOut" }}
-                  style={{
-                    background: `linear-gradient(90deg, ${healthColor(health)}, ${healthColor(health)}bb)`,
-                    boxShadow: `0 0 6px ${healthColor(health)}60`,
-                  }}
-                />
-              </div>
-            )}
           </div>
         </div>
       </Link>
@@ -175,71 +163,202 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
   );
 }
 
-// ── Project row — list view ───────────────────────────────────────────────────
-function ProjectRow({ project, index }: { project: Project; index: number }) {
-  const status = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.ACTIVE;
-  const taskCount = project._count?.tasks ?? 0;
-  const deadline = project.deadline ? new Date(project.deadline) : null;
-  const daysLeft = deadline ? differenceInDays(deadline, new Date()) : null;
-  const isOverdue = deadline && isPast(deadline);
-  const health = project.healthScore ?? null;
+// ── Sidebar donut ring ────────────────────────────────────────────────────────
+function DonutRing({ pct }: { pct: number }) {
+  const size = 128;
+  const stroke = 14;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <Link href={`/projects/${project.id}/board`} className="group">
-        <div
-          className="flex items-center gap-4 px-4 py-3.5 transition-colors"
-          style={{ borderBottom: "1px solid var(--border-subtle)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-        >
-          <div className="w-2.5 h-2.5 rounded-full shrink-0"
-            style={{ background: project.color, boxShadow: `0 0 8px ${project.color}55` }} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold truncate" style={{ color: "var(--text-foreground)", letterSpacing: "-0.01em" }}>
-              {project.name}
-            </p>
-            {project.clientName && (
-              <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>{project.clientName}</p>
-            )}
-          </div>
-          <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full w-[88px] text-center"
-            style={{ background: status.bg, color: status.color }}>
-            {status.label}
-          </span>
-          <span className="text-[12px] font-medium w-16 text-center" style={{ color: "var(--text-muted)" }}>
-            {taskCount} tasks
-          </span>
-          <span className="text-[12px] font-bold w-12 text-center"
-            style={{ color: health !== null ? healthColor(health) : "var(--text-subtle)" }}>
-            {health !== null ? `${Math.round(health)}%` : "—"}
-          </span>
-          <span className="text-[12px] font-medium w-20 text-right"
-            style={{ color: isOverdue ? "var(--danger)" : "var(--text-muted)" }}>
-            {deadline ? format(deadline, "MMM d") : "—"}
-          </span>
-          <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-            style={{ color: "var(--text-subtle)" }} />
+    <svg width={size} height={size} style={{ overflow: "visible" }}>
+      <defs>
+        <linearGradient id="dring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#6366F1" />
+          <stop offset="100%" stopColor="#22C55E" />
+        </linearGradient>
+        <filter id="dring-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+      <circle cx={size / 2} cy={size / 2} r={r}
+        fill="none" strokeWidth={stroke} stroke="var(--bg-elevated)" />
+      <motion.circle cx={size / 2} cy={size / 2} r={r}
+        fill="none"
+        strokeWidth={stroke}
+        stroke="url(#dring-grad)"
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        initial={{ strokeDashoffset: circ }}
+        animate={{ strokeDashoffset: circ * (1 - pct / 100) }}
+        transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        filter="url(#dring-glow)"
+      />
+      <text x={size / 2} y={size / 2 - 6} textAnchor="middle" dominantBaseline="middle"
+        style={{ fontSize: 24, fontWeight: 900, fill: "var(--text-foreground)", fontFamily: "inherit" }}>
+        {Math.round(pct)}%
+      </text>
+      <text x={size / 2} y={size / 2 + 14} textAnchor="middle" dominantBaseline="middle"
+        style={{ fontSize: 9.5, fontWeight: 600, fill: "var(--text-muted)", fontFamily: "inherit",
+          textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        Complete
+      </text>
+    </svg>
+  );
+}
+
+// ── Right sidebar panel ───────────────────────────────────────────────────────
+function RightPanel({ projects }: { projects: Project[] }) {
+  const total      = projects.length;
+  const completed  = projects.filter((p) => p.status === "COMPLETED").length;
+  const inProgress = projects.filter((p) => p.status === "ACTIVE").length;
+  const waiting    = projects.filter((p) => ["PLANNING", "ON_HOLD"].includes(p.status)).length;
+  const pct        = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const stats = [
+    { label: "Total",       value: total,      color: "#6366F1" },
+    { label: "Completed",   value: completed,  color: "#22C55E" },
+    { label: "In Progress", value: inProgress, color: "#818CF8" },
+    { label: "Waiting",     value: waiting,    color: "#FBBF24" },
+  ];
+
+  const upcoming = projects
+    .filter((p) => p.deadline && p.status !== "COMPLETED")
+    .map((p) => ({
+      ...p,
+      daysLeft: differenceInDays(new Date(p.deadline!), new Date()),
+    }))
+    .filter((p) => p.daysLeft >= 0)
+    .sort((a, b) => a.daysLeft - b.daysLeft)[0];
+
+  return (
+    <div className="flex flex-col gap-4">
+
+      {/* Team strip */}
+      <div className="rounded-[18px] p-4"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <div className="flex items-center gap-1.5 mb-3">
+          <Users className="w-3.5 h-3.5" style={{ color: "var(--text-subtle)" }} />
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-subtle)" }}>
+            Team
+          </p>
         </div>
-      </Link>
-    </motion.div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {AVATAR_COLORS.slice(0, 5).map((c, i) => (
+            <div key={i}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+              style={{ background: c, border: "2px solid var(--bg-card)" }}>
+              {String.fromCharCode(65 + i)}
+            </div>
+          ))}
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: "var(--bg-elevated)", border: "2px dashed var(--border)" }}>
+            <Plus className="w-3 h-3" style={{ color: "var(--text-subtle)" }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Donut overview */}
+      <div className="rounded-[18px] p-4 flex flex-col items-center"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-4 self-start"
+          style={{ color: "var(--text-subtle)" }}>Overview</p>
+        <DonutRing pct={pct} />
+      </div>
+
+      {/* Stat tiles 2×2 grid */}
+      <div className="rounded-[18px] p-4"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-3"
+          style={{ color: "var(--text-subtle)" }}>Statistics</p>
+        <div className="grid grid-cols-2 gap-2">
+          {stats.map((s, i) => (
+            <motion.div key={s.label}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.07 + 0.2, duration: 0.3 }}
+              className="rounded-[12px] p-3"
+              style={{
+                background: "var(--bg-elevated)",
+                borderLeft: `3px solid ${s.color}`,
+              }}>
+              <p className="text-[20px] font-black leading-none mb-0.5" style={{ color: s.color }}>
+                {s.value}
+              </p>
+              <p className="text-[9.5px] font-medium" style={{ color: "var(--text-muted)" }}>
+                {s.label}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Upcoming deadline */}
+      <div className="rounded-[18px] p-4"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <div className="flex items-center gap-1.5 mb-3">
+          <CalendarDays className="w-3.5 h-3.5" style={{ color: "var(--text-subtle)" }} />
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-subtle)" }}>
+            Upcoming
+          </p>
+        </div>
+        {upcoming ? (
+          <div className="flex items-center gap-3 p-2.5 rounded-[10px]"
+            style={{ background: "var(--bg-elevated)" }}>
+            <div className="w-9 h-9 rounded-[10px] flex flex-col items-center justify-center text-white text-center shrink-0"
+              style={{ background: `linear-gradient(135deg, ${upcoming.color}, ${upcoming.color}99)` }}>
+              <span className="text-[7px] font-bold leading-none uppercase">
+                {format(new Date(upcoming.deadline!), "MMM")}
+              </span>
+              <span className="text-[14px] font-black leading-none">
+                {format(new Date(upcoming.deadline!), "d")}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11.5px] font-bold truncate" style={{ color: "var(--text-foreground)" }}>
+                {upcoming.name}
+              </p>
+              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                {upcoming.daysLeft === 0 ? "Due today" : `${upcoming.daysLeft}d left`}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>No upcoming deadlines</p>
+        )}
+      </div>
+
+      {/* Quick note */}
+      <div className="rounded-[18px] p-4"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-3"
+          style={{ color: "var(--text-subtle)" }}>Quick Note</p>
+        <textarea
+          placeholder="Jot something down…"
+          rows={3}
+          className="w-full rounded-[10px] px-3 py-2 text-[11.5px] resize-none focus:outline-none transition-all"
+          style={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border-subtle)",
+            color: "var(--text-foreground)",
+            lineHeight: 1.6,
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
+        />
+      </div>
+    </div>
   );
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ProjectsPage() {
-  const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [projects, setProjects]     = useState<Project[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [creating, setCreating]     = useState(false);
   const [form, setForm] = useState({
     name: "", description: "", color: PROJECT_COLORS[0],
     clientName: "", deadline: "", status: "ACTIVE",
@@ -251,17 +370,27 @@ export default function ProjectsPage() {
       .then((d) => { setProjects(d); setLoading(false); });
   }, []);
 
-  const filtered = useMemo(() => projects.filter((p) => {
-    if (statusFilter && p.status !== statusFilter) return false;
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) &&
-        !p.clientName?.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }), [projects, search, statusFilter]);
+  const columnMap = useMemo(() => {
+    const map: Record<string, Project[]> = {};
+    for (const col of COLUMNS) map[col.id] = [];
+    for (const p of projects) {
+      const col = COLUMNS.find((c) => c.statuses.includes(p.status));
+      if (col) map[col.id].push(p);
+    }
+    return map;
+  }, [projects]);
+
+  const openCreate = (status: string) => {
+    setForm((f) => ({ ...f, status }));
+    setShowCreate(true);
+  };
 
   const createProject = async (e: React.FormEvent) => {
     e.preventDefault(); setCreating(true);
     const res = await fetch("/api/projects", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
     });
     if (res.ok) {
       const p = await res.json();
@@ -269,178 +398,210 @@ export default function ProjectsPage() {
       setShowCreate(false);
       setForm({ name: "", description: "", color: PROJECT_COLORS[0], clientName: "", deadline: "", status: "ACTIVE" });
       toast.success("Project created");
-    } else toast.error("Failed to create project");
+    } else {
+      toast.error("Failed to create project");
+    }
     setCreating(false);
   };
 
-  const activeCount = projects.filter((p) => p.status === "ACTIVE").length;
-
   return (
-    <div className="p-6 space-y-6">
+    <div className="flex overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
 
-      {/* ── Page header with summary strip ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-[22px] font-black tracking-[-0.03em]" style={{ color: "var(--text-foreground)" }}>
+      {/* ── Kanban main area ── */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 shrink-0"
+          style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+          <h1 className="text-[20px] font-black tracking-[-0.03em]"
+            style={{ color: "var(--text-foreground)" }}>
             Projects
           </h1>
-          <p className="text-[12px] mt-0.5" style={{ color: "var(--text-subtle)" }}>
-            {projects.length} total · {activeCount} active
-          </p>
-        </div>
-        <button
-          onClick={() => router.push("/projects/new")}
-          className="flex items-center gap-2 h-9 px-5 rounded-[12px] text-[13px] font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.98]"
-          style={{
-            background: "linear-gradient(135deg, #6366F1 0%, #A78BFA 100%)",
-            boxShadow: "0 4px 20px rgba(99,102,241,0.40), inset 0 1px 0 rgba(255,255,255,0.20)",
-          }}
-        >
-          <Plus className="w-3.5 h-3.5" strokeWidth={2.5} /> New Project
-        </button>
-      </div>
-
-      {/* ── Quick summary pills ── */}
-      {!loading && projects.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {Object.entries(STATUS_CONFIG).filter(([k]) => projects.some(p => p.status === k)).map(([key, cfg]) => {
-            const count = projects.filter(p => p.status === key).length;
-            return (
-              <button key={key}
-                onClick={() => setStatusFilter(statusFilter === key ? "" : key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold transition-all"
-                style={{
-                  background: statusFilter === key ? cfg.bg : "var(--bg-elevated)",
-                  color: statusFilter === key ? cfg.color : "var(--text-muted)",
-                  border: `1px solid ${statusFilter === key ? cfg.color + "40" : "var(--border)"}`,
-                }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.color }} />
-                {cfg.label} <span className="opacity-60">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Filter bar ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[180px] max-w-[280px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--text-subtle)" }} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search projects…"
-            className="w-full pl-9 pr-3 h-9 rounded-[10px] text-[12.5px] font-medium outline-none transition-all"
-            style={{
-              background: "var(--bg-elevated)",
-              border: "1px solid var(--border)",
-              color: "var(--text-foreground)",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = "rgba(99,102,241,0.5)";
-              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.08)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "var(--border)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2"
-              style={{ color: "var(--text-subtle)" }}>
-              <X className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2">
+            <button
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-colors"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+            >
+              <Filter className="w-4 h-4" />
             </button>
+            <button
+              onClick={() => openCreate("ACTIVE")}
+              className="flex items-center gap-2 h-9 px-4 rounded-[12px] text-[13px] font-bold text-white transition-transform"
+              style={{
+                background: "linear-gradient(135deg, #6366F1 0%, #818CF8 100%)",
+                boxShadow: "0 4px 16px rgba(99,102,241,0.40), inset 0 1px 0 rgba(255,255,255,0.18)",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.03)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+            >
+              <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+              Create Project
+            </button>
+          </div>
+        </div>
+
+        {/* Kanban columns */}
+        <div className="flex-1 overflow-auto p-5">
+          {loading ? (
+            <div className="grid grid-cols-3 gap-5">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <div className="skeleton h-8 rounded-xl" />
+                  {Array.from({ length: 2 }).map((_, j) => (
+                    <div key={j} className="skeleton h-[170px] rounded-[16px]" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-5">
+              {COLUMNS.map((col) => {
+                const colProjects = columnMap[col.id] ?? [];
+                return (
+                  <div key={col.id}>
+
+                    {/* Column header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full shrink-0"
+                          style={{ background: col.accent, boxShadow: `0 0 6px ${col.accent}88` }} />
+                        <span className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>
+                          {col.label}
+                        </span>
+                        <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ background: col.accent + "20", color: col.accent }}>
+                          {colProjects.length}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => openCreate(col.statuses[0])}
+                        className="w-6 h-6 rounded-[8px] flex items-center justify-center"
+                        style={{
+                          background: col.accent + "20",
+                          color: col.accent,
+                          transition: "background 0.15s, transform 0.15s",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.background = col.accent + "35";
+                          (e.currentTarget as HTMLElement).style.transform = "scale(1.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.background = col.accent + "20";
+                          (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                        }}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="space-y-3">
+                      <AnimatePresence>
+                        {colProjects.map((p, i) => (
+                          <ProjectCard key={p.id} project={p} index={i} />
+                        ))}
+                      </AnimatePresence>
+
+                      {/* Empty drop zone */}
+                      {colProjects.length === 0 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          onClick={() => openCreate(col.statuses[0])}
+                          className="rounded-[14px] border-2 border-dashed p-6 flex flex-col items-center gap-2 cursor-pointer"
+                          style={{
+                            borderColor: "var(--border)",
+                            color: "var(--text-subtle)",
+                            transition: "border-color 0.15s, color 0.15s",
+                          }}
+                          onMouseEnter={(e) => {
+                            const el = e.currentTarget as HTMLElement;
+                            el.style.borderColor = col.accent + "55";
+                            el.style.color = col.accent;
+                          }}
+                          onMouseLeave={(e) => {
+                            const el = e.currentTarget as HTMLElement;
+                            el.style.borderColor = "var(--border)";
+                            el.style.color = "var(--text-subtle)";
+                          }}
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="text-[11px] font-semibold">Add project</span>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
-
-        <div className="ml-auto flex items-center gap-1.5 p-1 rounded-[10px]"
-          style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
-          {[
-            { v: "grid", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
-            { v: "list", icon: <List className="w-3.5 h-3.5" /> }
-          ].map(({ v, icon }) => (
-            <button key={v} onClick={() => setView(v as "grid" | "list")}
-              className="flex items-center justify-center w-7 h-7 rounded-[8px] transition-all"
-              style={{
-                background: view === v ? "var(--bg-card)" : "transparent",
-                color: view === v ? "var(--text-foreground)" : "var(--text-subtle)",
-                boxShadow: view === v ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
-              }}>
-              {icon}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* ── Content ── */}
-      {loading ? (
-        <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" : "space-y-1"}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className={`skeleton rounded-[20px] ${view === "grid" ? "h-[230px]" : "h-12"}`} />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={<FolderKanban className="w-6 h-6" />}
-          title={search || statusFilter ? "No matching projects" : "No projects yet"}
-          description={search || statusFilter ? "Try a different search or filter." : "Create your first project to get started."}
-          action={!search && !statusFilter ? (
-            <button onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 h-9 px-4 rounded-[12px] text-[13px] font-bold text-white"
-              style={{ background: "linear-gradient(135deg,#6366F1,#A78BFA)", boxShadow: "0 4px 16px rgba(99,102,241,0.35)" }}>
-              <Plus className="w-3.5 h-3.5" /> Create Project
-            </button>
-          ) : undefined}
-        />
-      ) : view === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((p, i) => <ProjectCard key={p.id} project={p} index={i} />)}
-        </div>
-      ) : (
-        <div className="rounded-[16px] overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-          <div className="flex items-center gap-4 px-4 py-3"
-            style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
-            <div className="w-2.5 shrink-0" />
-            <p className="flex-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-subtle)" }}>Project</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest w-[88px] text-center" style={{ color: "var(--text-subtle)" }}>Status</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest w-16 text-center" style={{ color: "var(--text-subtle)" }}>Tasks</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest w-12 text-center" style={{ color: "var(--text-subtle)" }}>Health</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest w-20 text-right" style={{ color: "var(--text-subtle)" }}>Deadline</p>
-            <div className="w-3.5 shrink-0" />
-          </div>
-          {filtered.map((p, i) => <ProjectRow key={p.id} project={p} index={i} />)}
-        </div>
-      )}
+      {/* ── Right sidebar panel ── */}
+      <div
+        className="w-[268px] shrink-0 overflow-y-auto p-4"
+        style={{ borderLeft: "1px solid var(--border)" }}
+      >
+        {!loading && <RightPanel projects={projects} />}
+      </div>
 
       {/* ── Create modal ── */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Project" size="md">
         <form onSubmit={createProject} className="p-6 space-y-4">
-          <Input label="Project Name" placeholder="e.g. Website Redesign" value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })} required autoFocus />
-          <Textarea label="Description" placeholder="What is this project about?" rows={2}
-            value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Input
+            label="Project Name"
+            placeholder="e.g. Website Redesign"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            autoFocus
+          />
+          <Textarea
+            label="Description"
+            placeholder="What is this project about?"
+            rows={2}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
           <div className="grid grid-cols-2 gap-3">
-            <Select label="Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
+            <Select
+              label="Column"
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
               options={[
-                { value: "PLANNING", label: "Planning" },
-                { value: "ACTIVE",   label: "Active"   },
-                { value: "ON_HOLD",  label: "On Hold"  },
-              ]} />
-            <Input label="Client Name" placeholder="Optional" value={form.clientName}
-              onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
+                { value: "PLANNING", label: "Started"   },
+                { value: "ACTIVE",   label: "On Going"  },
+                { value: "ON_HOLD",  label: "On Hold"   },
+              ]}
+            />
+            <Input
+              label="Client / Tag"
+              placeholder="Optional"
+              value={form.clientName}
+              onChange={(e) => setForm({ ...form, clientName: e.target.value })}
+            />
           </div>
-          <Input label="Deadline" type="date" value={form.deadline}
-            onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+          <Input
+            label="Deadline"
+            type="date"
+            value={form.deadline}
+            onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+          />
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-widest mb-2"
               style={{ color: "var(--text-subtle)" }}>Color</label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {PROJECT_COLORS.map((c) => (
                 <button key={c} type="button" onClick={() => setForm({ ...form, color: c })}
                   className="w-8 h-8 rounded-[10px] transition-all"
                   style={{
                     background: c,
-                    boxShadow: form.color === c ? `0 0 0 2px var(--bg-card), 0 0 0 4px ${c}, 0 0 12px ${c}60` : "none",
+                    boxShadow: form.color === c
+                      ? `0 0 0 2px var(--bg-card), 0 0 0 4px ${c}, 0 0 14px ${c}70`
+                      : "none",
                     transform: form.color === c ? "scale(1.18)" : "scale(1)",
                   }} />
               ))}
@@ -454,11 +615,11 @@ export default function ProjectsPage() {
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
               Cancel
             </button>
-            <button type="submit" disabled={creating}
+            <button type="submit" disabled={creating || !form.name.trim()}
               className="h-9 px-5 rounded-[10px] text-[13px] font-bold text-white flex items-center gap-2 disabled:opacity-60 transition-all"
               style={{
-                background: "linear-gradient(135deg, #6366F1, #A78BFA)",
-                boxShadow: creating ? "none" : "0 4px 20px rgba(99,102,241,0.40)",
+                background: "linear-gradient(135deg, #6366F1, #818CF8)",
+                boxShadow: creating ? "none" : "0 4px 16px rgba(99,102,241,0.40)",
               }}>
               {creating
                 ? <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
