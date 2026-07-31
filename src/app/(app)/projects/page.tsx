@@ -1,9 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import {
-  Plus, MoreHorizontal, FileText, MessageSquare,
-  Filter, CalendarDays, Users,
-} from "lucide-react";
+import { Plus, Search, X, ChevronRight, CalendarDays, Layers } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -19,141 +16,187 @@ const PROJECT_COLORS = [
   "#EF4444", "#EC4899", "#3B82F6", "#F97316",
 ];
 
-const AVATAR_COLORS = ["#6366F1", "#EC4899", "#F59E0B", "#10B981", "#06B6D4", "#A78BFA"];
+const STATUS_META: Record<string, { label: string; dot: string }> = {
+  PLANNING:  { label: "Planning",  dot: "#60A5FA" },
+  ACTIVE:    { label: "Active",    dot: "#4ADE80" },
+  ON_HOLD:   { label: "On Hold",   dot: "#FBBF24" },
+  COMPLETED: { label: "Completed", dot: "#22C55E" },
+};
 
-// Three Kanban columns — ON_HOLD projects surface in "On Going"
-const COLUMNS = [
-  { id: "PLANNING",  label: "Started",   accent: "#60A5FA", statuses: ["PLANNING"] },
-  { id: "ACTIVE",    label: "On Going",  accent: "#818CF8", statuses: ["ACTIVE", "ON_HOLD"] },
-  { id: "COMPLETED", label: "Completed", accent: "#22C55E", statuses: ["COMPLETED"] },
+const TABS = [
+  { id: "ALL",       label: "All" },
+  { id: "ACTIVE",    label: "Active" },
+  { id: "PLANNING",  label: "Planning" },
+  { id: "ON_HOLD",   label: "On Hold" },
+  { id: "COMPLETED", label: "Completed" },
 ];
 
-// ── Avatar stack ──────────────────────────────────────────────────────────────
-function AvatarStack({ seed, count }: { seed: string; count: number }) {
-  const shown = Math.min(Math.max(count, 2), 4);
+/* ── Mini progress arc ─────────────────────────────────────────────────────── */
+function MiniArc({ pct, color, index }: { pct: number; color: string; index: number }) {
+  const sz = 44, sw = 4.5, r = (sz - sw) / 2;
+  const circ = 2 * Math.PI * r;
   return (
-    <div className="flex items-center">
-      {Array.from({ length: shown }).map((_, i) => {
-        const charCode = seed.charCodeAt(i % seed.length) % AVATAR_COLORS.length;
-        return (
-          <div key={i}
-            className="w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center text-[8px] font-bold text-white"
-            style={{
-              background: AVATAR_COLORS[(charCode + i) % AVATAR_COLORS.length],
-              borderColor: "var(--bg-card)",
-              marginLeft: i === 0 ? 0 : -6,
-              zIndex: shown - i,
-              position: "relative",
-            }}>
-            {String.fromCharCode(65 + i)}
-          </div>
-        );
-      })}
-    </div>
+    <svg width={sz} height={sz} style={{ overflow: "visible", flexShrink: 0 }}>
+      <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" strokeWidth={sw} stroke="var(--bg-elevated)" />
+      <motion.circle
+        cx={sz / 2} cy={sz / 2} r={r} fill="none"
+        strokeWidth={sw} stroke={color} strokeLinecap="round"
+        strokeDasharray={circ}
+        initial={{ strokeDashoffset: circ }}
+        animate={{ strokeDashoffset: circ * (1 - Math.max(0, Math.min(100, pct)) / 100) }}
+        transition={{ duration: 1.1, ease: [0.4, 0, 0.2, 1], delay: index * 0.05 + 0.2 }}
+        transform={`rotate(-90 ${sz / 2} ${sz / 2})`}
+        style={{ filter: `drop-shadow(0 0 3px ${color}88)` }}
+      />
+      <text x={sz / 2} y={sz / 2 + 1} textAnchor="middle" dominantBaseline="middle"
+        style={{ fontSize: 10, fontWeight: 900, fill: "var(--text-foreground)", fontFamily: "inherit" }}>
+        {Math.round(pct)}
+      </text>
+    </svg>
   );
 }
 
-// ── Kanban project card ───────────────────────────────────────────────────────
+/* ── Project cover card ────────────────────────────────────────────────────── */
 function ProjectCard({ project, index }: { project: Project; index: number }) {
-  const progress = project.healthScore ?? 0;
-  const taskCount = project._count?.tasks ?? 0;
-  const commentCount = Math.max(0, taskCount - 1);
+  const sm     = STATUS_META[project.status] ?? { label: project.status, dot: "#94A3B8" };
+  const tasks  = project._count?.tasks ?? 0;
+  const health = project.healthScore ?? 0;
+
+  const safeDeadline = project.deadline ? new Date(project.deadline) : null;
+  const deadlineValid = safeDeadline && !isNaN(safeDeadline.getTime());
+  const daysLeft = deadlineValid ? differenceInDays(safeDeadline, new Date()) : null;
+  const isOverdue = daysLeft !== null && daysLeft < 0 && project.status !== "COMPLETED";
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      layout
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ delay: index * 0.045, duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
     >
-      <Link href={`/projects/${project.id}/board`}>
+      <Link href={`/projects/${project.id}/board`} style={{ textDecoration: "none", display: "block" }}>
         <div
-          className="rounded-[16px] p-4 cursor-pointer group"
           style={{
+            borderRadius: 20, overflow: "hidden",
             background: "var(--bg-card)",
             border: "1px solid var(--border)",
-            transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
+            boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+            transition: "box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease",
+            cursor: "pointer",
           }}
           onMouseEnter={(e) => {
             const el = e.currentTarget as HTMLElement;
+            el.style.boxShadow = `0 14px 44px rgba(0,0,0,0.14)`;
+            el.style.transform = "translateY(-4px)";
             el.style.borderColor = project.color + "55";
-            el.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)";
-            el.style.transform = "translateY(-2px)";
           }}
           onMouseLeave={(e) => {
             const el = e.currentTarget as HTMLElement;
-            el.style.borderColor = "var(--border)";
-            el.style.boxShadow = "none";
+            el.style.boxShadow = "0 1px 6px rgba(0,0,0,0.05)";
             el.style.transform = "none";
+            el.style.borderColor = "var(--border)";
           }}
         >
-          {/* Tag chip + overflow button */}
-          <div className="flex items-center justify-between mb-3">
-            <span
-              className="text-[10px] font-bold px-2.5 py-[3px] rounded-full"
-              style={{ background: project.color + "20", color: project.color }}
-            >
-              {project.clientName || "General"}
-            </span>
-            <button
-              onClick={(e) => e.preventDefault()}
-              className="w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}
-            >
-              <MoreHorizontal className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Title */}
-          <h3 className="text-[13px] font-bold mb-1.5 leading-snug truncate"
-            style={{ color: "var(--text-foreground)" }}>
-            {project.name}
-          </h3>
-
-          {/* Description */}
-          {project.description && (
-            <p className="text-[11px] mb-3 line-clamp-2 leading-relaxed"
-              style={{ color: "var(--text-muted)" }}>
-              {project.description}
-            </p>
-          )}
-
-          {/* Progress bar */}
-          <div className="mb-3.5">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[9.5px] font-semibold uppercase tracking-wide"
-                style={{ color: "var(--text-subtle)" }}>Progress</span>
-              <span className="text-[10px] font-bold" style={{ color: project.color }}>
-                {Math.round(progress)}%
+          {/* ── Cover ───────────────────────────────────────────────── */}
+          <div style={{
+            height: 134,
+            background: `linear-gradient(140deg, ${project.color} 0%, ${project.color}bb 100%)`,
+            position: "relative", padding: "14px 16px",
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            {/* Dot-grid pattern */}
+            <div aria-hidden style={{
+              position: "absolute", inset: 0, pointerEvents: "none",
+              backgroundImage: "radial-gradient(rgba(255,255,255,0.13) 1px, transparent 1px)",
+              backgroundSize: "18px 18px",
+            }} />
+            {/* Top row: status + arrow */}
+            <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{
+                display: "flex", alignItems: "center", gap: 5,
+                fontSize: 9.5, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase",
+                padding: "4px 10px", borderRadius: 100,
+                background: "rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.92)",
+              }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: sm.dot, display: "block", flexShrink: 0 }} />
+                {sm.label}
               </span>
+              <ChevronRight style={{ width: 16, height: 16, color: "rgba(255,255,255,0.5)" }} />
             </div>
-            <div className="h-[5px] rounded-full overflow-hidden"
-              style={{ background: "var(--bg-elevated)" }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ delay: index * 0.05 + 0.25, duration: 0.8, ease: "easeOut" }}
-                className="h-full rounded-full"
-                style={{
-                  background: `linear-gradient(90deg, ${project.color}, ${project.color}99)`,
-                  boxShadow: `0 0 6px ${project.color}44`,
-                }}
-              />
+            {/* Project name */}
+            <div style={{ position: "relative" }}>
+              {project.clientName && (
+                <p style={{ fontSize: 9.5, fontWeight: 600, color: "rgba(255,255,255,0.6)", letterSpacing: "0.06em", marginBottom: 3 }}>
+                  {project.clientName}
+                </p>
+              )}
+              <h3 style={{
+                fontSize: 17, fontWeight: 900, color: "#ffffff",
+                lineHeight: 1.2, letterSpacing: "-0.02em",
+                textShadow: "0 1px 8px rgba(0,0,0,0.2)",
+              }}>
+                {project.name}
+              </h3>
             </div>
           </div>
 
-          {/* Bottom: avatars + file/comment counts */}
-          <div className="flex items-center justify-between">
-            <AvatarStack seed={project.id} count={taskCount} />
-            <div className="flex items-center gap-2.5">
-              <span className="flex items-center gap-1 text-[10px] font-semibold"
-                style={{ color: "var(--text-muted)" }}>
-                <FileText className="w-3 h-3" />
-                {taskCount}
-              </span>
-              <span className="flex items-center gap-1 text-[10px] font-semibold"
-                style={{ color: "var(--text-muted)" }}>
-                <MessageSquare className="w-3 h-3" />
-                {commentCount}
+          {/* ── Body ────────────────────────────────────────────────── */}
+          <div style={{ padding: "15px 16px 16px" }}>
+            {/* Description */}
+            {project.description ? (
+              <p style={{
+                fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 14,
+                display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+              }}>
+                {project.description}
+              </p>
+            ) : (
+              <div style={{ height: 8 }} />
+            )}
+
+            {/* Health + deadline row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              {/* Arc + labels */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <MiniArc pct={health} color={project.color} index={index} />
+                <div>
+                  <p style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-subtle)", marginBottom: 2 }}>Health</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <Layers style={{ width: 10, height: 10, color: "var(--text-subtle)" }} />
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>{tasks} task{tasks !== 1 ? "s" : ""}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Deadline badge */}
+              {deadlineValid ? (
+                <div style={{
+                  padding: "5px 10px", borderRadius: 10, textAlign: "right",
+                  background: isOverdue ? "rgba(239,68,68,0.08)" : daysLeft! <= 7 ? "rgba(245,158,11,0.08)" : "var(--bg-elevated)",
+                }}>
+                  <p style={{
+                    fontSize: 9.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
+                    color: isOverdue ? "#EF4444" : daysLeft! <= 7 ? "#F59E0B" : "var(--text-subtle)",
+                  }}>
+                    {isOverdue ? "Overdue" : daysLeft === 0 ? "Due today" : `${daysLeft}d left`}
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 2, justifyContent: "flex-end" }}>
+                    <CalendarDays style={{ width: 9, height: 9, color: "var(--text-subtle)" }} />
+                    <p style={{ fontSize: 10, fontWeight: 500, color: "var(--text-muted)" }}>
+                      {format(safeDeadline!, "MMM d")}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ fontSize: 10, color: "var(--text-subtle)", padding: "5px 10px", background: "var(--bg-elevated)", borderRadius: 10 }}>No deadline</p>
+              )}
+            </div>
+
+            {/* Footer divider + open link */}
+            <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 12, display: "flex", justifyContent: "flex-end" }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: project.color }}>
+                Open board →
               </span>
             </div>
           </div>
@@ -163,202 +206,32 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
   );
 }
 
-// ── Sidebar donut ring ────────────────────────────────────────────────────────
-function DonutRing({ pct }: { pct: number }) {
-  const size = 128;
-  const stroke = 14;
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-
+/* ── Stat chip ─────────────────────────────────────────────────────────────── */
+function StatChip({ label, value, color, sub }: { label: string; value: number; color: string; sub?: string }) {
   return (
-    <svg width={size} height={size} style={{ overflow: "visible" }}>
-      <defs>
-        <linearGradient id="dring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6366F1" />
-          <stop offset="100%" stopColor="#22C55E" />
-        </linearGradient>
-        <filter id="dring-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-      <circle cx={size / 2} cy={size / 2} r={r}
-        fill="none" strokeWidth={stroke} stroke="var(--bg-elevated)" />
-      <motion.circle cx={size / 2} cy={size / 2} r={r}
-        fill="none"
-        strokeWidth={stroke}
-        stroke="url(#dring-grad)"
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        initial={{ strokeDashoffset: circ }}
-        animate={{ strokeDashoffset: circ * (1 - pct / 100) }}
-        transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        filter="url(#dring-glow)"
-      />
-      <text x={size / 2} y={size / 2 - 6} textAnchor="middle" dominantBaseline="middle"
-        style={{ fontSize: 24, fontWeight: 900, fill: "var(--text-foreground)", fontFamily: "inherit" }}>
-        {Math.round(pct)}%
-      </text>
-      <text x={size / 2} y={size / 2 + 14} textAnchor="middle" dominantBaseline="middle"
-        style={{ fontSize: 9.5, fontWeight: 600, fill: "var(--text-muted)", fontFamily: "inherit",
-          textTransform: "uppercase", letterSpacing: "0.08em" }}>
-        Complete
-      </text>
-    </svg>
-  );
-}
-
-// ── Right sidebar panel ───────────────────────────────────────────────────────
-function RightPanel({ projects }: { projects: Project[] }) {
-  const total      = projects.length;
-  const completed  = projects.filter((p) => p.status === "COMPLETED").length;
-  const inProgress = projects.filter((p) => p.status === "ACTIVE").length;
-  const waiting    = projects.filter((p) => ["PLANNING", "ON_HOLD"].includes(p.status)).length;
-  const pct        = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  const stats = [
-    { label: "Total",       value: total,      color: "#6366F1" },
-    { label: "Completed",   value: completed,  color: "#22C55E" },
-    { label: "In Progress", value: inProgress, color: "#818CF8" },
-    { label: "Waiting",     value: waiting,    color: "#FBBF24" },
-  ];
-
-  const upcoming = projects
-    .filter((p) => p.deadline && p.status !== "COMPLETED")
-    .map((p) => ({
-      ...p,
-      daysLeft: differenceInDays(new Date(p.deadline!), new Date()),
-    }))
-    .filter((p) => p.daysLeft >= 0)
-    .sort((a, b) => a.daysLeft - b.daysLeft)[0];
-
-  return (
-    <div className="flex flex-col gap-4">
-
-      {/* Team strip */}
-      <div className="rounded-[18px] p-4"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-        <div className="flex items-center gap-1.5 mb-3">
-          <Users className="w-3.5 h-3.5" style={{ color: "var(--text-subtle)" }} />
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-subtle)" }}>
-            Team
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {AVATAR_COLORS.slice(0, 5).map((c, i) => (
-            <div key={i}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-              style={{ background: c, border: "2px solid var(--bg-card)" }}>
-              {String.fromCharCode(65 + i)}
-            </div>
-          ))}
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: "var(--bg-elevated)", border: "2px dashed var(--border)" }}>
-            <Plus className="w-3 h-3" style={{ color: "var(--text-subtle)" }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Donut overview */}
-      <div className="rounded-[18px] p-4 flex flex-col items-center"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-        <p className="text-[10px] font-bold uppercase tracking-widest mb-4 self-start"
-          style={{ color: "var(--text-subtle)" }}>Overview</p>
-        <DonutRing pct={pct} />
-      </div>
-
-      {/* Stat tiles 2×2 grid */}
-      <div className="rounded-[18px] p-4"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-        <p className="text-[10px] font-bold uppercase tracking-widest mb-3"
-          style={{ color: "var(--text-subtle)" }}>Statistics</p>
-        <div className="grid grid-cols-2 gap-2">
-          {stats.map((s, i) => (
-            <motion.div key={s.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.07 + 0.2, duration: 0.3 }}
-              className="rounded-[12px] p-3"
-              style={{
-                background: "var(--bg-elevated)",
-                borderLeft: `3px solid ${s.color}`,
-              }}>
-              <p className="text-[20px] font-black leading-none mb-0.5" style={{ color: s.color }}>
-                {s.value}
-              </p>
-              <p className="text-[9.5px] font-medium" style={{ color: "var(--text-muted)" }}>
-                {s.label}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Upcoming deadline */}
-      <div className="rounded-[18px] p-4"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-        <div className="flex items-center gap-1.5 mb-3">
-          <CalendarDays className="w-3.5 h-3.5" style={{ color: "var(--text-subtle)" }} />
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--text-subtle)" }}>
-            Upcoming
-          </p>
-        </div>
-        {upcoming ? (
-          <div className="flex items-center gap-3 p-2.5 rounded-[10px]"
-            style={{ background: "var(--bg-elevated)" }}>
-            <div className="w-9 h-9 rounded-[10px] flex flex-col items-center justify-center text-white text-center shrink-0"
-              style={{ background: `linear-gradient(135deg, ${upcoming.color}, ${upcoming.color}99)` }}>
-              <span className="text-[7px] font-bold leading-none uppercase">
-                {format(new Date(upcoming.deadline!), "MMM")}
-              </span>
-              <span className="text-[14px] font-black leading-none">
-                {format(new Date(upcoming.deadline!), "d")}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11.5px] font-bold truncate" style={{ color: "var(--text-foreground)" }}>
-                {upcoming.name}
-              </p>
-              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                {upcoming.daysLeft === 0 ? "Due today" : `${upcoming.daysLeft}d left`}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>No upcoming deadlines</p>
-        )}
-      </div>
-
-      {/* Quick note */}
-      <div className="rounded-[18px] p-4"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-        <p className="text-[10px] font-bold uppercase tracking-widest mb-3"
-          style={{ color: "var(--text-subtle)" }}>Quick Note</p>
-        <textarea
-          placeholder="Jot something down…"
-          rows={3}
-          className="w-full rounded-[10px] px-3 py-2 text-[11.5px] resize-none focus:outline-none transition-all"
-          style={{
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--border-subtle)",
-            color: "var(--text-foreground)",
-            lineHeight: 1.6,
-          }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
-        />
-      </div>
+    <div style={{
+      flex: 1, minWidth: 0, padding: "14px 18px", borderRadius: 16,
+      background: "var(--bg-card)", border: "1px solid var(--border)",
+    }}>
+      <p style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", color, fontVariantNumeric: "tabular-nums", lineHeight: 1, marginBottom: 4 }}>
+        {value}
+      </p>
+      <p style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-subtle)" }}>
+        {label}
+      </p>
+      {sub && <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{sub}</p>}
     </div>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+/* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function ProjectsPage() {
-  const [projects, setProjects]     = useState<Project[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating]     = useState(false);
+  const [projects,    setProjects]    = useState<Project[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [showCreate,  setShowCreate]  = useState(false);
+  const [creating,    setCreating]    = useState(false);
+  const [activeTab,   setActiveTab]   = useState("ALL");
+  const [search,      setSearch]      = useState("");
   const [form, setForm] = useState({
     name: "", description: "", color: PROJECT_COLORS[0],
     clientName: "", deadline: "", status: "ACTIVE",
@@ -366,27 +239,42 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     fetch("/api/projects")
-      .then((r) => r.json())
-      .then((d) => { setProjects(d); setLoading(false); });
+      .then(r => r.json())
+      .then(d => { setProjects(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
-  const columnMap = useMemo(() => {
-    const map: Record<string, Project[]> = {};
-    for (const col of COLUMNS) map[col.id] = [];
-    for (const p of projects) {
-      const col = COLUMNS.find((c) => c.statuses.includes(p.status));
-      if (col) map[col.id].push(p);
-    }
-    return map;
-  }, [projects]);
+  const stats = useMemo(() => ({
+    total:     projects.length,
+    active:    projects.filter(p => p.status === "ACTIVE").length,
+    completed: projects.filter(p => p.status === "COMPLETED").length,
+    overdue:   projects.filter(p => {
+      if (!p.deadline || p.status === "COMPLETED") return false;
+      const dt = new Date(p.deadline);
+      return !isNaN(dt.getTime()) && differenceInDays(dt, new Date()) < 0;
+    }).length,
+  }), [projects]);
 
-  const openCreate = (status: string) => {
-    setForm((f) => ({ ...f, status }));
-    setShowCreate(true);
-  };
+  const filtered = useMemo(() => {
+    let list = projects;
+    if (activeTab !== "ALL") list = list.filter(p => p.status === activeTab);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.clientName ?? "").toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [projects, activeTab, search]);
+
+  const tabCount = (id: string) =>
+    id === "ALL" ? projects.length : projects.filter(p => p.status === id).length;
 
   const createProject = async (e: React.FormEvent) => {
-    e.preventDefault(); setCreating(true);
+    e.preventDefault();
+    setCreating(true);
     const res = await fetch("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -394,7 +282,7 @@ export default function ProjectsPage() {
     });
     if (res.ok) {
       const p = await res.json();
-      setProjects((prev) => [p, ...prev]);
+      setProjects(prev => [p, ...prev]);
       setShowCreate(false);
       setForm({ name: "", description: "", color: PROJECT_COLORS[0], clientName: "", deadline: "", status: "ACTIVE" });
       toast.success("Project created");
@@ -405,150 +293,215 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="flex overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
+    <div style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-      {/* ── Kanban main area ── */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 shrink-0"
-          style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-          <h1 className="text-[20px] font-black tracking-[-0.03em]"
-            style={{ color: "var(--text-foreground)" }}>
+      {/* ── Page header ──────────────────────────────────────────────── */}
+      <div style={{
+        flexShrink: 0,
+        background: "var(--bg-base)",
+        borderBottom: "1px solid var(--border-subtle)",
+        padding: "0 32px",
+      }}>
+        {/* Title row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0 14px" }}>
+          <h1 style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.03em", color: "var(--text-foreground)" }}>
             Projects
           </h1>
-          <div className="flex items-center gap-2">
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Search */}
+            <div style={{ position: "relative" }}>
+              <Search style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 13, height: 13, color: "var(--text-subtle)", pointerEvents: "none" }} />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search…"
+                style={{
+                  paddingLeft: 30, paddingRight: search ? 28 : 12, height: 34,
+                  borderRadius: 11, fontSize: 12.5, fontWeight: 500, width: 180,
+                  background: "var(--bg-elevated)", border: "1px solid var(--border)",
+                  color: "var(--text-foreground)", outline: "none",
+                  transition: "border-color 0.15s, width 0.18s ease",
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.45)"; e.currentTarget.style.width = "220px"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.width = "180px"; }}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-subtle)", display: "flex" }}>
+                  <X style={{ width: 11, height: 11 }} />
+                </button>
+              )}
+            </div>
+            {/* New project */}
             <button
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-colors"
-              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
-            >
-              <Filter className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => openCreate("ACTIVE")}
-              className="flex items-center gap-2 h-9 px-4 rounded-[12px] text-[13px] font-bold text-white transition-transform"
+              onClick={() => setShowCreate(true)}
               style={{
+                display: "flex", alignItems: "center", gap: 7,
+                height: 34, padding: "0 15px", borderRadius: 11,
+                fontSize: 13, fontWeight: 700, color: "#fff", border: "none", cursor: "pointer",
                 background: "linear-gradient(135deg, #6366F1 0%, #818CF8 100%)",
-                boxShadow: "0 4px 16px rgba(99,102,241,0.40), inset 0 1px 0 rgba(255,255,255,0.18)",
+                boxShadow: "0 4px 14px rgba(99,102,241,0.38)",
+                transition: "transform 0.15s, box-shadow 0.15s",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.03)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1.04)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(99,102,241,0.5)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 14px rgba(99,102,241,0.38)"; }}
             >
-              <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
-              Create Project
+              <Plus style={{ width: 14, height: 14, strokeWidth: 2.5 }} />
+              New Project
             </button>
           </div>
         </div>
 
-        {/* Kanban columns */}
-        <div className="flex-1 overflow-auto p-5">
-          {loading ? (
-            <div className="grid grid-cols-3 gap-5">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="space-y-3">
-                  <div className="skeleton h-8 rounded-xl" />
-                  {Array.from({ length: 2 }).map((_, j) => (
-                    <div key={j} className="skeleton h-[170px] rounded-[16px]" />
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-5">
-              {COLUMNS.map((col) => {
-                const colProjects = columnMap[col.id] ?? [];
-                return (
-                  <div key={col.id}>
-
-                    {/* Column header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full shrink-0"
-                          style={{ background: col.accent, boxShadow: `0 0 6px ${col.accent}88` }} />
-                        <span className="text-[13px] font-bold" style={{ color: "var(--text-foreground)" }}>
-                          {col.label}
-                        </span>
-                        <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: col.accent + "20", color: col.accent }}>
-                          {colProjects.length}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => openCreate(col.statuses[0])}
-                        className="w-6 h-6 rounded-[8px] flex items-center justify-center"
-                        style={{
-                          background: col.accent + "20",
-                          color: col.accent,
-                          transition: "background 0.15s, transform 0.15s",
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLElement).style.background = col.accent + "35";
-                          (e.currentTarget as HTMLElement).style.transform = "scale(1.1)";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLElement).style.background = col.accent + "20";
-                          (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                        }}
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Cards */}
-                    <div className="space-y-3">
-                      <AnimatePresence>
-                        {colProjects.map((p, i) => (
-                          <ProjectCard key={p.id} project={p} index={i} />
-                        ))}
-                      </AnimatePresence>
-
-                      {/* Empty drop zone */}
-                      {colProjects.length === 0 && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          onClick={() => openCreate(col.statuses[0])}
-                          className="rounded-[14px] border-2 border-dashed p-6 flex flex-col items-center gap-2 cursor-pointer"
-                          style={{
-                            borderColor: "var(--border)",
-                            color: "var(--text-subtle)",
-                            transition: "border-color 0.15s, color 0.15s",
-                          }}
-                          onMouseEnter={(e) => {
-                            const el = e.currentTarget as HTMLElement;
-                            el.style.borderColor = col.accent + "55";
-                            el.style.color = col.accent;
-                          }}
-                          onMouseLeave={(e) => {
-                            const el = e.currentTarget as HTMLElement;
-                            el.style.borderColor = "var(--border)";
-                            el.style.color = "var(--text-subtle)";
-                          }}
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span className="text-[11px] font-semibold">Add project</span>
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        {/* Status tabs */}
+        <div style={{ display: "flex", gap: 0 }}>
+          {TABS.map(tab => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "8px 14px", fontSize: 12.5,
+                  fontWeight: active ? 700 : 500,
+                  background: "none", border: "none", cursor: "pointer",
+                  color: active ? "var(--accent)" : "var(--text-muted)",
+                  borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
+                  marginBottom: -1, transition: "color 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {tab.label}
+                <span style={{
+                  fontSize: 9, fontWeight: 800, padding: "1.5px 6px", borderRadius: 100,
+                  background: active ? "rgba(99,102,241,0.1)" : "var(--bg-elevated)",
+                  color: active ? "var(--accent)" : "var(--text-subtle)",
+                }}>
+                  {tabCount(tab.id)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* ── Right sidebar panel ── */}
-      <div
-        className="w-[268px] shrink-0 overflow-y-auto p-4"
-        style={{ borderLeft: "1px solid var(--border)" }}
-      >
-        {!loading && <RightPanel projects={projects} />}
+      {/* ── Scrollable content ───────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px 32px 56px" }}>
+
+        {loading ? (
+          /* Skeleton */
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(288px, 1fr))", gap: 20 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ borderRadius: 20, overflow: "hidden", background: "var(--bg-card)", border: "1px solid var(--border)", animation: "pulse 1.8s ease-in-out infinite" }}>
+                <div style={{ height: 134, background: "var(--bg-elevated)" }} />
+                <div style={{ padding: "15px 16px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[80, 95, 60].map((w, j) => (
+                    <div key={j} style={{ height: 11, width: `${w}%`, borderRadius: 6, background: "var(--bg-elevated)" }} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Stats strip (only when browsing all) */}
+            <AnimatePresence>
+              {activeTab === "ALL" && !search && (
+                <motion.div
+                  key="stats"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.25 }}
+                  style={{ display: "flex", gap: 12, marginBottom: 28 }}
+                >
+                  <StatChip label="Total"     value={stats.total}     color="var(--text-foreground)" />
+                  <StatChip label="Active"    value={stats.active}    color="#818CF8" />
+                  <StatChip label="Completed" value={stats.completed} color="#22C55E" />
+                  <StatChip label="Overdue"   value={stats.overdue}   color={stats.overdue > 0 ? "#EF4444" : "var(--text-subtle)"} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Empty state */}
+            {filtered.length === 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                style={{ textAlign: "center", padding: "80px 0" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>
+                  {search ? "🔍" : "📁"}
+                </div>
+                <p style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-foreground)", marginBottom: 6 }}>
+                  {search ? `No results for "${search}"` : "No projects here yet"}
+                </p>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24 }}>
+                  {search ? "Try a different keyword" : "Create your first project to get started"}
+                </p>
+                {!search && (
+                  <button
+                    onClick={() => setShowCreate(true)}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 8,
+                      padding: "10px 20px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                      color: "#fff", background: "linear-gradient(135deg, #6366F1, #818CF8)",
+                      border: "none", cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.35)",
+                    }}>
+                    <Plus style={{ width: 14, height: 14 }} />
+                    New Project
+                  </button>
+                )}
+              </motion.div>
+            )}
+
+            {/* Project grid */}
+            {filtered.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(288px, 1fr))", gap: 20 }}>
+                <AnimatePresence mode="popLayout">
+                  {filtered.map((p, i) => (
+                    <ProjectCard key={p.id} project={p} index={i} />
+                  ))}
+                </AnimatePresence>
+
+                {/* Add project tile */}
+                <motion.div
+                  layout
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+                  onClick={() => setShowCreate(true)}
+                  style={{
+                    borderRadius: 20, border: "2px dashed var(--border)",
+                    minHeight: 134 + 130,
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10,
+                    cursor: "pointer", color: "var(--text-subtle)",
+                    transition: "border-color 0.15s, background 0.15s, color 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.borderColor = "rgba(99,102,241,0.4)";
+                    el.style.color = "var(--accent)";
+                    el.style.background = "rgba(99,102,241,0.03)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.borderColor = "var(--border)";
+                    el.style.color = "var(--text-subtle)";
+                    el.style.background = "transparent";
+                  }}
+                >
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, border: "2px dashed currentColor",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <Plus style={{ width: 18, height: 18 }} />
+                  </div>
+                  <span style={{ fontSize: 12.5, fontWeight: 600 }}>New Project</span>
+                </motion.div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* ── Create modal ── */}
+      {/* ── Create modal ──────────────────────────────────────────────── */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Project" size="md">
         <form onSubmit={createProject} className="p-6 space-y-4">
           <Input
@@ -568,13 +521,13 @@ export default function ProjectsPage() {
           />
           <div className="grid grid-cols-2 gap-3">
             <Select
-              label="Column"
+              label="Status"
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
               options={[
-                { value: "PLANNING", label: "Started"   },
-                { value: "ACTIVE",   label: "On Going"  },
-                { value: "ON_HOLD",  label: "On Hold"   },
+                { value: "PLANNING", label: "Planning" },
+                { value: "ACTIVE",   label: "Active"   },
+                { value: "ON_HOLD",  label: "On Hold"  },
               ]}
             />
             <Input
@@ -608,18 +561,22 @@ export default function ProjectsPage() {
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setShowCreate(false)}
+            <button
+              type="button" onClick={() => setShowCreate(false)}
               className="h-9 px-4 rounded-[10px] text-[13px] font-semibold transition-colors"
-              style={{ color: "var(--text-muted)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+              style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; }}>
               Cancel
             </button>
-            <button type="submit" disabled={creating || !form.name.trim()}
-              className="h-9 px-5 rounded-[10px] text-[13px] font-bold text-white flex items-center gap-2 disabled:opacity-60 transition-all"
+            <button
+              type="submit" disabled={creating || !form.name.trim()}
+              className="h-9 px-5 rounded-[10px] text-[13px] font-bold text-white flex items-center gap-2 disabled:opacity-60"
               style={{
                 background: "linear-gradient(135deg, #6366F1, #818CF8)",
-                boxShadow: creating ? "none" : "0 4px 16px rgba(99,102,241,0.40)",
+                boxShadow: creating ? "none" : "0 4px 14px rgba(99,102,241,0.38)",
+                border: "none", cursor: creating ? "wait" : "pointer",
+                transition: "box-shadow 0.15s",
               }}>
               {creating
                 ? <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
