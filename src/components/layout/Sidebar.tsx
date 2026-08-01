@@ -89,6 +89,11 @@ const itemVariant = {
   hidden: { opacity: 0, x: -10 },
   show:   { opacity: 1, x: 0, transition: { duration: 0.28, ease: "easeOut" as const } },
 };
+// Submenu container — animates height AND propagates "hidden"/"show" to NavLink children
+const submenuVariants = {
+  hidden: { height: 0, opacity: 0, transition: { duration: 0.16, ease: "easeInOut" as const } },
+  show:   { height: "auto", opacity: 1, transition: { duration: 0.18, ease: "easeInOut" as const, staggerChildren: 0.04, delayChildren: 0.04 } },
+};
 
 /* ── Always-dark sidebar palette ───────────────────────────────────────────── */
 const SB = {
@@ -397,10 +402,10 @@ export function Sidebar() {
               {(collapsed || open[section.key]) && (
                 <motion.div
                   key={section.key}
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.18, ease: "easeInOut" }}
+                  variants={submenuVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="hidden"
                   style={{ overflow: "hidden", marginTop: 2 }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
