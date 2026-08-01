@@ -758,6 +758,436 @@ function NextActionCard({ task, urgentCount }: { task: TaskWithProject; urgentCo
   );
 }
 
+/* ── Your Day Panel ─────────────────────────────────────────────────────── */
+function YourDayPanel({ tasks }: { tasks: TaskWithProject[] }) {
+  const active = tasks.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED");
+  if (!active.length) return null;
+  return (
+    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "18px 22px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div>
+          <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)" }}>Your Day</p>
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+            {active.length} task{active.length !== 1 ? "s" : ""} on your plate
+          </p>
+        </div>
+        <Link href="/tasks" style={{ fontSize: 9.5, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>View all →</Link>
+      </div>
+      <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }} className="no-scrollbar">
+        {active.slice(0, 7).map(task => {
+          const pri = PRI[task.priority] ?? PRI.MEDIUM;
+          const isOv = !!(task.dueDate && isPast(new Date(task.dueDate)));
+          const color = isOv ? "#EF4444" : pri.color;
+          return (
+            <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
+              style={{
+                display: "flex", flexDirection: "column", gap: 8,
+                minWidth: 168, maxWidth: 200, flexShrink: 0,
+                padding: "13px 14px", borderRadius: 16,
+                background: "var(--bg-elevated)",
+                border: `1.5px solid ${isOv ? "rgba(239,68,68,0.22)" : "var(--border)"}`,
+                textDecoration: "none",
+                transition: "transform 0.15s",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{
+                  fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase",
+                  padding: "2.5px 7px", borderRadius: 100,
+                  background: `${color}14`, color,
+                }}>
+                  {isOv ? "OVERDUE" : pri.label}
+                </span>
+                {task.priority === "URGENT" && <span style={{ fontSize: 12 }}>🔥</span>}
+              </div>
+              <p style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, color: "var(--text-foreground)" }}>
+                {task.title.length > 42 ? task.title.slice(0, 40) + "…" : task.title}
+              </p>
+              {task.project && (
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: task.project.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, color: "var(--text-subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {task.project.name}
+                  </span>
+                </div>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Wins Wall ───────────────────────────────────────────────────────────── */
+function WinsWall({ tasks }: { tasks: TaskWithProject[] }) {
+  if (!tasks.length) return null;
+  return (
+    <div style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.22)", borderRadius: 18, padding: "14px 20px" }}>
+      <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "#22C55E", marginBottom: 10 }}>
+        🏆 Completed today · {tasks.length}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {tasks.slice(0, 10).map(task => (
+          <div key={task.id} style={{
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "4px 10px 4px 7px", borderRadius: 100,
+            background: "rgba(34,197,94,0.09)", border: "1px solid rgba(34,197,94,0.18)",
+          }}>
+            <span style={{ fontSize: 10, color: "#22C55E", fontWeight: 900 }}>✓</span>
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-foreground)" }}>
+              {task.title.length > 32 ? task.title.slice(0, 30) + "…" : task.title}
+            </span>
+            {(task.assignee as { name?: string } | undefined)?.name && (
+              <span style={{ fontSize: 9.5, color: "var(--text-subtle)" }}>
+                · {((task.assignee as { name?: string }).name ?? "").split(" ")[0]}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Standup Block ───────────────────────────────────────────────────────── */
+function StandupBlock({ text, loading, onGenerate }: { text: string; loading: boolean; onGenerate: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
+  };
+  return (
+    <section>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <Label text="Daily Standup · AI" />
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {text && !loading && (
+            <button onClick={copy}
+              style={{ fontSize: 9.5, fontWeight: 700, color: copied ? "#22C55E" : "var(--text-subtle)", background: "none", border: "none", cursor: "pointer", transition: "color 0.2s" }}>
+              {copied ? "✓ Copied" : "Copy"}
+            </button>
+          )}
+          <button onClick={onGenerate} disabled={loading}
+            style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: "0.04em",
+              padding: "4px 10px", borderRadius: 8,
+              background: "var(--accent-muted)", color: "var(--accent)",
+              border: "1px solid var(--accent-glow)",
+              cursor: loading ? "wait" : "pointer", opacity: loading ? 0.6 : 1,
+            }}>
+            {loading ? "Generating…" : text ? "↺ Regenerate" : "✨ Generate"}
+          </button>
+        </div>
+      </div>
+      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "16px 20px" }}>
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[80, 65, 48].map((w, i) => (
+              <div key={i} className="animate-pulse"
+                style={{ height: 11, borderRadius: 4, background: "var(--bg-elevated)", width: `${w}%` }} />
+            ))}
+          </div>
+        ) : text ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {text.split("\n").filter(l => l.trim()).map((line, i) => {
+              const match = line.match(/^(Yesterday|Today|Blockers):\s*(.*)/i);
+              if (match) return (
+                <div key={i} style={{ marginTop: i > 0 ? 10 : 0 }}>
+                  <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 3 }}>
+                    {match[1]}
+                  </p>
+                  <p style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.55 }}>{match[2]}</p>
+                </div>
+              );
+              return (
+                <p key={i} style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                  {line.replace(/^[•·\-]\s*/, "").trim()}
+                </p>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 0" }}>
+            <div style={{ fontSize: 28, lineHeight: 1 }}>🎙️</div>
+            <p style={{ fontSize: 12, color: "var(--text-subtle)", textAlign: "center", maxWidth: 240 }}>
+              AI reads your tasks and writes your standup in seconds
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ── Burndown Chart ──────────────────────────────────────────────────────── */
+function BurndownChart({ data }: { data: { day: string; remaining: number; ideal: number }[] }) {
+  if (!data.length) return (
+    <p style={{ color: "var(--text-subtle)", fontSize: 12, textAlign: "center", padding: "40px 0" }}>No data yet</p>
+  );
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+        <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)" }}>
+          Task Burndown
+        </p>
+        <div style={{ display: "flex", gap: 14 }}>
+          {[{ label: "Remaining", color: "#F59E0B" }, { label: "Ideal", color: "#6B7280" }].map(l => (
+            <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ width: 16, height: 2, background: l.color, borderRadius: 1, display: "inline-block", opacity: l.label === "Ideal" ? 0.45 : 1 }} />
+              <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{l.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <ResponsiveContainer width="100%" height={150}>
+        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+          <defs>
+            <linearGradient id="gRemaining" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.28} />
+              <stop offset="100%" stopColor="#F59E0B" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} strokeDasharray="2 4" stroke="var(--border-subtle)" />
+          <XAxis dataKey="day" tick={{ fontSize: 9, fill: "var(--text-subtle)" }} tickLine={false} axisLine={false} interval={1} />
+          <YAxis tick={{ fontSize: 9, fill: "var(--text-subtle)" }} tickLine={false} axisLine={false} allowDecimals={false} />
+          <Tooltip content={<ChartTip />} cursor={{ stroke: "var(--border-strong)", strokeWidth: 1, strokeDasharray: "3 3" }} />
+          <Area type="monotone" dataKey="remaining" name="Remaining" stroke="#F59E0B" strokeWidth={2} fill="url(#gRemaining)" dot={false} />
+          <Area type="monotone" dataKey="ideal" name="Ideal" stroke="#6B7280" strokeWidth={1.5} strokeDasharray="4 3" fill="none" dot={false} opacity={0.5} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/* ── Team Pulse ──────────────────────────────────────────────────────────── */
+function TeamPulse({ data }: { data: { name: string; tasks: number }[] }) {
+  if (!data.length) return null;
+  const sorted   = [...data].sort((a, b) => b.tasks - a.tasks);
+  const maxTasks = Math.max(...sorted.map(d => d.tasks), 1);
+  const AVATAR_COLORS = ["#6366F1","#818CF8","#60A5FA","#34D399","#FBBF24","#F87171","#A78BFA","#F472B6"];
+
+  return (
+    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
+      <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 16 }}>
+        Team Pulse · {sorted.length} members
+      </p>
+      <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }} className="no-scrollbar">
+        {sorted.map((member, i) => {
+          const pct   = Math.round((member.tasks / maxTasks) * 100);
+          const inits = member.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+          const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+          const load  = pct >= 75 ? "high" : pct >= 35 ? "medium" : "low";
+          const lc    = load === "high" ? "#EF4444" : load === "medium" ? "#F59E0B" : "#22C55E";
+          return (
+            <div key={member.name} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              minWidth: 80, padding: "12px 10px", borderRadius: 16,
+              background: "var(--bg-elevated)", flexShrink: 0,
+            }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: `${color}20`, border: `2px solid ${color}44`,
+                fontSize: 12, fontWeight: 900, color,
+              }}>
+                {inits}
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "var(--text-foreground)", whiteSpace: "nowrap" }}>
+                  {member.name.split(" ")[0]}
+                </p>
+                <p style={{ fontSize: 20, fontWeight: 900, color: "var(--text-foreground)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
+                  {member.tasks}
+                </p>
+                <p style={{ fontSize: 8.5, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>tasks</p>
+              </div>
+              <div style={{
+                height: 3, width: "100%", background: "var(--bg-card)", borderRadius: 2, overflow: "hidden",
+              }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: lc, borderRadius: 2, transition: "width 0.8s" }} />
+              </div>
+              <span style={{
+                fontSize: 8, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase",
+                padding: "2px 6px", borderRadius: 100, background: `${lc}14`, color: lc,
+              }}>
+                {load}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Project Health Matrix ───────────────────────────────────────────────── */
+function HealthMatrix({ health, projects }: {
+  health: { name: string; score: number; color: string }[];
+  projects: Project[];
+}) {
+  const rows = health
+    .map(h => {
+      const proj = projects.find(p => p.name === h.name);
+      const tasks = proj?._count?.tasks ?? 0;
+      const pct   = Math.min(100, Math.max(0, h.score));
+      const hc    = pct >= 80 ? "#22C55E" : pct >= 55 ? "#F59E0B" : pct > 0 ? "#EF4444" : "#6B7280";
+      return { ...h, tasks, pct, hc, projId: proj?.id };
+    })
+    .filter(r => r.tasks > 0 || r.score > 0)
+    .sort((a, b) => b.pct - a.pct);
+
+  if (!rows.length) return null;
+
+  return (
+    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
+      <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 14 }}>
+        Project Health Matrix
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {rows.slice(0, 6).map((r, i) => (
+          <div key={i}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: r.color, flexShrink: 0, boxShadow: `0 0 5px ${r.color}` }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-foreground)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {r.name}
+              </span>
+              <span style={{ fontSize: 10, color: "var(--text-subtle)", flexShrink: 0 }}>{r.tasks} tasks</span>
+              <span style={{
+                fontSize: 11, fontWeight: 900, color: r.hc, minWidth: 32, textAlign: "right",
+                fontVariantNumeric: "tabular-nums",
+              }}>
+                {r.pct > 0 ? `${Math.round(r.pct)}` : "—"}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1, height: 5, background: "var(--bg-elevated)", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", width: `${r.pct}%`, background: r.hc,
+                  borderRadius: 3, transition: "width 1s cubic-bezier(0.4,0,0.2,1)",
+                }} />
+              </div>
+              <span style={{
+                fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
+                color: r.hc, minWidth: 32, textAlign: "right",
+              }}>
+                {r.pct >= 80 ? "good" : r.pct >= 55 ? "risk" : r.pct > 0 ? "critical" : "—"}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Quick Wins Panel ────────────────────────────────────────────────────── */
+function QuickWinsPanel({ tasks }: { tasks: TaskWithProject[] }) {
+  if (!tasks.length) return null;
+  return (
+    <section>
+      <Label text="Quick Wins" count={tasks.length} className="mb-3" />
+      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden" }}>
+        {tasks.slice(0, 5).map((task, i) => {
+          const pri = PRI[task.priority] ?? PRI.MEDIUM;
+          return (
+            <div key={task.id} style={{
+              display: "flex", alignItems: "center", gap: 9,
+              padding: "10px 14px",
+              borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: pri.color, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {task.title}
+                </p>
+                {task.project && (
+                  <p style={{ fontSize: 9.5, color: "var(--text-subtle)", marginTop: 1 }}>{task.project.name}</p>
+                )}
+              </div>
+              <span style={{
+                fontSize: 8.5, fontWeight: 800, padding: "2px 6px", borderRadius: 4,
+                background: `${pri.color}12`, color: pri.color, letterSpacing: "0.06em", flexShrink: 0,
+              }}>
+                {pri.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ── Velocity Prediction ─────────────────────────────────────────────────── */
+function VelocityPrediction({ data, totalTasks }: { data: { completed: number; created: number }[]; totalTasks: number }) {
+  if (data.length < 7) return null;
+  const recent      = data.slice(-7);
+  const avgCompleted = recent.reduce((s, r) => s + r.completed, 0) / 7;
+  const avgCreated   = recent.reduce((s, r) => s + r.created, 0) / 7;
+  const netPerDay    = avgCompleted - avgCreated;
+  if (netPerDay <= 0) return (
+    <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(239,68,68,0.1)", color: "#EF4444" }}>
+      Adding tasks faster than closing
+    </span>
+  );
+  const daysToEmpty = Math.ceil(totalTasks / netPerDay);
+  return (
+    <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(34,197,94,0.1)", color: "#22C55E" }}>
+      At pace: ~{daysToEmpty}d to clear backlog
+    </span>
+  );
+}
+
+/* ── Risk Detector ───────────────────────────────────────────────────────── */
+function RiskDetector({ projects, tasks }: {
+  projects: Project[];
+  tasks: TaskWithProject[];
+}) {
+  const risks: { level: "critical" | "warn"; title: string; detail: string }[] = [];
+
+  // Projects with no activity (0 tasks moved to done recently)
+  const stalePjs = projects.filter(p => (p._count?.tasks ?? 0) === 0);
+  if (stalePjs.length > 0) {
+    risks.push({ level: "warn", title: `${stalePjs.length} project${stalePjs.length > 1 ? "s" : ""} with no tasks`, detail: stalePjs.map(p => p.name).slice(0, 2).join(", ") });
+  }
+
+  // Overdue high-priority tasks
+  const overdueHigh = tasks.filter(t =>
+    t.dueDate && isPast(new Date(t.dueDate)) && (t.priority === "URGENT" || t.priority === "HIGH") && t.status !== "DONE"
+  );
+  if (overdueHigh.length > 0) {
+    risks.push({ level: "critical", title: `${overdueHigh.length} overdue high-priority task${overdueHigh.length > 1 ? "s" : ""}`, detail: overdueHigh.map(t => t.title).slice(0, 2).join(" · ") });
+  }
+
+  if (!risks.length) return null;
+
+  return (
+    <section>
+      <Label text="Risk Detector" count={risks.length} danger className="mb-3" />
+      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden" }}>
+        {risks.map((r, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 14px",
+            borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
+            background: r.level === "critical" ? "rgba(239,68,68,0.03)" : undefined,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 4,
+              background: r.level === "critical" ? "#EF4444" : "#F59E0B",
+              boxShadow: `0 0 6px ${r.level === "critical" ? "#EF444460" : "#F59E0B60"}`,
+            }} />
+            <div>
+              <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-foreground)", lineHeight: 1.3 }}>{r.title}</p>
+              <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2 }}>{r.detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  PAGE                                                                       */
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -774,8 +1204,11 @@ export default function DashboardPage() {
   const [loading,        setLoading]        = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showNLCreator,  setShowNLCreator]  = useState(false);
+  const [standupText,    setStandupText]    = useState("");
+  const [standupLoading, setStandupLoading] = useState(false);
 
-  const generating = useRef(false);
+  const generating        = useRef(false);
+  const standupGenerating = useRef(false);
 
   useEffect(() => {
     if (!localStorage.getItem("colliq_onboarded")) setShowOnboarding(true);
@@ -822,6 +1255,27 @@ export default function DashboardPage() {
     if (analyticsData && !generating.current) generateBrief();
   }, [analyticsData, generateBrief]);
 
+  const generateStandup = useCallback(async () => {
+    if (standupGenerating.current || !analyticsData) return;
+    standupGenerating.current = true;
+    setStandupLoading(true);
+    setStandupText("");
+    const d      = analyticsData;
+    const myWork = upcomingToday.filter(t => t.status !== "DONE").slice(0, 5);
+    const doneTasks = upcomingToday.filter(t => t.status === "DONE").slice(0, 3);
+    const prompt = `Write a professional daily standup update. Use exactly this format with these three labels:
+Yesterday: [1-2 sentences about completed work]
+Today: [1-2 sentences about planned work]
+Blockers: [blockers or "None"]
+
+Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).join(", ") + "." : ""} ${myWork.length > 0 ? "Working on: " + myWork.map(t => `${t.title} (${t.priority})`).join(", ") + "." : ""} ${d.overdueTasks > 0 ? `${d.overdueTasks} tasks overdue.` : ""} Keep it concise and professional, under 60 words total.`;
+    const result = await ask("/api/ai/assistant", { messages: [{ role: "user", content: prompt }] });
+    const text   = result && !result.includes("[Error:") ? result : "Failed to generate standup. Please try again.";
+    setStandupText(text);
+    setStandupLoading(false);
+    standupGenerating.current = false;
+  }, [analyticsData, upcomingToday, ask]);
+
   /* Trend deltas — split 14-day taskTrend into two 7-day halves */
   const trendDeltas = (() => {
     const trend = analyticsData?.taskTrend ?? [];
@@ -844,6 +1298,29 @@ export default function DashboardPage() {
     };
   })();
 
+  /* Wins today — recentTasks that are DONE */
+  const winsToday: TaskWithProject[] = analyticsData
+    ? ((analyticsData.recentTasks ?? []) as TaskWithProject[]).filter(t => t.status === "DONE").slice(0, 10)
+    : [];
+
+  /* Burndown data from taskTrend */
+  const burndownData = (() => {
+    const trend = analyticsData?.taskTrend ?? [];
+    if (!trend.length) return [];
+    const totalCompleted = trend.reduce((s, r) => s + r.completed, 0);
+    const idealPerDay    = totalCompleted / Math.max(trend.length - 1, 1);
+    let running = totalCompleted;
+    return trend.map((row, i) => {
+      running = Math.max(0, running - row.completed);
+      const dt = new Date(row.date);
+      return {
+        day:       isNaN(dt.getTime()) ? row.date : format(dt, "MMM d"),
+        remaining: running,
+        ideal:     Math.max(0, Math.round(totalCompleted - idealPerDay * i)),
+      };
+    });
+  })();
+
   /* Derived */
   const actionFeed: TaskWithProject[] = upcomingToday
     .filter(t => t.status !== "DONE" && t.status !== "ARCHIVED")
@@ -854,6 +1331,10 @@ export default function DashboardPage() {
       return (PRIORITY_ORDER[a.priority] ?? 2) - (PRIORITY_ORDER[b.priority] ?? 2);
     })
     .slice(0, 7);
+
+  const quickWins: TaskWithProject[] = actionFeed
+    .filter(t => t.priority === "URGENT" || t.priority === "HIGH")
+    .slice(0, 5);
 
   const urgentCount = actionFeed.filter(t =>
     t.priority === "URGENT" || (t.dueDate && isPast(new Date(t.dueDate)))
@@ -953,9 +1434,25 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* ════ YOUR DAY ════ */}
+        <div className="mb-4">
+          <YourDayPanel tasks={upcomingToday} />
+        </div>
+
+        {/* ════ WINS WALL ════ */}
+        {winsToday.length > 0 && (
+          <div className="mb-4">
+            <WinsWall tasks={winsToday} />
+          </div>
+        )}
+
         {/* ════ VELOCITY + STATUS DONUT ════ */}
         <div className="grid grid-cols-[1fr_300px] gap-4 mb-4">
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+              <div />
+              <VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />
+            </div>
             <VelocityChart data={d.taskTrend ?? []} />
           </div>
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 20px" }}>
@@ -963,25 +1460,32 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ════ PRIORITY + TEAM ACTIVITY ════ */}
-        {(hasPriorityData || hasTeamData) && (
-          <div
-            className="mb-8"
-            style={{ display: "grid", gridTemplateColumns: hasPriorityData && hasTeamData ? "1fr 1fr" : "1fr", gap: 16 }}
-          >
-            {hasPriorityData && (
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-                <PriorityBars data={d.tasksByPriority ?? {}} />
-              </div>
-            )}
-            {hasTeamData && (
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-                <TeamBars data={d.teamActivity ?? []} />
-              </div>
-            )}
+        {/* ════ BURNDOWN + PRIORITY ════ */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
+            <BurndownChart data={burndownData} />
           </div>
-        )}
-        {!(hasPriorityData || hasTeamData) && <div className="mb-8" />}
+          {hasPriorityData ? (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
+              <PriorityBars data={d.tasksByPriority ?? {}} />
+            </div>
+          ) : (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
+              <StatusDonut data={d.tasksByStatus ?? {}} />
+            </div>
+          )}
+        </div>
+
+        {/* ════ HEALTH MATRIX + TEAM PULSE ════ */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          {hasHealthData && (
+            <HealthMatrix health={d.projectHealth ?? []} projects={projects} />
+          )}
+          {hasTeamData && (
+            <TeamPulse data={d.teamActivity ?? []} />
+          )}
+          {!hasHealthData && !hasTeamData && <div />}
+        </div>
 
         {/* ════ BODY — two column ════ */}
         <div className="grid grid-cols-[1fr_300px] gap-10 items-start">
@@ -1006,6 +1510,12 @@ export default function DashboardPage() {
                 </div>
               </section>
             )}
+
+            {/* STANDUP GENERATOR */}
+            <StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} />
+
+            {/* RISK DETECTOR */}
+            <RiskDetector projects={projects} tasks={upcomingToday} />
 
             {/* PROJECT ROADMAP */}
             {hasHealthData && (
@@ -1098,6 +1608,14 @@ export default function DashboardPage() {
             </section>
 
             <Divider />
+
+            {/* QUICK WINS */}
+            {quickWins.length > 0 && (
+              <>
+                <QuickWinsPanel tasks={quickWins} />
+                <Divider />
+              </>
+            )}
 
             {/* QUICK ACTIONS */}
             <section>
