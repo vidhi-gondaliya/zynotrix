@@ -1,10 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Search, X, ChevronRight, CalendarDays, Layers } from "lucide-react";
-import { Modal } from "@/components/ui/Modal";
-import { Input } from "@/components/ui/Input";
-import { Textarea } from "@/components/ui/Textarea";
-import { Select } from "@/components/ui/Select";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Project } from "@/types";
 import Link from "next/link";
@@ -226,16 +223,11 @@ function StatChip({ label, value, color, sub }: { label: string; value: number; 
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 export default function ProjectsPage() {
+  const router = useRouter();
   const [projects,    setProjects]    = useState<Project[]>([]);
   const [loading,     setLoading]     = useState(true);
-  const [showCreate,  setShowCreate]  = useState(false);
-  const [creating,    setCreating]    = useState(false);
   const [activeTab,   setActiveTab]   = useState("ALL");
   const [search,      setSearch]      = useState("");
-  const [form, setForm] = useState({
-    name: "", description: "", color: PROJECT_COLORS[0],
-    clientName: "", deadline: "", status: "ACTIVE",
-  });
 
   useEffect(() => {
     fetch("/api/projects")
@@ -272,25 +264,6 @@ export default function ProjectsPage() {
   const tabCount = (id: string) =>
     id === "ALL" ? projects.length : projects.filter(p => p.status === id).length;
 
-  const createProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreating(true);
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      const p = await res.json();
-      setProjects(prev => [p, ...prev]);
-      setShowCreate(false);
-      setForm({ name: "", description: "", color: PROJECT_COLORS[0], clientName: "", deadline: "", status: "ACTIVE" });
-      toast.success("Project created");
-    } else {
-      toast.error("Failed to create project");
-    }
-    setCreating(false);
-  };
 
   return (
     <div style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -335,7 +308,7 @@ export default function ProjectsPage() {
             </div>
             {/* New project */}
             <button
-              onClick={() => setShowCreate(true)}
+              onClick={() => router.push("/projects/new")}
               style={{
                 display: "flex", alignItems: "center", gap: 7,
                 height: 34, padding: "0 15px", borderRadius: 11,
@@ -439,7 +412,7 @@ export default function ProjectsPage() {
                 </p>
                 {!search && (
                   <button
-                    onClick={() => setShowCreate(true)}
+                    onClick={() => router.push("/projects/new")}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 8,
                       padding: "10px 20px", borderRadius: 12, fontSize: 13, fontWeight: 700,
@@ -466,7 +439,7 @@ export default function ProjectsPage() {
                 <motion.div
                   layout
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-                  onClick={() => setShowCreate(true)}
+                  onClick={() => router.push("/projects/new")}
                   style={{
                     borderRadius: 20, border: "2px dashed var(--border)",
                     minHeight: 134 + 130,
@@ -501,91 +474,6 @@ export default function ProjectsPage() {
         )}
       </div>
 
-      {/* ── Create modal ──────────────────────────────────────────────── */}
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Project" size="md">
-        <form onSubmit={createProject} className="p-6 space-y-4">
-          <Input
-            label="Project Name"
-            placeholder="e.g. Website Redesign"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            autoFocus
-          />
-          <Textarea
-            label="Description"
-            placeholder="What is this project about?"
-            rows={2}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              label="Status"
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-              options={[
-                { value: "PLANNING", label: "Planning" },
-                { value: "ACTIVE",   label: "Active"   },
-                { value: "ON_HOLD",  label: "On Hold"  },
-              ]}
-            />
-            <Input
-              label="Client / Tag"
-              placeholder="Optional"
-              value={form.clientName}
-              onChange={(e) => setForm({ ...form, clientName: e.target.value })}
-            />
-          </div>
-          <Input
-            label="Deadline"
-            type="date"
-            value={form.deadline}
-            onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-          />
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-widest mb-2"
-              style={{ color: "var(--text-subtle)" }}>Color</label>
-            <div className="flex gap-2 flex-wrap">
-              {PROJECT_COLORS.map((c) => (
-                <button key={c} type="button" onClick={() => setForm({ ...form, color: c })}
-                  className="w-8 h-8 rounded-[10px] transition-all"
-                  style={{
-                    background: c,
-                    boxShadow: form.color === c
-                      ? `0 0 0 2px var(--bg-card), 0 0 0 4px ${c}, 0 0 14px ${c}70`
-                      : "none",
-                    transform: form.color === c ? "scale(1.18)" : "scale(1)",
-                  }} />
-              ))}
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button" onClick={() => setShowCreate(false)}
-              className="h-9 px-4 rounded-[10px] text-[13px] font-semibold transition-colors"
-              style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; }}>
-              Cancel
-            </button>
-            <button
-              type="submit" disabled={creating || !form.name.trim()}
-              className="h-9 px-5 rounded-[10px] text-[13px] font-bold text-white flex items-center gap-2 disabled:opacity-60"
-              style={{
-                background: "linear-gradient(135deg, #6366F1, #818CF8)",
-                boxShadow: creating ? "none" : "0 4px 14px rgba(99,102,241,0.38)",
-                border: "none", cursor: creating ? "wait" : "pointer",
-                transition: "box-shadow 0.15s",
-              }}>
-              {creating
-                ? <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                : <Plus className="w-3.5 h-3.5" />}
-              {creating ? "Creating…" : "Create Project"}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }
