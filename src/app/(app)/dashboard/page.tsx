@@ -1385,6 +1385,31 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
   const hasPriorityData = Object.values(d.tasksByPriority ?? {}).some(v => v > 0);
   const hasHealthData   = (d.projectHealth ?? []).length > 0;
 
+  /* Merged risks: computed alerts + API alerts */
+  const allRisks: { level: "critical" | "warn"; title: string; detail: string }[] = [];
+
+  // Computed: overdue high-priority tasks
+  const overdueHigh = upcomingToday.filter(t =>
+    t.dueDate && isPast(new Date(t.dueDate)) &&
+    (t.priority === "URGENT" || t.priority === "HIGH") && t.status !== "DONE"
+  );
+  if (overdueHigh.length > 0) {
+    allRisks.push({ level: "critical", title: `${overdueHigh.length} overdue high-priority task${overdueHigh.length > 1 ? "s" : ""}`, detail: overdueHigh.map(t => t.title).slice(0, 2).join(" · ") });
+  }
+
+  // API alerts
+  if (d.alerts && d.alerts.length > 0) {
+    d.alerts.slice(0, 4).forEach((a: { severity: string; title: string; detail: string }) => {
+      allRisks.push({ level: a.severity === "critical" ? "critical" : "warn", title: a.title, detail: a.detail });
+    });
+  }
+
+  // Computed: stale projects
+  const stalePjs = projects.filter(p => (p._count?.tasks ?? 0) === 0);
+  if (stalePjs.length > 0) {
+    allRisks.push({ level: "warn", title: `${stalePjs.length} project${stalePjs.length > 1 ? "s" : ""} with no tasks`, detail: stalePjs.map(p => p.name).slice(0, 2).join(", ") });
+  }
+
   return (
     <>
       <NLTaskCreator open={showNLCreator} onClose={() => setShowNLCreator(false)} />
@@ -1410,49 +1435,15 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
         </div>
 
         {/* ════ KPI TILES ════ */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          <KpiTile
-            label="Active Projects"
-            value={d.activeProjects}
-            sub={`${d.totalProjects} total`}
-            accent="var(--accent)"
-            trend={trendDeltas.projects}
-          />
-          <KpiTile
-            label="Total Tasks"
-            value={d.totalTasks}
-            sub={`${d.activeTasks} in progress`}
-            trend={trendDeltas.tasks}
-          />
-          <KpiTile
-            label="Completion Rate"
-            value={`${d.completionRate}%`}
-            sub={`${d.completedTasks} tasks done`}
-            accent="#22C55E"
-            trend={trendDeltas.rate}
-          />
-          <KpiTile
-            label="Overdue"
-            value={d.overdueTasks}
-            sub={d.overdueTasks === 0 ? "all on track" : `${urgentCount > 0 ? urgentCount + " high priority" : "needs attention"}`}
-            accent={d.overdueTasks > 0 ? "#EF4444" : "#22C55E"}
-          />
+        <div className="grid grid-cols-4 gap-3 mb-5">
+          <KpiTile label="Active Projects" value={d.activeProjects} sub={`${d.totalProjects} total`}         accent="var(--accent)" trend={trendDeltas.projects} />
+          <KpiTile label="Total Tasks"     value={d.totalTasks}     sub={`${d.activeTasks} in progress`}                           trend={trendDeltas.tasks} />
+          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}  accent="#22C55E"       trend={trendDeltas.rate} />
+          <KpiTile label="Overdue"         value={d.overdueTasks}   sub={d.overdueTasks === 0 ? "all on track" : `${urgentCount > 0 ? urgentCount + " urgent" : "needs attention"}`} accent={d.overdueTasks > 0 ? "#EF4444" : "#22C55E"} />
         </div>
 
-        {/* ════ YOUR DAY ════ */}
-        <div className="mb-4">
-          <YourDayPanel tasks={upcomingToday} />
-        </div>
-
-        {/* ════ WINS WALL ════ */}
-        {winsToday.length > 0 && (
-          <div className="mb-4">
-            <WinsWall tasks={winsToday} />
-          </div>
-        )}
-
-        {/* ════ VELOCITY + STATUS DONUT ════ */}
-        <div className="grid grid-cols-[1fr_300px] gap-4 mb-4">
+        {/* ════ CHARTS — Row 1: Velocity + Status Donut ════ */}
+        <div className="grid grid-cols-[1fr_280px] gap-4 mb-4">
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
             <VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} />
           </div>
@@ -1461,38 +1452,30 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
           </div>
         </div>
 
-        {/* ════ BURNDOWN + PRIORITY ════ */}
+        {/* ════ CHARTS — Row 2: Burndown + Priority ════ */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
             <BurndownChart data={burndownData} />
           </div>
-          {hasPriorityData ? (
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-              <PriorityBars data={d.tasksByPriority ?? {}} />
-            </div>
-          ) : (
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-              <StatusDonut data={d.tasksByStatus ?? {}} />
-            </div>
-          )}
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
+            {hasPriorityData
+              ? <PriorityBars data={d.tasksByPriority ?? {}} />
+              : <StatusDonut data={d.tasksByStatus ?? {}} />}
+          </div>
         </div>
 
-        {/* ════ HEALTH MATRIX + TEAM PULSE ════ */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {hasHealthData && (
-            <HealthMatrix health={d.projectHealth ?? []} projects={projects} />
-          )}
-          {hasTeamData && (
+        {/* ════ TEAM PULSE — full width ════ */}
+        {hasTeamData && (
+          <div className="mb-5">
             <TeamPulse data={d.teamActivity ?? []} />
-          )}
-          {!hasHealthData && !hasTeamData && <div />}
-        </div>
+          </div>
+        )}
 
         {/* ════ BODY — two column ════ */}
-        <div className="grid grid-cols-[1fr_300px] gap-10 items-start">
+        <div className="grid grid-cols-[1fr_296px] gap-8 items-start">
 
           {/* ── LEFT ── */}
-          <div className="space-y-9">
+          <div className="space-y-8">
 
             {/* YOUR NEXT ACTION */}
             {actionFeed.length > 0 && (
@@ -1502,12 +1485,34 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
             {/* REQUIRES ACTION */}
             {actionFeed.length > 1 && (
               <section>
-                <div className="flex items-center justify-between mb-3">
-                  <Label text="Requires action" count={actionFeed.length - 1} danger={urgentCount > 1} />
-                </div>
-                <div className="rounded-2xl overflow-hidden"
-                  style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                <Label text="Requires Action" count={actionFeed.length - 1} danger={urgentCount > 1} className="mb-3" />
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
                   {actionFeed.slice(1).map((task, i) => <ActionRow key={task.id} task={task} index={i} />)}
+                </div>
+              </section>
+            )}
+
+            {/* AI BRIEF — promoted higher */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <Label text="AI Brief" />
+                <button onClick={() => generateBrief(true)} className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--text-subtle)" }}>
+                  Refresh
+                </button>
+              </div>
+              <div className="rounded-2xl px-5 py-4" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                <AiBrief text={briefText} loading={briefLoading} />
+              </div>
+            </section>
+
+            {/* ACTIVITY — promoted higher */}
+            {d.recentTasks && d.recentTasks.length > 0 && (
+              <section>
+                <Label text="Recent Activity" count={d.recentTasks.length} className="mb-3" />
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                  {(d.recentTasks as TaskWithProject[]).slice(0, 6).map((task, i) => (
+                    <ActivityRow key={task.id} task={task} index={i} />
+                  ))}
                 </div>
               </section>
             )}
@@ -1515,76 +1520,128 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
             {/* STANDUP GENERATOR */}
             <StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} />
 
-            {/* RISK DETECTOR */}
-            <RiskDetector projects={projects} tasks={upcomingToday} />
+            {/* RISKS — merged: computed + API alerts */}
+            {allRisks.length > 0 && (
+              <section>
+                <Label text="Risks" count={allRisks.length} danger={allRisks.some(r => r.level === "critical")} className="mb-3" />
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                  {allRisks.slice(0, 6).map((r, i) => (
+                    <div key={i} style={{
+                      display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 16px",
+                      borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
+                      background: r.level === "critical" ? "rgba(239,68,68,0.025)" : undefined,
+                    }}>
+                      <span style={{
+                        width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 5,
+                        background: r.level === "critical" ? "#EF4444" : "#F59E0B",
+                        boxShadow: `0 0 6px ${r.level === "critical" ? "#EF444450" : "#F59E0B50"}`,
+                      }} />
+                      <div className="flex-1 min-w-0">
+                        <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-foreground)", lineHeight: 1.35 }}>{r.title}</p>
+                        <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.detail}</p>
+                      </div>
+                      <span style={{
+                        fontSize: 8, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase",
+                        padding: "2px 7px", borderRadius: 100, flexShrink: 0,
+                        background: r.level === "critical" ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
+                        color: r.level === "critical" ? "#EF4444" : "#F59E0B",
+                      }}>
+                        {r.level}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* PROJECT ROADMAP */}
             {hasHealthData && (
               <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} />
             )}
 
-            {/* AI BRIEF */}
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <Label text="AI Brief" />
-                <button
-                  onClick={() => generateBrief(true)}
-                  className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity"
-                  style={{ color: "var(--text-subtle)" }}
-                >
-                  Refresh
-                </button>
-              </div>
-              <div className="rounded-2xl px-5 py-4"
-                style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                <AiBrief text={briefText} loading={briefLoading} />
-              </div>
-            </section>
-
-            {/* RISK WATCH */}
-            {d.alerts && d.alerts.length > 0 && (
-              <section>
-                <Label
-                  text="Risk watch"
-                  count={d.alerts.length}
-                  danger={!!(d.criticalAlertCount && d.criticalAlertCount > 0)}
-                  className="mb-3"
-                />
-                <div className="rounded-2xl overflow-hidden"
-                  style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {d.alerts.slice(0, 4).map((alert, i) => (
-                    <RiskRow key={alert.id} alert={alert} index={i} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* CHANGED WHILE AWAY */}
-            {d.recentTasks && d.recentTasks.length > 0 && (
-              <section>
-                <Label text="Changed while you were away" count={d.recentTasks.length} className="mb-3" />
-                <div className="rounded-2xl overflow-hidden"
-                  style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {(d.recentTasks as TaskWithProject[]).slice(0, 6).map((task, i) => (
-                    <ActivityRow key={task.id} task={task} index={i} />
-                  ))}
-                </div>
-              </section>
-            )}
           </div>
 
           {/* ── RIGHT ── */}
-          <div className="space-y-7">
+          <div className="space-y-6">
+
+            {/* YOUR DAY — moved from top of page */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <Label text="Your Day" count={upcomingToday.filter(t => t.status !== "DONE").length} />
+                <Link href="/tasks" className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--accent)" }}>All →</Link>
+              </div>
+              {upcomingToday.filter(t => t.status !== "DONE").length === 0 ? (
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: "20px 16px", textAlign: "center" }}>
+                  <p style={{ fontSize: 20, marginBottom: 6 }}>✅</p>
+                  <p style={{ fontSize: 12, color: "var(--text-subtle)", fontWeight: 600 }}>You're all caught up!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingToday.filter(t => t.status !== "DONE").slice(0, 5).map(task => {
+                    const pri   = PRI[task.priority] ?? PRI.MEDIUM;
+                    const isOv  = !!(task.dueDate && isPast(new Date(task.dueDate)));
+                    const color = isOv ? "#EF4444" : pri.color;
+                    return (
+                      <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
+                        style={{
+                          display: "flex", flexDirection: "column", gap: 5,
+                          padding: "11px 13px", borderRadius: 14,
+                          background: "var(--bg-card)",
+                          border: `1px solid ${isOv ? "rgba(239,68,68,0.2)" : "var(--border)"}`,
+                          textDecoration: "none",
+                          transition: "transform 0.12s",
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateX(2px)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                          <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", padding: "2px 6px", borderRadius: 100, background: `${color}14`, color }}>
+                            {isOv ? "OVERDUE" : pri.label}
+                          </span>
+                          {task.priority === "URGENT" && <span style={{ fontSize: 11 }}>🔥</span>}
+                        </div>
+                        <p style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.35, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {task.title}
+                        </p>
+                        {task.project && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ width: 5, height: 5, borderRadius: "50%", background: task.project.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: 9.5, color: "var(--text-subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.project.name}</span>
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* WINS TODAY — moved from top of page */}
+            {winsToday.length > 0 && (
+              <section>
+                <Label text="Wins Today" count={winsToday.length} className="mb-3" />
+                <div style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 16, padding: "12px 14px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {winsToday.slice(0, 4).map(task => (
+                      <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <span style={{ fontSize: 10, color: "#22C55E", fontWeight: 900, flexShrink: 0 }}>✓</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {task.title}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <Divider />
 
             {/* PROJECTS */}
             <section>
               <div className="flex items-center justify-between mb-3">
                 <Label text="Projects" />
-                <Link href="/projects"
-                  className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity"
-                  style={{ color: "var(--accent)" }}>
-                  All →
-                </Link>
+                <Link href="/projects" className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--accent)" }}>All →</Link>
               </div>
               <div className="space-y-px">
                 {projects.length === 0 ? (
@@ -1593,40 +1650,35 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                   <Link key={p.id} href={`/projects/${p.id}/board`}>
                     <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg -mx-2 cursor-pointer"
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}
-                    >
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}>
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color, boxShadow: `0 0 6px ${p.color}88` }} />
-                      <span className="flex-1 text-[12.5px] font-medium truncate" style={{ color: "var(--text-foreground)" }}>
-                        {p.name}
-                      </span>
-                      <span className="text-[10px] tabular-nums shrink-0" style={{ color: "var(--text-subtle)" }}>
-                        {p._count?.tasks ?? 0}
-                      </span>
+                      <span className="flex-1 text-[12.5px] font-medium truncate" style={{ color: "var(--text-foreground)" }}>{p.name}</span>
+                      <span className="text-[10px] tabular-nums shrink-0" style={{ color: "var(--text-subtle)" }}>{p._count?.tasks ?? 0}</span>
                     </div>
                   </Link>
                 ))}
               </div>
             </section>
 
-            <Divider />
-
             {/* QUICK WINS */}
             {quickWins.length > 0 && (
               <>
-                <QuickWinsPanel tasks={quickWins} />
                 <Divider />
+                <QuickWinsPanel tasks={quickWins} />
               </>
             )}
 
+            <Divider />
+
             {/* QUICK ACTIONS */}
             <section>
-              <Label text="Quick actions" className="mb-3" />
+              <Label text="Quick Actions" className="mb-3" />
               <div className="space-y-2">
-                <Action glyph="✦" label="New task with AI"     onClick={() => setShowNLCreator(true)} />
-                <Action glyph="⬡" label="Browse all projects"  href="/projects" />
-                <Action glyph="◉" label="Clock in / out"       href="/attendance" />
-                <Action glyph="⚡" label="AI assistant"         href="/ai/assistant" />
-                <Action glyph="📊" label="Team workload"        href="/workload" />
+                <Action glyph="✦" label="New task with AI"    onClick={() => setShowNLCreator(true)} />
+                <Action glyph="⬡" label="Browse all projects" href="/projects" />
+                <Action glyph="◉" label="Clock in / out"      href="/attendance" />
+                <Action glyph="⚡" label="AI assistant"        href="/ai/assistant" />
+                <Action glyph="📊" label="Team workload"       href="/workload" />
               </div>
             </section>
 
