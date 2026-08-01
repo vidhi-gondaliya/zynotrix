@@ -86,14 +86,30 @@ function ChartTip({ active, payload, label }: any) {
 }
 
 /* ── KPI tile ─────────────────────────────────────────────────────────────── */
-function KpiTile({ label, value, sub, accent }: { label: string; value: string | number; sub: string; accent?: string }) {
+function KpiTile({ label, value, sub, accent, trend }: {
+  label: string; value: string | number; sub: string; accent?: string; trend?: number;
+}) {
+  const hasTrend = trend !== undefined && trend !== 0;
+  const up = (trend ?? 0) > 0;
   return (
     <div style={{
       background: "var(--bg-card)",
       border: "1px solid var(--border)",
       borderRadius: 18,
       padding: "18px 20px",
+      position: "relative",
     }}>
+      {hasTrend && (
+        <span style={{
+          position: "absolute", top: 14, right: 14,
+          fontSize: 10, fontWeight: 800, letterSpacing: "0.04em",
+          padding: "3px 7px", borderRadius: 100,
+          background: up ? "rgba(34,197,94,0.13)" : "rgba(239,68,68,0.11)",
+          color: up ? "#22C55E" : "#EF4444",
+        }}>
+          {up ? "↑" : "↓"} {up ? "+" : ""}{trend}%
+        </span>
+      )}
       <p style={{ color: "var(--text-subtle)", fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", marginBottom: 8 }}>
         {label}
       </p>
@@ -101,6 +117,102 @@ function KpiTile({ label, value, sub, accent }: { label: string; value: string |
         {value}
       </p>
       <p style={{ color: "var(--text-muted)", fontSize: 11 }}>{sub}</p>
+    </div>
+  );
+}
+
+/* ── Hero Strip ───────────────────────────────────────────────────────────── */
+function HeroStrip({
+  greeting, firstName, urgentCount, tasksByStatus,
+}: {
+  greeting: string; firstName: string; urgentCount: number;
+  tasksByStatus: Record<string, number>;
+}) {
+  const chips = [
+    { label: "Active",     key: "IN_PROGRESS", color: "#6366F1", glow: "rgba(99,102,241,0.45)" },
+    { label: "Pending",    key: "TODO",         color: "#FBBF24", glow: "rgba(251,191,36,0.40)" },
+    { label: "In Review",  key: "IN_REVIEW",    color: "#60A5FA", glow: "rgba(96,165,250,0.40)" },
+    { label: "Completed",  key: "DONE",         color: "#22C55E", glow: "rgba(34,197,94,0.38)" },
+  ] as const;
+
+  return (
+    <div style={{
+      position: "relative", overflow: "hidden",
+      background: "linear-gradient(135deg, #0C0D26 0%, #11123A 50%, #0A0C22 100%)",
+      borderRadius: 22,
+      padding: "28px 32px",
+      marginBottom: 20,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 24,
+      minHeight: 110,
+    }}>
+      {/* Dot-grid texture */}
+      <div aria-hidden style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        backgroundImage: "radial-gradient(rgba(255,255,255,0.065) 1px, transparent 1px)",
+        backgroundSize: "22px 22px",
+      }} />
+      {/* Ambient orb */}
+      <div aria-hidden style={{
+        position: "absolute", top: -60, right: "30%",
+        width: 260, height: 260, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%)",
+        pointerEvents: "none",
+      }} />
+
+      {/* Left: greeting */}
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <p style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 5 }}>
+          {format(new Date(), "EEEE, MMMM d")}
+        </p>
+        <h1 style={{
+          fontSize: 26, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1.1,
+          background: "linear-gradient(120deg, #ffffff 10%, #a5b4fc 90%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+        }}>
+          Good {greeting}, {firstName}
+        </h1>
+        {urgentCount > 0 && (
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#FCA5A5", marginTop: 7, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 13 }}>⚡</span>
+            {urgentCount} urgent {urgentCount === 1 ? "task" : "tasks"} need{urgentCount === 1 ? "s" : ""} attention
+          </p>
+        )}
+      </div>
+
+      {/* Right: stat chips */}
+      <div style={{ position: "relative", display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        {chips.map(({ label, key, color, glow }) => {
+          const count = tasksByStatus[key] ?? 0;
+          return (
+            <div key={key} style={{
+              display: "flex", flexDirection: "column", alignItems: "center",
+              padding: "12px 18px",
+              borderRadius: 16,
+              background: "rgba(255,255,255,0.05)",
+              border: `1px solid rgba(255,255,255,0.09)`,
+              backdropFilter: "blur(8px)",
+              minWidth: 78,
+            }}>
+              <span style={{
+                fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1,
+                color, textShadow: `0 0 18px ${glow}`,
+                fontVariantNumeric: "tabular-nums",
+              }}>
+                {count}
+              </span>
+              <span style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
+                color: "rgba(255,255,255,0.38)", marginTop: 5,
+              }}>
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -710,6 +822,28 @@ export default function DashboardPage() {
     if (analyticsData && !generating.current) generateBrief();
   }, [analyticsData, generateBrief]);
 
+  /* Trend deltas — split 14-day taskTrend into two 7-day halves */
+  const trendDeltas = (() => {
+    const trend = analyticsData?.taskTrend ?? [];
+    if (trend.length < 2) return { projects: 0, tasks: 0, rate: 0, overdue: 0 };
+    const half = Math.floor(trend.length / 2);
+    const prev = trend.slice(0, half);
+    const curr = trend.slice(half);
+    const safeRate = (a: number, b: number) => b > 0 ? Math.round(((a - b) / b) * 100) : 0;
+    const sumCompleted = (arr: typeof trend) => arr.reduce((s, r) => s + r.completed, 0);
+    const sumCreated   = (arr: typeof trend) => arr.reduce((s, r) => s + r.created, 0);
+    const cCurr = sumCompleted(curr), cPrev = sumCompleted(prev);
+    const tCurr = sumCreated(curr),   tPrev = sumCreated(prev);
+    const rateCurr = tCurr > 0 ? Math.round((cCurr / tCurr) * 100) : 0;
+    const ratePrev = tPrev > 0 ? Math.round((cPrev / tPrev) * 100) : 0;
+    return {
+      projects: safeRate(analyticsData?.activeProjects ?? 0, analyticsData?.totalProjects ?? 1),
+      tasks:    safeRate(tCurr, tPrev),
+      rate:     rateCurr - ratePrev,
+      overdue:  0,
+    };
+  })();
+
   /* Derived */
   const actionFeed: TaskWithProject[] = upcomingToday
     .filter(t => t.status !== "DONE" && t.status !== "ARCHIVED")
@@ -779,27 +913,14 @@ export default function DashboardPage() {
         {/* ════ SIGNAL BAR ════ */}
         <SignalBar projects={projects} />
 
-        {/* ════ PAGE HEADER ════ */}
-        <div className="flex items-end justify-between mt-6 mb-6">
-          <div>
-            <p className="text-[11px] font-semibold mb-0.5" style={{ color: "var(--text-subtle)" }}>
-              {format(new Date(), "EEEE, MMMM d")}
-            </p>
-            <h1 className="text-[22px] font-black" style={{ color: "var(--text-foreground)", letterSpacing: "-0.025em" }}>
-              Good {greeting}, {firstName}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {urgentCount > 0 && (
-              <span className="text-[10px] font-black px-2.5 py-1.5 rounded-full"
-                style={{ background: "rgba(239,68,68,0.10)", color: "#EF4444", letterSpacing: "0.06em" }}>
-                ⚡ {urgentCount} URGENT
-              </span>
-            )}
-            <span className="text-[10.5px] tabular-nums" style={{ color: "var(--text-subtle)" }}>
-              {d.completedTasks}/{d.totalTasks} done · {d.completionRate}%
-            </span>
-          </div>
+        {/* ════ HERO STRIP ════ */}
+        <div className="mt-6">
+          <HeroStrip
+            greeting={greeting}
+            firstName={firstName}
+            urgentCount={urgentCount}
+            tasksByStatus={d.tasksByStatus ?? {}}
+          />
         </div>
 
         {/* ════ KPI TILES ════ */}
@@ -809,17 +930,20 @@ export default function DashboardPage() {
             value={d.activeProjects}
             sub={`${d.totalProjects} total`}
             accent="var(--accent)"
+            trend={trendDeltas.projects}
           />
           <KpiTile
             label="Total Tasks"
             value={d.totalTasks}
             sub={`${d.activeTasks} in progress`}
+            trend={trendDeltas.tasks}
           />
           <KpiTile
             label="Completion Rate"
             value={`${d.completionRate}%`}
             sub={`${d.completedTasks} tasks done`}
             accent="#22C55E"
+            trend={trendDeltas.rate}
           />
           <KpiTile
             label="Overdue"
