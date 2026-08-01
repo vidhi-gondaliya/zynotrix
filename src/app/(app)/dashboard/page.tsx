@@ -131,7 +131,7 @@ function HeroStrip({
   const chips = [
     { label: "Active",     key: "IN_PROGRESS", color: "#6366F1", glow: "rgba(99,102,241,0.45)" },
     { label: "Pending",    key: "TODO",         color: "#FBBF24", glow: "rgba(251,191,36,0.40)" },
-    { label: "In Review",  key: "IN_REVIEW",    color: "#60A5FA", glow: "rgba(96,165,250,0.40)" },
+    { label: "In Review",  key: "REVIEW",       color: "#60A5FA", glow: "rgba(96,165,250,0.40)" },
     { label: "Completed",  key: "DONE",         color: "#22C55E", glow: "rgba(34,197,94,0.38)" },
   ] as const;
 
@@ -218,7 +218,7 @@ function HeroStrip({
 }
 
 /* ── 14-Day Velocity Area Chart ───────────────────────────────────────────── */
-function VelocityChart({ data }: { data: { date: string; completed: number; created: number }[] }) {
+function VelocityChart({ data, prediction }: { data: { date: string; completed: number; created: number }[]; prediction?: React.ReactNode }) {
   if (!data.length) return (
     <p style={{ color: "var(--text-subtle)", fontSize: 12, textAlign: "center", padding: "40px 0" }}>No trend data yet</p>
   );
@@ -228,11 +228,14 @@ function VelocityChart({ data }: { data: { date: string; completed: number; crea
   });
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
-        <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)" }}>
-          14-Day Velocity
-        </p>
-        <div style={{ display: "flex", gap: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)" }}>
+            14-Day Velocity
+          </p>
+          {prediction}
+        </div>
+        <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
           {[{ label: "Created", color: "#6366F1" }, { label: "Completed", color: "#22C55E" }].map(l => (
             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 16, height: 2, background: l.color, borderRadius: 1, display: "inline-block" }} />
@@ -892,7 +895,8 @@ function StandupBlock({ text, loading, onGenerate }: { text: string; loading: bo
         ) : text ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {text.split("\n").filter(l => l.trim()).map((line, i) => {
-              const match = line.match(/^(Yesterday|Today|Blockers):\s*(.*)/i);
+              const clean = line.replace(/\*\*/g, "").trim();
+              const match = clean.match(/^(Yesterday|Today|Blockers):\s*(.*)/i);
               if (match) return (
                 <div key={i} style={{ marginTop: i > 0 ? 10 : 0 }}>
                   <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 3 }}>
@@ -903,7 +907,7 @@ function StandupBlock({ text, loading, onGenerate }: { text: string; loading: bo
               );
               return (
                 <p key={i} style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.55 }}>
-                  {line.replace(/^[•·\-]\s*/, "").trim()}
+                  {clean.replace(/^[•·\-]\s*/, "")}
                 </p>
               );
             })}
@@ -978,7 +982,7 @@ function TeamPulse({ data }: { data: { name: string; tasks: number }[] }) {
           const pct   = Math.round((member.tasks / maxTasks) * 100);
           const inits = member.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
           const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-          const load  = pct >= 75 ? "high" : pct >= 35 ? "medium" : "low";
+          const load  = member.tasks >= 10 ? "high" : member.tasks >= 5 ? "medium" : "low";
           const lc    = load === "high" ? "#EF4444" : load === "medium" ? "#F59E0B" : "#22C55E";
           return (
             <div key={member.name} style={{
@@ -1290,10 +1294,11 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
     const tCurr = sumCreated(curr),   tPrev = sumCreated(prev);
     const rateCurr = tCurr > 0 ? Math.round((cCurr / tCurr) * 100) : 0;
     const ratePrev = tPrev > 0 ? Math.round((cPrev / tPrev) * 100) : 0;
+    const clamp = (v: number) => Math.max(-99, Math.min(99, v));
     return {
-      projects: safeRate(analyticsData?.activeProjects ?? 0, analyticsData?.totalProjects ?? 1),
-      tasks:    safeRate(tCurr, tPrev),
-      rate:     rateCurr - ratePrev,
+      projects: clamp(safeRate(analyticsData?.activeProjects ?? 0, analyticsData?.totalProjects ?? 1)),
+      tasks:    tPrev > 0 ? clamp(safeRate(tCurr, tPrev)) : 0,
+      rate:     clamp(rateCurr - ratePrev),
       overdue:  0,
     };
   })();
@@ -1449,11 +1454,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
         {/* ════ VELOCITY + STATUS DONUT ════ */}
         <div className="grid grid-cols-[1fr_300px] gap-4 mb-4">
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-              <div />
-              <VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />
-            </div>
-            <VelocityChart data={d.taskTrend ?? []} />
+            <VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} />
           </div>
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 20px" }}>
             <StatusDonut data={d.tasksByStatus ?? {}} />
