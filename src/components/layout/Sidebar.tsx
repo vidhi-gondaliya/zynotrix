@@ -102,17 +102,175 @@ const SB = {
   userBg:  "rgba(255,255,255,0.04)",
 };
 
+/* ── Badge ─────────────────────────────────────────────────────────────────── */
+function Badge({ count }: { count: number }) {
+  return (
+    <span style={{
+      minWidth: 16, height: 16, padding: "0 3.5px", borderRadius: 100,
+      background: "#EF4444", color: "#fff", fontSize: 8, fontWeight: 900,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
+
+/* ── NavLink ───────────────────────────────────────────────────────────────── */
+function NavLink({
+  item, badge, collapsed, active,
+}: {
+  item: NavItem;
+  badge?: React.ReactNode;
+  collapsed: boolean;
+  active: boolean;
+}) {
+  return (
+    <motion.div variants={itemVariant}>
+      <Link
+        href={item.href}
+        title={collapsed ? item.label : undefined}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          justifyContent: collapsed ? "center" : undefined,
+          padding: collapsed ? "10px 0" : "9px 13px",
+          borderRadius: 13,
+          fontSize: 14,
+          fontWeight: active ? 700 : 450,
+          letterSpacing: active ? "-0.01em" : "-0.005em",
+          color: active ? SB.active : SB.text,
+          background: active
+            ? "linear-gradient(135deg, rgba(99,102,241,0.92) 0%, rgba(139,92,246,0.88) 100%)"
+            : "transparent",
+          boxShadow: active
+            ? "0 2px 22px rgba(99,102,241,0.48), inset 0 1px 0 rgba(255,255,255,0.16)"
+            : "none",
+          textDecoration: "none",
+          position: "relative",
+          overflow: "hidden",
+          transition: "background 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease",
+        }}
+        onMouseEnter={(e) => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.background = SB.hoverBg;
+            (e.currentTarget as HTMLElement).style.color = SB.hover;
+            (e.currentTarget as HTMLElement).style.transform = "translateX(3px)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!active) {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = SB.text;
+            (e.currentTarget as HTMLElement).style.transform = "translateX(0)";
+          }
+        }}
+      >
+        {active && (
+          <motion.span
+            layoutId="active-ring"
+            style={{
+              position: "absolute", inset: 0, borderRadius: 13,
+              boxShadow: "0 0 0 1px rgba(99,102,241,0.55)",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+
+        <span style={{
+          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          width: 18, height: 18,
+        }}>
+          <item.icon style={{ width: 16, height: 16 }} strokeWidth={active ? 2.3 : 1.85} />
+        </span>
+
+        <AnimatePresence initial={false}>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.14 }}
+              style={{ flex: 1, overflow: "hidden", whiteSpace: "nowrap" }}
+            >
+              {item.label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        {badge && !collapsed && <span style={{ marginLeft: "auto", flexShrink: 0 }}>{badge}</span>}
+        {badge && collapsed  && <span style={{ position: "absolute", top: 2, right: 2 }}>{badge}</span>}
+      </Link>
+    </motion.div>
+  );
+}
+
+/* ── SectionToggle ─────────────────────────────────────────────────────────── */
+function SectionToggle({
+  section, collapsed, isOpen, hasActive, onToggle,
+}: {
+  section: { key: string; label: string; dot: string };
+  collapsed: boolean;
+  isOpen: boolean;
+  hasActive: boolean;
+  onToggle: () => void;
+}) {
+  if (collapsed) return (
+    <div style={{ height: 1, margin: "10px 8px", background: SB.border }} />
+  );
+
+  return (
+    <motion.button
+      variants={itemVariant}
+      onClick={onToggle}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 7,
+        padding: "8px 10px 4px", background: "none", border: "none", cursor: "pointer",
+        marginTop: 6,
+      }}
+    >
+      <motion.span
+        animate={{ scale: hasActive ? [1, 1.3, 1] : 1 }}
+        transition={{ duration: 0.4 }}
+        style={{
+          width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+          background: hasActive ? section.dot : "rgba(255,255,255,0.18)",
+          boxShadow: hasActive ? `0 0 7px ${section.dot}` : "none",
+          transition: "background 0.2s, box-shadow 0.2s",
+        }}
+      />
+      <span style={{
+        fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase",
+        color: hasActive ? "rgba(255,255,255,0.72)" : SB.section,
+        flex: 1, textAlign: "left",
+        transition: "color 0.2s",
+      }}>
+        {section.label}
+      </span>
+      <ChevronDown style={{
+        width: 11, height: 11, flexShrink: 0,
+        color: "rgba(255,255,255,0.2)",
+        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+        transition: "transform 0.22s ease",
+      }} />
+    </motion.button>
+  );
+}
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 export function Sidebar() {
-  const pathname      = usePathname();
+  const pathname        = usePathname();
   const { unreadCount } = useNotifications();
   const { data: session } = useSession();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
   const userRole = (session?.user as { role?: string })?.role ?? "MEMBER";
   const isAdmin  = hasPermission(userRole, "admin:access");
 
+  const isActive = (href: string) =>
+    pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
+
   const activeSection = SECTIONS.find((s) =>
-    s.items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+    s.items.some((item) => isActive(item.href))
   )?.key ?? null;
 
   const [open, setOpen] = useState<Record<string, boolean>>(() => {
@@ -134,152 +292,6 @@ export function Sidebar() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [toggle]);
-
-  const isActive = (href: string) =>
-    pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
-
-  /* ── NavLink ─────────────────────────────────────────────────────────────── */
-  const NavLink = ({ item, badge }: { item: NavItem; badge?: React.ReactNode }) => {
-    const active = isActive(item.href);
-    return (
-      <motion.div variants={itemVariant}>
-        <Link
-          href={item.href}
-          title={collapsed ? item.label : undefined}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            justifyContent: collapsed ? "center" : undefined,
-            padding: collapsed ? "10px 0" : "9px 13px",
-            borderRadius: 13,
-            fontSize: 14,
-            fontWeight: active ? 700 : 450,
-            letterSpacing: active ? "-0.01em" : "-0.005em",
-            color: active ? SB.active : SB.text,
-            background: active
-              ? "linear-gradient(135deg, rgba(99,102,241,0.92) 0%, rgba(139,92,246,0.88) 100%)"
-              : "transparent",
-            boxShadow: active
-              ? "0 2px 22px rgba(99,102,241,0.48), inset 0 1px 0 rgba(255,255,255,0.16)"
-              : "none",
-            textDecoration: "none",
-            position: "relative",
-            overflow: "hidden",
-            transition: "background 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease",
-          }}
-          onMouseEnter={(e) => {
-            if (!active) {
-              (e.currentTarget as HTMLElement).style.background = SB.hoverBg;
-              (e.currentTarget as HTMLElement).style.color = SB.hover;
-              (e.currentTarget as HTMLElement).style.transform = "translateX(3px)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!active) {
-              (e.currentTarget as HTMLElement).style.background = "transparent";
-              (e.currentTarget as HTMLElement).style.color = SB.text;
-              (e.currentTarget as HTMLElement).style.transform = "translateX(0)";
-            }
-          }}
-        >
-          {/* Active glow ring */}
-          {active && (
-            <motion.span
-              layoutId="active-ring"
-              style={{
-                position: "absolute", inset: 0, borderRadius: 13,
-                boxShadow: "0 0 0 1px rgba(99,102,241,0.55)",
-                pointerEvents: "none",
-              }}
-            />
-          )}
-
-          <span style={{
-            flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-            width: 18, height: 18,
-          }}>
-            <item.icon style={{ width: 16, height: 16 }} strokeWidth={active ? 2.3 : 1.85} />
-          </span>
-
-          <AnimatePresence initial={false}>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.14 }}
-                style={{ flex: 1, overflow: "hidden", whiteSpace: "nowrap" }}
-              >
-                {item.label}
-              </motion.span>
-            )}
-          </AnimatePresence>
-
-          {badge && !collapsed && <span style={{ marginLeft: "auto", flexShrink: 0 }}>{badge}</span>}
-          {badge && collapsed && <span style={{ position: "absolute", top: 2, right: 2 }}>{badge}</span>}
-        </Link>
-      </motion.div>
-    );
-  };
-
-  /* ── Section toggle ──────────────────────────────────────────────────────── */
-  const SectionToggle = ({ section }: { section: typeof SECTIONS[number] }) => {
-    const isOpen    = open[section.key];
-    const hasActive = section.items.some((item) => isActive(item.href));
-
-    if (collapsed) return (
-      <div style={{ height: 1, margin: "10px 8px", background: SB.border }} />
-    );
-
-    return (
-      <motion.button
-        variants={itemVariant}
-        onClick={() => setOpen((p) => ({ ...p, [section.key]: !p[section.key] }))}
-        style={{
-          width: "100%", display: "flex", alignItems: "center", gap: 7,
-          padding: "8px 10px 4px", background: "none", border: "none", cursor: "pointer",
-          marginTop: 6,
-        }}
-      >
-        <motion.span
-          animate={{ scale: hasActive ? [1, 1.3, 1] : 1 }}
-          transition={{ duration: 0.4 }}
-          style={{
-            width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
-            background: hasActive ? section.dot : "rgba(255,255,255,0.18)",
-            boxShadow: hasActive ? `0 0 7px ${section.dot}` : "none",
-            transition: "background 0.2s, box-shadow 0.2s",
-          }}
-        />
-        <span style={{
-          fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase",
-          color: hasActive ? "rgba(255,255,255,0.72)" : SB.section,
-          flex: 1, textAlign: "left",
-          transition: "color 0.2s",
-        }}>
-          {section.label}
-        </span>
-        <ChevronDown style={{
-          width: 11, height: 11, flexShrink: 0,
-          color: "rgba(255,255,255,0.2)",
-          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-          transition: "transform 0.22s ease",
-        }} />
-      </motion.button>
-    );
-  };
-
-  /* ── Badge helper ────────────────────────────────────────────────────────── */
-  const Badge = ({ count }: { count: number }) => (
-    <span style={{
-      minWidth: 16, height: 16, padding: "0 3.5px", borderRadius: 100,
-      background: "#EF4444", color: "#fff", fontSize: 8, fontWeight: 900,
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      {count > 9 ? "9+" : count}
-    </span>
-  );
 
   /* ── Sidebar body ────────────────────────────────────────────────────────── */
   const sidebarContent = (
@@ -366,17 +378,26 @@ export function Sidebar() {
         className="no-scrollbar"
         style={{ flex: 1, overflowY: "auto", padding: "10px 10px 6px", display: "flex", flexDirection: "column", gap: 2 }}
       >
-        {PINNED.map((item) => <NavLink key={item.href} item={item} />)}
+        {PINNED.map((item) => (
+          <NavLink key={item.href} item={item} collapsed={collapsed} active={isActive(item.href)} />
+        ))}
 
         <div style={{ height: 8 }} />
 
         {SECTIONS.map((section) => (
           <div key={section.key} style={{ marginBottom: 2 }}>
-            <SectionToggle section={section} />
+            <SectionToggle
+              section={section}
+              collapsed={collapsed}
+              isOpen={open[section.key]}
+              hasActive={section.items.some((item) => isActive(item.href))}
+              onToggle={() => setOpen((p) => ({ ...p, [section.key]: !p[section.key] }))}
+            />
             <AnimatePresence initial={false}>
               {(collapsed || open[section.key]) && (
                 <motion.div
-                  initial={false}
+                  key={section.key}
+                  initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.18, ease: "easeInOut" }}
@@ -387,7 +408,15 @@ export function Sidebar() {
                       const badge = item.href === "/messages" && unreadCount > 0
                         ? <Badge count={unreadCount} />
                         : null;
-                      return <NavLink key={item.href} item={item} badge={badge} />;
+                      return (
+                        <NavLink
+                          key={item.href}
+                          item={item}
+                          badge={badge}
+                          collapsed={collapsed}
+                          active={isActive(item.href)}
+                        />
+                      );
                     })}
                   </div>
                 </motion.div>
@@ -404,15 +433,17 @@ export function Sidebar() {
             <NavLink
               item={{ href: "/notifications", icon: Bell, label: "Notifications" }}
               badge={unreadCount > 0 ? <Badge count={unreadCount} /> : null}
+              collapsed={collapsed}
+              active={isActive("/notifications")}
             />
           </motion.div>
           {(isAdmin || pathname.startsWith("/admin")) && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.44 }}>
-              <NavLink item={{ href: "/admin", icon: ShieldCheck, label: "Admin Panel" }} />
+              <NavLink item={{ href: "/admin", icon: ShieldCheck, label: "Admin Panel" }} collapsed={collapsed} active={isActive("/admin")} />
             </motion.div>
           )}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.48 }}>
-            <NavLink item={{ href: "/settings", icon: Settings, label: "Settings" }} />
+            <NavLink item={{ href: "/settings", icon: Settings, label: "Settings" }} collapsed={collapsed} active={isActive("/settings")} />
           </motion.div>
         </div>
 
