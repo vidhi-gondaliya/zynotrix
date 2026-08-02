@@ -8,7 +8,7 @@ import {
   ClipboardCheck, BarChart2, Trophy,
   Workflow, LayoutTemplate, ArrowLeftRight, Puzzle, Shield,
   Bell, Settings, ShieldCheck, LogOut, CreditCard,
-  Zap, PanelLeftClose, PanelLeftOpen, ChevronDown,
+  Zap, PanelLeftClose, PanelLeftOpen, ChevronDown, Receipt,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useNotifications } from "@/store/useNotifications";
@@ -75,8 +75,6 @@ const SECTIONS = [
       { href: "/templates",     icon: LayoutTemplate, label: "Templates"       },
       { href: "/import-export", icon: ArrowLeftRight, label: "Import / Export" },
       { href: "/integrations",  icon: Puzzle,         label: "Integrations"    },
-      { href: "/billing",       icon: CreditCard,     label: "Billing"         },
-      { href: "/audit",         icon: Shield,         label: "Audit Log"       },
     ] as NavItem[],
   },
 ] as const;
@@ -448,7 +446,13 @@ export function Sidebar() {
               <NavLink item={{ href: "/admin", icon: ShieldCheck, label: "Admin Panel" }} collapsed={collapsed} active={isActive("/admin")} />
             </motion.div>
           )}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.46 }}>
+            <NavLink item={{ href: "/billing", icon: CreditCard, label: "Billing" }} collapsed={collapsed} active={isActive("/billing")} />
+          </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.48 }}>
+            <NavLink item={{ href: "/audit", icon: Receipt, label: "Audit Log" }} collapsed={collapsed} active={isActive("/audit")} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.50 }}>
             <NavLink item={{ href: "/settings", icon: Settings, label: "Settings" }} collapsed={collapsed} active={isActive("/settings")} />
           </motion.div>
         </div>
