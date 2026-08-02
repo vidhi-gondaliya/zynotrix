@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   let customerId = sub?.stripeCustomerId as string | undefined;
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await stripe().customers.create({
       email: user?.email ?? undefined,
       name:  user?.name  ?? undefined,
       metadata: { organizationId: orgId, userId },
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const appUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await stripe().checkout.sessions.create({
     customer: customerId,
     mode: "payment",
     line_items: [

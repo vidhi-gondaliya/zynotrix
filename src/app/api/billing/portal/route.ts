@@ -23,7 +23,7 @@ export async function POST() {
 
   const appUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await stripe().billingPortal.sessions.create({
     customer:   sub.stripeCustomerId,
     return_url: `${appUrl}/billing`,
   });

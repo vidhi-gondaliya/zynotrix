@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, secret);
+    event = stripe().webhooks.constructEvent(body, sig, secret);
   } catch (err) {
     return NextResponse.json({ error: `Webhook signature failed: ${err}` }, { status: 400 });
   }
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
         if (session.mode === "subscription" && session.subscription) {
           // Subscription checkout — activate plan
-          const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+          const sub = await stripe().subscriptions.retrieve(session.subscription as string);
           const planId = session.metadata?.planId ?? sub.metadata?.planId ?? "FREE";
           const cycle  = session.metadata?.billingCycle ?? "monthly";
 
