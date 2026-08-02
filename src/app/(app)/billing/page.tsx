@@ -393,9 +393,9 @@ function BillingContent() {
     } finally { setActionId(null); }
   };
 
-  const sub     = data?.subscription;
-  const usage   = data?.usage;
-  const plan    = data?.plan;
+  const sub     = data?.subscription ?? null;
+  const usage   = data?.usage ?? null;
+  const plan    = data?.plan ?? null;
   const planId  = sub?.plan ?? "FREE";
   const accent  = PLAN_ACCENT[planId] ?? "#6366F1";
   const gradient = PLAN_GRADIENT[planId] ?? PLAN_GRADIENT.FREE;
@@ -403,7 +403,7 @@ function BillingContent() {
 
   /* ── Tabs content ─────────────────────────────────────────────────── */
 
-  const OverviewTab = () => !data ? null : (
+  const OverviewTab = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
       {/* Current plan hero */}
