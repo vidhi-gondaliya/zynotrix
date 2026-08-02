@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
 import { generateJSON } from "@/lib/claude";
+import { requireUnderLimit } from "@/lib/plan-gate";
 
 export async function GET() {
   const ctx = await requireOrg();
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
   const { orgId, userId } = ctx;
+
+  const limitErr = await requireUnderLimit(orgId, "automations_monthly");
+  if (limitErr) return limitErr;
 
   const { rule, customStatuses } = await req.json();
   if (!rule?.trim()) return NextResponse.json({ error: "Rule required" }, { status: 400 });

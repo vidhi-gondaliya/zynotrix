@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/task-activity";
 import { createNotification } from "@/lib/notifications";
+import { runAutomations } from "@/lib/automations";
 
 export async function GET(_req: NextRequest, { params }: { params: { taskId: string } }) {
   const session = await auth();
@@ -40,6 +41,19 @@ export async function POST(req: NextRequest, { params }: { params: { taskId: str
   });
 
   await logActivity(params.taskId, session.user.id, "commented", { preview: content.slice(0, 80) });
+
+  // Fire comment_added automations
+  prisma.project.findFirst({
+    where: { tasks: { some: { id: params.taskId } } },
+    select: { organizationId: true },
+  }).then((proj) => {
+    if (proj?.organizationId) {
+      runAutomations(proj.organizationId, "comment_added", {
+        taskId: params.taskId,
+        comment: { content: content.trim(), authorId: session.user.id },
+      }).catch(() => {});
+    }
+  }).catch(() => {});
 
   // Notify task assignee and creator (not the commenter)
   const toNotify = new Set<string>();

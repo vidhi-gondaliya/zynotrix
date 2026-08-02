@@ -7,7 +7,7 @@ import {
   Bot, Sparkles, Heart, Search,
   ClipboardCheck, BarChart2, Trophy,
   Workflow, LayoutTemplate, ArrowLeftRight, Puzzle, Shield,
-  Bell, Settings, ShieldCheck, LogOut,
+  Bell, Settings, ShieldCheck, LogOut, CreditCard,
   Zap, PanelLeftClose, PanelLeftOpen, ChevronDown,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -75,6 +75,7 @@ const SECTIONS = [
       { href: "/templates",     icon: LayoutTemplate, label: "Templates"       },
       { href: "/import-export", icon: ArrowLeftRight, label: "Import / Export" },
       { href: "/integrations",  icon: Puzzle,         label: "Integrations"    },
+      { href: "/billing",       icon: CreditCard,     label: "Billing"         },
       { href: "/audit",         icon: Shield,         label: "Audit Log"       },
     ] as NavItem[],
   },

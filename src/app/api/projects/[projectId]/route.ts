@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
+import { hasPermission } from "@/lib/permissions";
 
 export async function GET(_req: NextRequest, { params }: { params: { projectId: string } }) {
   const ctx = await requireOrg();
@@ -51,7 +52,11 @@ export async function PUT(req: NextRequest, { params }: { params: { projectId: s
 export async function DELETE(_req: NextRequest, { params }: { params: { projectId: string } }) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { orgId } = ctx;
+  const { orgId, orgRole } = ctx;
+
+  if (!hasPermission(orgRole, "projects:delete")) {
+    return NextResponse.json({ error: "Only Admins and Owners can delete projects." }, { status: 403 });
+  }
 
   await prisma.project.update({
     where: { id: params.projectId, organizationId: orgId },

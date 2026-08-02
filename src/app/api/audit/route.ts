@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
 import { hasPermission } from "@/lib/permissions";
+import { requireFeature } from "@/lib/plan-gate";
 
 export async function GET(req: NextRequest) {
   const ctx = await requireOrg();
@@ -11,6 +12,9 @@ export async function GET(req: NextRequest) {
   if (!hasPermission(orgRole, "admin:access")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const featureErr = await requireFeature(orgId, "audit_log");
+  if (featureErr) return featureErr;
 
   const { searchParams } = req.nextUrl;
   const entityType = searchParams.get("entityType");

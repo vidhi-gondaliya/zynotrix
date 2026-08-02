@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { consumeCredits, CREDIT_COSTS, type CreditTier } from "./credits";
 
 const globalForClaude = globalThis as unknown as { claude: Anthropic };
 
@@ -10,6 +11,23 @@ if (process.env.NODE_ENV !== "production") globalForClaude.claude = claude;
 
 const MODEL = process.env.CLAUDE_MODEL ?? "claude-opus-4-5";
 const FAST_MODEL = "claude-haiku-4-5-20251001";
+
+/**
+ * Attempt to consume AI credits before an AI call.
+ * Returns a 402 Response if the org has no credits; null if ok or no orgId provided.
+ */
+export async function checkAndConsumeCredits(orgId: string | null | undefined, tier: CreditTier): Promise<Response | null> {
+  if (!orgId) return null; // no org context — allow (e.g. admin routes)
+  const cost = CREDIT_COSTS[tier];
+  const ok   = await consumeCredits(orgId, cost);
+  if (!ok) {
+    return new Response(
+      JSON.stringify({ error: "Insufficient AI credits. Purchase a TopUp or upgrade your plan.", code: "CREDITS_EXHAUSTED" }),
+      { status: 402, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  return null;
+}
 
 export async function streamToResponse(
   messages: Anthropic.MessageParam[],

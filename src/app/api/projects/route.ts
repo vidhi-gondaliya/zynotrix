@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
+import { hasPermission } from "@/lib/permissions";
+import { requireUnderLimit } from "@/lib/plan-gate";
 
 export async function GET() {
   const ctx = await requireOrg();
@@ -22,7 +24,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { orgId, userId } = ctx;
+  const { orgId, userId, orgRole } = ctx;
+
+  if (!hasPermission(orgRole, "projects:create")) {
+    return NextResponse.json({ error: "You don't have permission to create projects." }, { status: 403 });
+  }
+
+  const limitErr = await requireUnderLimit(orgId, "projects");
+  if (limitErr) return limitErr;
 
   const body = await req.json();
   const project = await prisma.project.create({

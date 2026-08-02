@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPermission } from "@/lib/permissions";
 
 export async function GET(_req: NextRequest, { params }: { params: { documentId: string } }) {
   const session = await auth();
@@ -60,6 +61,17 @@ export async function PUT(req: NextRequest, { params }: { params: { documentId: 
 export async function DELETE(_req: NextRequest, { params }: { params: { documentId: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Allow author to delete their own; otherwise require documents:manage permission
+  const doc = await prisma.document.findUnique({ where: { id: params.documentId }, select: { authorId: true } });
+  if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (doc.authorId !== session.user.id) {
+    const orgRole = session.user.orgRole as string | undefined;
+    if (!hasPermission(orgRole, "documents:manage")) {
+      return NextResponse.json({ error: "You can only delete your own documents." }, { status: 403 });
+    }
+  }
 
   await prisma.searchIndex.deleteMany({ where: { sourceId: params.documentId } });
   await prisma.document.delete({ where: { id: params.documentId } });

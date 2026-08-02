@@ -2,6 +2,14 @@
   "functions": {
     "src/app/api/ai/**": { "maxDuration": 60 },
     "src/app/api/reports/**": { "maxDuration": 60 },
-    "src/app/api/automations/**": { "maxDuration": 30 }
-  }
+    "src/app/api/automations/**": { "maxDuration": 30 },
+    "src/app/api/cron/**": { "maxDuration": 60 },
+    "src/app/api/webhooks/**": { "maxDuration": 30 }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/automations",
+      "schedule": "0 8 * * *"
+    }
+  ]
 }

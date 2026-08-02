@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { streamToResponse, SYSTEM_PROMPTS } from "@/lib/claude";
+import { streamToResponse, SYSTEM_PROMPTS, checkAndConsumeCredits } from "@/lib/claude";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
 
@@ -7,6 +7,9 @@ export async function POST(req: NextRequest) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
   const { orgId } = ctx;
+
+  const creditBlock = await checkAndConsumeCredits(orgId, "complex");
+  if (creditBlock) return creditBlock;
 
   const { messages, projectId, context: pageContext } = await req.json();
 

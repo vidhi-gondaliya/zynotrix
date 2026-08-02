@@ -5,6 +5,7 @@ import { awardPoints } from "@/lib/rewards";
 import { logActivity } from "@/lib/task-activity";
 import { notifySlackForTaskEvent } from "@/lib/integrations/slack";
 import { requireOrg, isOrgError } from "@/lib/org";
+import { runAutomations } from "@/lib/automations";
 
 export async function GET(_req: NextRequest, { params }: { params: { taskId: string } }) {
   const ctx = await requireOrg();
@@ -62,6 +63,12 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
 
   if (body.status && body.status !== existing.status) {
     await logActivity(params.taskId, userId, "status_changed", { from: existing.status, to: body.status });
+    runAutomations(orgId, "task_status_changed", {
+      taskId: params.taskId,
+      task: task as Record<string, unknown>,
+      fromStatus: existing.status,
+      toStatus: body.status,
+    }).catch(() => {});
   }
   if (body.priority && body.priority !== existing.priority) {
     await logActivity(params.taskId, userId, "priority_changed", { from: existing.priority, to: body.priority });

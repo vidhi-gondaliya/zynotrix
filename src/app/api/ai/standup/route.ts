@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { generateJSON } from "@/lib/claude";
+import { generateJSON, checkAndConsumeCredits } from "@/lib/claude";
 import { prisma } from "@/lib/prisma";
 import { requireOrg, isOrgError } from "@/lib/org";
 
 export async function GET() {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { userId, userName } = ctx;
+  const { orgId, userId, userName } = ctx;
+
+  const creditBlock = await checkAndConsumeCredits(orgId, "complex");
+  if (creditBlock) return creditBlock;
 
   const yesterday = new Date(Date.now() - 86400000);
   const tomorrow  = new Date(Date.now() + 86400000);

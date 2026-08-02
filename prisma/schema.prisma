@@ -32,6 +32,8 @@ model Organization {
   projectTemplates ProjectTemplate[]
   meetings         Meeting[]
   attendanceRecords AttendanceRecord[]
+  subscription     Subscription?
+  aiCreditBalance  AiCreditBalance?
 
   @@map("organizations")
 }
@@ -947,4 +949,68 @@ model WebhookLog {
 
   @@index([source, createdAt])
   @@map("webhook_logs")
+}
+
+// ── Billing ──────────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  organizationId       String    @unique
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan                 String    @default("FREE")     // FREE | STARTER | GROWTH | SCALE | SCALE_FLAT
+  billingCycle         String    @default("monthly")  // monthly | annual
+  status               String    @default("active")   // active | trialing | past_due | canceled
+  seats                Int       @default(1)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  trialEndsAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@map("subscriptions")
+}
+
+model AiCreditBalance {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  balance        Int      @default(0)
+  usedThisMonth  Int      @default(0)
+  lastResetAt    DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("ai_credit_balances")
+}
+
+model AiCreditTransaction {
+  id             String   @id @default(cuid())
+  organizationId String
+  type           String   // MONTHLY_GRANT | TOPUP | USAGE
+  amount         Int      // positive = granted, negative = used
+  description    String
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("ai_credit_transactions")
+}
+
+model BillingInvoice {
+  id              String    @id @default(cuid())
+  organizationId  String
+  stripeInvoiceId String?   @unique
+  amount          Int       // cents
+  currency        String    @default("usd")
+  status          String    // paid | open | void | draft
+  description     String
+  invoiceUrl      String?
+  invoicePdf      String?
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("billing_invoices")
 }

@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireOrg, isOrgError } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
+import { requireFeature } from "@/lib/plan-gate";
 
 export async function GET(_req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
+
+  const featureErr = await requireFeature(orgId, "custom_fields");
+  if (featureErr) return featureErr;
 
   const fields = await (prisma as any).customField.findMany({
     where: { projectId: params.projectId },
@@ -14,8 +19,12 @@ export async function GET(_req: NextRequest, { params }: { params: { projectId: 
 }
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgId } = ctx;
+
+  const featureErr = await requireFeature(orgId, "custom_fields");
+  if (featureErr) return featureErr;
 
   const { name, type, options, isRequired } = await req.json();
   if (!name || !type) return NextResponse.json({ error: "name and type required" }, { status: 400 });

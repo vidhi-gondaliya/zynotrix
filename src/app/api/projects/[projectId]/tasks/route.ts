@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { logActivity } from "@/lib/task-activity";
+import { runAutomations } from "@/lib/automations";
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
   const session = await auth();
@@ -62,6 +63,20 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   });
 
   await logActivity(task.id, session.user.id, "created", { title: body.title });
+
+  // Fire automation hooks — get orgId from project
+  prisma.project.findUnique({ where: { id: params.projectId }, select: { organizationId: true } })
+    .then((proj) => {
+      if (proj?.organizationId) {
+        runAutomations(proj.organizationId, "task_created", {
+          taskId: task.id,
+          task: task as Record<string, unknown>,
+          projectId: params.projectId,
+        }).catch(() => {});
+      }
+    })
+    .catch(() => {});
+
   if (body.assigneeId && body.assigneeId !== session.user.id) {
     await logActivity(task.id, session.user.id, "assigned", { to: body.assigneeId });
     await createNotification(

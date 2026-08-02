@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { streamToResponse, SYSTEM_PROMPTS } from "@/lib/claude";
+import { streamToResponse, SYSTEM_PROMPTS, checkAndConsumeCredits } from "@/lib/claude";
 import { requireOrg, isOrgError } from "@/lib/org";
 import type { SourceType } from "@/types";
 
@@ -10,6 +10,9 @@ export async function POST(req: NextRequest) {
   const { orgId } = ctx;
 
   const { query, scope, projectId } = await req.json();
+
+  const creditBlock = await checkAndConsumeCredits(orgId, "medium");
+  if (creditBlock) return creditBlock;
 
   const candidates = await prisma.searchIndex.findMany({
     where: {

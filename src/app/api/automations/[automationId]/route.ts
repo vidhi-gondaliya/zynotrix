@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
+import { hasPermission } from "@/lib/permissions";
 
-// PATCH — toggle active / rename
+// PATCH — toggle active / rename (any member can toggle their own automations)
 export async function PATCH(req: NextRequest, { params }: { params: { automationId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
 
   const body = await req.json();
   const automation = await (prisma as any).automation.update({
@@ -18,10 +19,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { automation
   return NextResponse.json(automation);
 }
 
-// DELETE
+// DELETE — requires settings:access (admin+)
 export async function DELETE(_req: NextRequest, { params }: { params: { automationId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const { orgRole } = ctx;
+
+  if (!hasPermission(orgRole, "settings:access")) {
+    return NextResponse.json({ error: "Only Admins and Owners can delete automations." }, { status: 403 });
+  }
 
   await (prisma as any).automation.delete({ where: { id: params.automationId } });
   return NextResponse.json({ ok: true });
