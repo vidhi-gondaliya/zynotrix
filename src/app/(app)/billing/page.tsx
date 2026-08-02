@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   CreditCard, Zap, HardDrive, CheckCircle, AlertTriangle,
@@ -225,6 +225,14 @@ function TopUpCard({ pack, onBuy, loading }: { pack: TopUpPack; onBuy: (id: stri
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 60, textAlign: "center", color: "var(--text-muted, #6B7FA3)" }}><RefreshCw size={24} /></div>}>
+      <BillingContent />
+    </Suspense>
+  );
+}
+
+function BillingContent() {
   const router        = useRouter();
   const searchParams  = useSearchParams();
   const [data, setData]       = useState<UsageData | null>(null);
