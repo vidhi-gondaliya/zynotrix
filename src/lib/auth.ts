@@ -45,8 +45,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             authorization: {
               params: {
-                scope:
-                  "openid email profile https://www.googleapis.com/auth/calendar.events",
+                scope: "openid email profile",
               },
             },
           }),
