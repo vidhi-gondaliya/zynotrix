@@ -31,6 +31,7 @@ export interface BoardColumnConfig {
   label: string;
   color: string;
   group: "progress" | "done";
+  wipLimit?: number;
 }
 
 export interface BoardConfig {

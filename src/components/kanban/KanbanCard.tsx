@@ -110,18 +110,22 @@ export function KanbanCard({
       style={cardStyle}
     >
       <div className="p-4">
-        {/* ── Top row: category label + three-dot ─────────────────── */}
+        {/* ── Top row: priority badge + three-dot ─────────────────── */}
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <span
-            className="text-[10.5px] font-bold leading-none"
-            style={{ color: categoryColor }}
+            className="text-[9.5px] font-black leading-none tracking-wide uppercase px-2 py-[3px] rounded-full"
+            style={{
+              background: `${pri.color}18`,
+              color: pri.color,
+              border: `1px solid ${pri.color}30`,
+            }}
           >
-            {categoryLabel}
+            {pri.label.replace(" priority", "")}
           </span>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onContextMenu?.(e, task); }}
-            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors opacity-0"
+            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors"
             style={{
               color: "var(--text-subtle)",
               opacity: hovered ? 1 : 0,
@@ -134,7 +138,7 @@ export function KanbanCard({
 
         {/* ── Title ───────────────────────────────────────────────── */}
         <p
-          className="text-[13.5px] font-bold leading-snug mb-3"
+          className="text-[13.5px] font-bold leading-snug mb-2.5"
           style={{
             color: isDone ? "var(--text-muted)" : "var(--text-foreground)",
             letterSpacing: "-0.015em",
@@ -144,8 +148,23 @@ export function KanbanCard({
           {task.title}
         </p>
 
+        {/* ── Hashtag chips ────────────────────────────────────────── */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2.5">
+            {tags.slice(0, 4).map((tag) => (
+              <span
+                key={tag}
+                className="text-[9.5px] font-semibold px-1.5 py-[2px] rounded-md"
+                style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* ── Avatars ─────────────────────────────────────────────── */}
-        <div className="flex items-center mb-3">
+        <div className="flex items-center mb-2.5">
           {task.assignee ? (
             <Avatar name={task.assignee.name} image={task.assignee.image} size="xs" />
           ) : (
@@ -161,25 +180,22 @@ export function KanbanCard({
           )}
         </div>
 
-        {/* ── Footer: comment + file counts + dot accent ──────────── */}
+        {/* ── Footer: comment + subtask counts + dot accent ────────── */}
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1 text-[10.5px] font-semibold"
             style={{ color: "var(--text-muted)" }}>
             <MessageSquare className="w-3 h-3" />
-            {commentCount} {commentCount === 1 ? "comment" : "comment"}
+            {commentCount}
           </span>
-          <span className="flex items-center gap-1 text-[10.5px] font-semibold"
-            style={{ color: "var(--text-muted)" }}>
-            <Paperclip className="w-3 h-3" />
-            {subtaskTotal} {subtaskTotal === 1 ? "file" : "file"}
-          </span>
-
-          {/* Colored accent dot — bottom right */}
-          <div className="ml-auto w-[10px] h-[10px] rounded-full shrink-0"
-            style={{
-              background: dotColor,
-              boxShadow: `0 0 6px ${dotColor}88`,
-            }} />
+          {subtaskTotal > 0 && (
+            <span className="flex items-center gap-1 text-[10.5px] font-semibold"
+              style={{ color: "var(--text-muted)" }}>
+              <Paperclip className="w-3 h-3" />
+              {subtaskTotal}
+            </span>
+          )}
+          <div className="ml-auto w-[8px] h-[8px] rounded-full shrink-0"
+            style={{ background: dotColor, boxShadow: `0 0 5px ${dotColor}88` }} />
         </div>
       </div>
     </div>

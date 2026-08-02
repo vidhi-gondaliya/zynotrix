@@ -19,7 +19,7 @@ import type { Task, TaskStatus, BoardColumnConfig, Project } from "@/types";
 import { getBoardColumns } from "@/lib/board-templates";
 import { isPast, isThisWeek } from "date-fns";
 import toast from "react-hot-toast";
-import { Search, SlidersHorizontal, X, Clock, AlertTriangle } from "lucide-react";
+import { Search, SlidersHorizontal, X, Clock, AlertTriangle, Sparkles, Layers } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface KanbanBoardProps {
@@ -69,6 +69,13 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
   /* ── Context menu ────────────────────────────────────────────── */
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; task: Task } | null>(null);
 
+  /* ── WIP limits + collapse ───────────────────────────────────── */
+  const [wipLimits,     setWipLimits]     = useState<Record<string, number>>({});
+  const [collapsedCols, setCollapsedCols] = useState<Set<string>>(new Set());
+
+  /* ── AI copilot banner ───────────────────────────────────────── */
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
@@ -84,6 +91,10 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
     const cols = getBoardColumns(project.boardConfig);
     setColumns(cols);
     setMembers((project.members ?? []).map((m) => m.user));
+    // Load WIP limits from column configs
+    const limits: Record<string, number> = {};
+    cols.forEach((c) => { if (c.wipLimit) limits[c.id] = c.wipLimit; });
+    setWipLimits(limits);
 
     const grouped: Record<string, Task[]> = {};
     cols.forEach((c) => { grouped[c.id] = []; });
@@ -365,6 +376,55 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
   const togglePriority  = (v: string)   => setFilters((f) => ({ ...f, priorities: f.priorities.includes(v)    ? f.priorities.filter((p) => p !== v)    : [...f.priorities, v] }));
   const clearFilters    = ()            => setFilters({ assignees: [], priorities: [], overdue: false, thisWeek: false });
 
+  /* ── WIP limit setter ────────────────────────────────────────── */
+  const handleSetWipLimit = async (colId: string, limit: number | null) => {
+    const updated = limit === null
+      ? (() => { const n = { ...wipLimits }; delete n[colId]; return n; })()
+      : { ...wipLimits, [colId]: limit };
+    setWipLimits(updated);
+    const updatedCols = columns.map((c) => limit === null
+      ? { ...c, wipLimit: c.id === colId ? undefined : c.wipLimit }
+      : { ...c, wipLimit: c.id === colId ? limit : c.wipLimit }
+    );
+    setColumns(updatedCols);
+    try {
+      await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ boardConfig: JSON.stringify({ templateId: "custom", columns: updatedCols }) }),
+      });
+      toast.success(limit ? `WIP limit set to ${limit}` : "WIP limit removed");
+    } catch { toast.error("Failed to save WIP limit"); }
+  };
+
+  /* ── AI copilot banner (client-computed) ─────────────────────── */
+  const aiBanner = useMemo(() => {
+    if (bannerDismissed) return null;
+    const allFlat = Object.values(tasks).flat();
+    const overdueCount = allFlat.filter((t) => t.dueDate && isPast(new Date(t.dueDate)) && t.status !== "DONE" && t.status !== "ARCHIVED").length;
+    const overWipCol = columns.find((c) => wipLimits[c.id] && (tasks[c.id]?.length ?? 0) > wipLimits[c.id]);
+    if (overWipCol) {
+      return { icon: "⚠️", label: "WIP LIMIT EXCEEDED", message: `"${overWipCol.label}" has ${tasks[overWipCol.id]?.length ?? 0}/${wipLimits[overWipCol.id]} tasks — over capacity. Resolve blockers or move items forward.`, action: null, color: "#EF4444" };
+    }
+    const reviewCount = tasks["REVIEW"]?.length ?? 0;
+    if (reviewCount >= 2) {
+      return { icon: "👁️", label: "REVIEW BOTTLENECK", message: `${reviewCount} tasks are waiting in Review. Approve or request changes to keep velocity up.`, action: "Filter Review", actionFn: () => setFilters((f) => ({ ...f, priorities: [] })), color: "#FBBF24" };
+    }
+    if (overdueCount >= 2) {
+      return { icon: "🔥", label: "OVERDUE TASKS", message: `${overdueCount} tasks are past their due date. Address these before pulling new work.`, action: "Show Overdue", actionFn: () => setFilters((f) => ({ ...f, overdue: true })), color: "#F59E0B" };
+    }
+    const inProgressCount = tasks["IN_PROGRESS"]?.length ?? 0;
+    const backlogCount    = tasks["BACKLOG"]?.length ?? 0;
+    if (inProgressCount === 0 && backlogCount > 2) {
+      return { icon: "💡", label: "SPRINT VELOCITY", message: `No tasks in progress but ${backlogCount} in backlog. Pull items to maintain team velocity.`, action: null, color: "#818CF8" };
+    }
+    const doneCount2 = tasks["DONE"]?.length ?? 0;
+    if (doneCount2 >= 3 && inProgressCount === 0) {
+      return { icon: "✅", label: "GREAT PROGRESS", message: `${doneCount2} tasks completed! Consider planning the next sprint from your backlog.`, action: null, color: "#22C55E" };
+    }
+    return null;
+  }, [tasks, columns, wipLimits, bannerDismissed]);
+
   if (loading) return (
     <div className="p-6 animate-fade-in">
       <div className="h-14 skeleton rounded-2xl mb-4" />
@@ -374,46 +434,83 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
 
   return (
     <>
-      {/* ── Stats bar ───────────────────────────────────────────── */}
+      {/* ── Stats + Assignee chips bar ──────────────────────────── */}
       <div
         className="flex items-center gap-4 px-6 py-2.5 flex-wrap shrink-0"
         style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-sidebar)" }}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="flex-1 max-w-[200px]">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-semibold" style={{ color: "var(--text-muted)" }}>
-                {doneCount}/{totalCount} completed
-              </span>
-              <span className="text-[11px] font-black tabular" style={{ color: pct === 100 ? "var(--success)" : "var(--accent)" }}>
-                {pct}%
-              </span>
-            </div>
-            <div className="h-[4px] rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${pct}%`, background: pct === 100 ? "var(--success)" : "linear-gradient(90deg, var(--accent), #A78BFA)" }}
-              />
-            </div>
+        {/* Progress bar */}
+        <div className="flex-1 max-w-[180px] shrink-0">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-semibold" style={{ color: "var(--text-muted)" }}>
+              {doneCount}/{totalCount} done
+            </span>
+            <span className="text-[10px] font-black tabular-nums" style={{ color: pct === 100 ? "var(--success)" : "var(--accent)" }}>
+              {pct}%
+            </span>
+          </div>
+          <div className="h-[3px] rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${pct}%`, background: pct === 100 ? "var(--success)" : "linear-gradient(90deg, var(--accent), #A78BFA)" }} />
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {columns.map((col) => {
-            const count = visibleTasks[col.id]?.length ?? 0;
-            return (
-              <span key={col.id} className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: `${col.color}15`, color: col.color, border: `1px solid ${col.color}25`, opacity: count === 0 ? 0.4 : 1 }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: col.color }} />
-                {count}
-              </span>
-            );
-          })}
+        {/* Column count badge */}
+        <div className="flex items-center gap-1 shrink-0 px-2.5 py-1 rounded-full"
+          style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+          <Layers className="w-3 h-3" style={{ color: "var(--text-subtle)" }} />
+          <span className="text-[10px] font-black" style={{ color: "var(--text-muted)" }}>
+            {columns.length} columns
+          </span>
         </div>
 
-        {/* ── Toolbar buttons (right side) ──────────────────────── */}
+        {/* Always-visible assignee chips */}
+        {members.length > 0 && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>
+              Assignee
+            </span>
+            <div className="flex items-center">
+              {/* All chip */}
+              <button
+                onClick={() => setFilters((f) => ({ ...f, assignees: [] }))}
+                className="flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-black transition-all"
+                style={{
+                  background: filters.assignees.length === 0 ? "var(--accent)" : "var(--bg-elevated)",
+                  color: filters.assignees.length === 0 ? "#fff" : "var(--text-muted)",
+                  border: "2px solid var(--bg-sidebar)",
+                  zIndex: members.length + 1,
+                }}
+              >
+                All
+              </button>
+              {members.map((m, idx) => {
+                const active = filters.assignees.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleAssignee(m.id)}
+                    title={m.name ?? m.email}
+                    className="transition-all"
+                    style={{
+                      marginLeft: -6, zIndex: members.length - idx,
+                      opacity: active ? 1 : filters.assignees.length === 0 ? 0.7 : 0.35,
+                      outline: active ? `2px solid var(--accent)` : "none",
+                      outlineOffset: 2, borderRadius: "50%",
+                      transform: active ? "scale(1.12)" : "scale(1)",
+                      transition: "transform 0.14s, opacity 0.14s",
+                    }}
+                  >
+                    <Avatar name={m.name ?? m.email} image={m.image ?? undefined} size="xs" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Toolbar buttons */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
-          {/* Search */}
           <button
             onClick={() => { setShowSearch((v) => { if (!v) setTimeout(() => searchRef.current?.focus(), 60); else setSearchQuery(""); return !v; }); }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all"
@@ -428,7 +525,6 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
             {showSearch ? "Close" : "Search"}
           </button>
 
-          {/* Filter */}
           <button
             onClick={() => setShowFilters((v) => !v)}
             className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all"
@@ -449,6 +545,44 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
           </button>
         </div>
       </div>
+
+      {/* ── AI Copilot Banner ────────────────────────────────────── */}
+      <AnimatePresence>
+        {aiBanner && !bannerDismissed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden shrink-0"
+          >
+            <div className="flex items-center gap-3 px-6 py-2.5"
+              style={{ background: `${aiBanner.color}10`, borderBottom: `1px solid ${aiBanner.color}25` }}>
+              <div className="flex items-center gap-2 shrink-0">
+                <Sparkles className="w-3.5 h-3.5" style={{ color: aiBanner.color }} />
+                <span className="text-[9px] font-black uppercase tracking-[0.12em]" style={{ color: aiBanner.color }}>
+                  AI Copilot · {aiBanner.label}
+                </span>
+              </div>
+              <p className="flex-1 text-[11.5px] font-medium" style={{ color: "var(--text-foreground)" }}>
+                {aiBanner.message}
+              </p>
+              {aiBanner.action && aiBanner.actionFn && (
+                <button
+                  onClick={aiBanner.actionFn}
+                  className="shrink-0 px-3 py-1 rounded-full text-[10px] font-black transition-all"
+                  style={{ background: aiBanner.color, color: "#fff" }}
+                >
+                  {aiBanner.action}
+                </button>
+              )}
+              <button onClick={() => setBannerDismissed(true)} className="shrink-0" style={{ color: "var(--text-subtle)" }}>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Search bar ──────────────────────────────────────────── */}
       <AnimatePresence>
@@ -499,29 +633,6 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
             style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-sidebar)" }}
           >
             <div className="flex flex-wrap items-center gap-4 px-6 py-2.5">
-              {/* Assignee filter */}
-              {members.length > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider shrink-0" style={{ color: "var(--text-subtle)" }}>Assignee</span>
-                  <div className="flex items-center gap-1">
-                    {members.map((m) => {
-                      const active = filters.assignees.includes(m.id);
-                      return (
-                        <button
-                          key={m.id}
-                          onClick={() => toggleAssignee(m.id)}
-                          title={m.name ?? m.email}
-                          className="transition-all"
-                          style={{ opacity: active ? 1 : 0.4, transform: active ? "scale(1.1)" : "scale(1)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 2, borderRadius: "50%" }}
-                        >
-                          <Avatar name={m.name ?? m.email} image={m.image ?? undefined} size="xs" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {/* Priority filter */}
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-wider shrink-0" style={{ color: "var(--text-subtle)" }}>Priority</span>
@@ -599,7 +710,7 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
         onDragEnd={handleDragEnd}
       >
         <div
-          className="flex gap-5 px-6 pt-5 pb-14 overflow-x-auto relative"
+          className="flex gap-4 px-6 pt-5 pb-14 overflow-x-auto relative"
           style={{
             minHeight: "calc(100vh - 200px)",
             backgroundImage: `radial-gradient(circle, rgba(99,102,241,0.055) 1px, transparent 1px)`,
@@ -620,6 +731,14 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
               onRename={handleRenameColumn}
               onCardContextMenu={(e, task) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, task }); }}
               searchQuery={searchQuery || undefined}
+              wipLimit={wipLimits[col.id]}
+              collapsed={collapsedCols.has(col.id)}
+              onToggleCollapse={() => setCollapsedCols((s) => {
+                const next = new Set(s);
+                next.has(col.id) ? next.delete(col.id) : next.add(col.id);
+                return next;
+              })}
+              onSetWipLimit={(limit) => handleSetWipLimit(col.id, limit)}
             />
           ))}
         </div>
