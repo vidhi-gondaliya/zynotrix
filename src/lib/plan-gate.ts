@@ -53,7 +53,7 @@ async function getOrgPlanId(orgId: string): Promise<PlanId> {
   const sub = await (prisma as any).subscription.findUnique({
     where: { organizationId: orgId },
     select: { plan: true },
-  });
+  }).catch(() => null);
   if (sub?.plan) return sub.plan as PlanId;
 
   const org = await prisma.organization.findUnique({
