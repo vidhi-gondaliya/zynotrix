@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import type { Project } from "@/types";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 interface CustomField { id: string; name: string; type: string; options: string | null; isRequired: boolean; }
 interface ClientPortal { id: string; token: string; isActive: boolean; showTasks: boolean; showHealth: boolean; showTimeline: boolean; password: string | null; }
@@ -68,7 +69,7 @@ export default function ProjectSettingsPage() {
     });
     setSaving(false);
     if (res.ok) toast.success("Project updated");
-    else toast.error("Failed to update");
+    else toast.error(await getApiError(res, "Failed to update project"));
   };
 
   const addCustomField = async () => {

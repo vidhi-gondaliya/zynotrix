@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BOARD_TEMPLATES, COLOR_PALETTE, DONE_COLUMNS } from "@/lib/board-templates";
 import type { BoardConfig, BoardColumnConfig } from "@/types";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const PROJECT_COLORS = [
@@ -161,8 +162,11 @@ export default function NewProjectPage() {
         const p = await res.json();
         toast.success("Project created!");
         router.push(`/projects/${p.id}/board?new=1`);
-      } else { toast.error("Failed to create project"); setCreating(false); }
-    } catch { toast.error("Failed to create project"); setCreating(false); }
+      } else {
+        toast.error(await getApiError(res, "Failed to create project"));
+        setCreating(false);
+      }
+    } catch { toast.error("Couldn't reach the server — check your connection"); setCreating(false); }
   };
 
   const chosenTpl = chosenTemplate ? BOARD_TEMPLATES.find((t) => t.id === chosenTemplate.id) : null;

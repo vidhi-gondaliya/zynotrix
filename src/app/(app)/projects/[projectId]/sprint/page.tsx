@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 interface Task { id: string; title: string; status: string; priority: string; storyPoints: number | null; }
 interface Sprint { id: string; name: string; goal: string | null; startDate: string; endDate: string; status: string; velocity: number | null; tasks: { task: Task }[]; }
@@ -48,7 +49,7 @@ export default function SprintPage() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-    if (!res.ok) return toast.error("Failed to create sprint");
+    if (!res.ok) return void toast.error(await getApiError(res, "Failed to create sprint"));
     toast.success("Sprint created");
     setCreating(false);
     setForm({ name: "", goal: "", startDate: "", endDate: "" });

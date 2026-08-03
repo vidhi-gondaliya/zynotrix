@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, Loader2, Copy, Sparkles, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 import { useRouter } from "next/navigation";
 
 interface Template {
@@ -52,7 +53,7 @@ export default function TemplatesPage() {
       body: JSON.stringify({ projectName: name }),
     });
     setApplying(null);
-    if (!res.ok) return toast.error("Failed to apply template");
+    if (!res.ok) return void toast.error(await getApiError(res, "Failed to apply template"));
     const data = await res.json();
     toast.success(`Project "${name}" created!`);
     router.push(`/projects/${data.project.id}/board`);
@@ -64,7 +65,7 @@ export default function TemplatesPage() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, fromProjectId: form.fromProjectId || undefined }),
     });
-    if (!res.ok) return toast.error("Failed to create");
+    if (!res.ok) return void toast.error(await getApiError(res, "Failed to create template"));
     toast.success("Template created");
     setCreating(false);
     setForm({ name: "", description: "", category: "general", emoji: "📋", isPublic: false, fromProjectId: "" });

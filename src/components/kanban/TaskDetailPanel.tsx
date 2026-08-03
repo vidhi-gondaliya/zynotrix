@@ -12,6 +12,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import type { Task, User as UserType, TaskStatus, TaskPriority } from "@/types";
 import { format, isPast, formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Subtask { id: string; title: string; status: string; assignee?: { id: string; name: string | null; image: string | null } | null; }
@@ -197,7 +198,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
       body: JSON.stringify({ ...merged, dueDate: merged.dueDate || null, assigneeId: merged.assigneeId || null }),
     });
     if (res.ok) { const u = await res.json(); setForm(merged); onUpdate(u); }
-    else toast.error("Failed to save");
+    else toast.error(await getApiError(res, "Failed to save"));
     setSaving(false);
   };
 
@@ -206,7 +207,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
     const title = newSubtask.trim(); setNewSubtask("");
     const res = await fetch(`/api/tasks/${task.id}/subtasks`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title }) });
     if (res.ok) { const sub: Subtask = await res.json(); setSubtasks((p) => [...p, sub]); }
-    else toast.error("Failed to add subtask");
+    else toast.error(await getApiError(res, "Failed to add subtask"));
   };
 
   const toggleSubtask = async (id: string) => {
@@ -230,8 +231,8 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
     try {
       const res = await fetch(`/api/tasks/${task.id}/comments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) });
       if (res.ok) { const c: Comment = await res.json(); setComments((p) => [...p, c]); }
-      else { toast.error("Failed to add comment"); setNewComment(content); }
-    } catch { toast.error("Failed to add comment"); setNewComment(content); }
+      else { toast.error(await getApiError(res, "Failed to add comment")); setNewComment(content); }
+    } catch { toast.error("Couldn't reach the server — check your connection"); setNewComment(content); }
     finally { setCommentLoading(false); }
   };
 
@@ -240,7 +241,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
     setComments((p) => p.filter((c) => c.id !== commentId));
     const res = await fetch(`/api/tasks/${task.id}/comments`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ commentId }) });
     if (!res.ok) {
-      toast.error("Failed to delete");
+      getApiError(res, "Failed to delete comment").then(toast.error);
       fetch(`/api/tasks/${task.id}/comments`).then((r) => r.json()).then((d) => setComments(Array.isArray(d) ? d : []));
     }
   };

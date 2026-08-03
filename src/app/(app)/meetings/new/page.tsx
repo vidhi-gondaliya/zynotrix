@@ -8,6 +8,7 @@ import type { User } from "@/types";
 import { format, addHours } from "date-fns";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 import { useSession, signIn } from "next-auth/react";
 
 function toDatetimeLocal(d: Date) {
@@ -62,7 +63,7 @@ export default function NewMeetingPage() {
         if (m.googleMeetUrl) toast.success("Google Meet link ready", { icon: "🎥" });
         router.push("/meetings");
       } else {
-        toast.error("Failed to schedule meeting");
+        toast.error(await getApiError(res, "Failed to schedule meeting"));
       }
     } finally { setCreating(false); }
   };

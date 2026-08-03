@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ALL_PERMISSIONS, PERMISSION_CATEGORIES } from "@/lib/permissions";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 import { format } from "date-fns";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -383,7 +384,7 @@ export default function AdminPage() {
       const updated: AppUser = await res.json();
       setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
       toast.success(`Role updated to ${roles.find((r) => r.name === role)?.label ?? role}`);
-    } else toast.error("Failed to update role");
+    } else toast.error(await getApiError(res, "Failed to update role"));
   };
 
   const deleteRole = async (roleId: string) => {
@@ -411,7 +412,7 @@ export default function AdminPage() {
       const updated: Role = await res.json();
       setRoles((prev) => prev.map((r) => r.id === updated.id ? updated : r));
       toast.success("Permissions saved");
-    } else toast.error("Failed to save");
+    } else toast.error(await getApiError(res, "Failed to save permissions"));
     setSavingPerms(false);
   };
 

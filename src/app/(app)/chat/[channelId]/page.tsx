@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 function formatMessageDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -50,7 +51,7 @@ function AddMembersModal({ channel, onClose, onMembersUpdated }: {
         ]);
       }
       toast.success("Member added");
-    } else { toast.error("Failed to add member"); }
+    } else { toast.error(await getApiError(res, "Failed to add member")); }
     setAdding(null);
   };
 
@@ -62,7 +63,7 @@ function AddMembersModal({ channel, onClose, onMembersUpdated }: {
     if (res.ok) {
       onMembersUpdated((channel.members ?? []).filter((m) => m.userId !== userId));
       toast.success("Member removed");
-    } else { toast.error("Failed to remove member"); }
+    } else { toast.error(await getApiError(res, "Failed to remove member")); }
   };
 
   const filteredUsers = users.filter((u) =>
@@ -177,7 +178,7 @@ function NewChannelModal({ onClose, onCreated }: {
         onCreated(ch);
         onClose();
         toast.success(`#${ch.name} created`);
-      } else { toast.error("Failed to create channel"); }
+      } else { toast.error(await getApiError(res, "Failed to create channel")); }
     } finally { setCreating(false); }
   };
 
@@ -348,7 +349,7 @@ export default function ChannelPage({ params }: { params: { channelId: string } 
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
     });
-    if (!res.ok) toast.error("Failed to send message");
+    if (!res.ok) toast.error(await getApiError(res, "Failed to send message"));
     setSending(false);
   };
 

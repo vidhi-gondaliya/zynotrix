@@ -19,6 +19,7 @@ import type { Task, TaskStatus, BoardColumnConfig, Project } from "@/types";
 import { getBoardColumns } from "@/lib/board-templates";
 import { isPast, isThisWeek } from "date-fns";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 import { Search, SlidersHorizontal, X, Clock, AlertTriangle, Sparkles, Layers } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -220,9 +221,9 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
         const saved: Task = await res.json();
         handleSaveTask(saved);
       } else {
-        toast.error("Failed to create task");
+        toast.error(await getApiError(res, "Failed to create task"));
       }
-    } catch { toast.error("Failed to create task"); }
+    } catch { toast.error("Couldn't reach the server — check your connection"); }
   };
 
   const handleTaskClick = (task: Task) => { setSelectedTask(task); setShowModal(false); setShowDetailPanel(true); };

@@ -15,6 +15,7 @@ import {
 } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 // ── Create Meeting Modal ───────────────────────────────────────────────────────
 type CreateMode = "now" | "schedule";
@@ -62,7 +63,7 @@ function CreateMeetingModal({ users, onCreated, onClose }: {
       onClose();
       toast.success("Meeting started!");
       if (m.googleMeetUrl) window.open(m.googleMeetUrl, "_blank");
-    } else { toast.error("Failed to start meeting"); }
+    } else { toast.error(await getApiError(res, "Failed to start meeting")); }
     setCreating(false);
   };
 
@@ -83,7 +84,7 @@ function CreateMeetingModal({ users, onCreated, onClose }: {
       onClose();
       toast.success("Meeting scheduled!");
       if (m.googleMeetUrl) toast.success("Google Meet link created!", { icon: "🎥" });
-    } else { toast.error("Failed to schedule meeting"); }
+    } else { toast.error(await getApiError(res, "Failed to schedule meeting")); }
     setCreating(false);
   };
 

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 interface NotifPrefs {
   browser: boolean; email: boolean; whatsapp: boolean;
@@ -66,8 +67,8 @@ export default function SettingsPage() {
         body: JSON.stringify(prefs),
       });
       if (res.ok) { toast.success("Preferences saved"); setDirty(false); }
-      else toast.error("Failed to save");
-    } catch { toast.error("Failed to save"); }
+      else toast.error(await getApiError(res, "Failed to save preferences"));
+    } catch { toast.error("Couldn't reach the server — check your connection"); }
     setSaving(false);
   };
 

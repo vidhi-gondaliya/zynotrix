@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Task, TaskStatus, TaskPriority, User } from "@/types";
 import toast from "react-hot-toast";
+import { getApiError } from "@/lib/api-error";
 
 interface TaskModalProps {
   open: boolean;
@@ -69,7 +70,7 @@ export function TaskModal({ open, onClose, projectId, task, defaultStatus, onSav
         toast.success(isEdit ? "Task updated" : "Task created");
       }
     } else {
-      toast.error("Failed to save task");
+      toast.error(await getApiError(res, "Failed to save task"));
     }
     setSaving(false);
   };
