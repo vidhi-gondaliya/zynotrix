@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { BoardImportExport } from "@/components/kanban/BoardImportExport";
 import { getBoardColumns } from "@/lib/board-templates";
-import { Sparkles, X, Zap, ArrowLeftRight, CalendarDays, Globe } from "lucide-react";
+import { Sparkles, X, Zap, ArrowLeftRight, CalendarDays, Globe, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -16,7 +16,7 @@ export default function BoardPage({ params }: { params: { projectId: string } })
   const defaultTaskId = searchParams.get("task") ?? undefined;
 
   const [boardKey,         setBoardKey]         = useState(0);
-  const [project,          setProject]          = useState<{ name: string; description?: string; createdAt?: string } | null>(null);
+  const [project,          setProject]          = useState<{ name: string; description?: string; createdAt?: string; color?: string; status?: string } | null>(null);
   const [currentBoardConfig, setCurrentBoardConfig] = useState<string | null>(null);
   const [showAiBanner,     setShowAiBanner]     = useState(isNewProject);
   const [generatingTasks,  setGeneratingTasks]  = useState(false);
@@ -27,7 +27,7 @@ export default function BoardPage({ params }: { params: { projectId: string } })
       const res = await fetch(`/api/projects/${params.projectId}`, { cache: "no-store" });
       const p   = await res.json();
       setCurrentBoardConfig(p.boardConfig ?? null);
-      setProject({ name: p.name, description: p.description, createdAt: p.createdAt });
+      setProject({ name: p.name, description: p.description, createdAt: p.createdAt, color: p.color, status: p.status });
     } catch {}
   }, [params.projectId]);
 
@@ -73,57 +73,68 @@ export default function BoardPage({ params }: { params: { projectId: string } })
 
       {/* ── Project header ─────────────────────────────────────────── */}
       {project && (
-        <div className="px-6 pt-5 pb-4 shrink-0"
-          style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold mb-1.5 flex items-center gap-1.5"
-                style={{ color: "var(--text-subtle)" }}>
-                <Globe className="w-3 h-3" />
-                Public · Last updated just now
-              </p>
-              <h1 className="text-[26px] font-black tracking-[-0.03em] leading-none mb-3"
-                style={{ color: "var(--text-foreground)" }}>
-                {project.name}
-              </h1>
-            </div>
-            {project.createdAt && (
-              <div className="text-right shrink-0">
-                <p className="text-[9.5px] font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--text-subtle)" }}>Created On</p>
-                <p className="text-[12px] font-bold mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {format(new Date(project.createdAt), "MMMM d, yyyy")}
-                </p>
-              </div>
-            )}
+        <div className="shrink-0 px-6 py-3 flex items-center gap-4"
+          style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-sidebar)" }}>
+
+          {/* Color dot */}
+          <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-black shadow-sm"
+            style={{ background: project.color ?? "var(--accent)" }}>
+            {project.name.charAt(0).toUpperCase()}
           </div>
 
-          {/* Toolbar row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1" />
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setShowImportExport(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold transition-all"
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-muted)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-                  (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-glow)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-                  (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-                }}
-              >
-                <ArrowLeftRight className="w-3.5 h-3.5" />
-                Import / Export
-              </button>
+          {/* Title + meta */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[17px] font-black tracking-[-0.025em] leading-tight truncate"
+              style={{ color: "var(--text-foreground)" }}>
+              {project.name}
+            </h1>
+            <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+              <span className="flex items-center gap-1 text-[10.5px] font-medium"
+                style={{ color: "var(--text-subtle)" }}>
+                <Globe className="w-3 h-3" /> Public
+              </span>
+              {project.createdAt && (
+                <span className="flex items-center gap-1 text-[10.5px] font-medium"
+                  style={{ color: "var(--text-subtle)" }}>
+                  <CalendarDays className="w-3 h-3" />
+                  Created {format(new Date(project.createdAt), "MMM d, yyyy")}
+                </span>
+              )}
+              {project.status && (
+                <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wide"
+                  style={{
+                    background: project.status === "ACTIVE" ? "#00F09018" : project.status === "ON_HOLD" ? "#FFC10718" : "#60A5FA18",
+                    color: project.status === "ACTIVE" ? "#00C070" : project.status === "ON_HOLD" ? "#D4A017" : "#60A5FA",
+                  }}>
+                  {project.status.replace("_", " ")}
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Import / Export action */}
+          <button
+            onClick={() => setShowImportExport(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11.5px] font-bold transition-all"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              color: "var(--text-muted)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-glow)";
+              (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+              (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)";
+            }}
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+            Import / Export
+          </button>
         </div>
       )}
 

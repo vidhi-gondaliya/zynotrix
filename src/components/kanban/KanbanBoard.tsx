@@ -451,73 +451,68 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
 
   return (
     <>
-      {/* ── Stats + Assignee chips bar ──────────────────────────── */}
-      <div
-        className="flex items-center gap-4 px-6 py-2.5 flex-wrap shrink-0"
-        style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-sidebar)" }}
-      >
-        {/* Progress bar */}
-        <div className="flex-1 max-w-[180px] shrink-0">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-semibold" style={{ color: "var(--text-muted)" }}>
-              {doneCount}/{totalCount} done
-            </span>
-            <span className="text-[10px] font-black tabular-nums" style={{ color: pct === 100 ? "var(--success)" : "var(--accent)" }}>
-              {pct}%
-            </span>
-          </div>
-          <div className="h-[3px] rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${pct}%`, background: pct === 100 ? "var(--success)" : "linear-gradient(90deg, var(--accent), #A78BFA)" }} />
-          </div>
-        </div>
+      {/* ── Stats + controls bar ─────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-6 py-2 shrink-0 flex-wrap"
+        style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-sidebar)" }}>
 
-        {/* Column count badge */}
-        <div className="flex items-center gap-1 shrink-0 px-2.5 py-1 rounded-full"
+        {/* Progress pill */}
+        <div className="flex items-center gap-2.5 shrink-0 px-3 py-1.5 rounded-xl"
           style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
-          <Layers className="w-3 h-3" style={{ color: "var(--text-subtle)" }} />
-          <span className="text-[10px] font-black" style={{ color: "var(--text-muted)" }}>
-            {columns.length} columns
+          <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-base)" }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${pct}%`, background: pct === 100 ? "#22C55E" : "linear-gradient(90deg, var(--accent), #A78BFA)" }} />
+          </div>
+          <span className="text-[10.5px] font-black tabular-nums" style={{ color: pct === 100 ? "#22C55E" : "var(--accent)" }}>
+            {pct}%
+          </span>
+          <span className="text-[10px]" style={{ color: "var(--text-subtle)" }}>
+            {doneCount}/{totalCount} done
           </span>
         </div>
 
-        {/* Always-visible assignee chips */}
+        {/* Column count */}
+        <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl"
+          style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+          <Layers className="w-3 h-3" style={{ color: "var(--text-subtle)" }} />
+          <span className="text-[10.5px] font-bold" style={{ color: "var(--text-muted)" }}>
+            {columns.length} sections
+          </span>
+        </div>
+
+        {/* Divider */}
+        <div className="shrink-0 w-px h-5" style={{ background: "var(--border)" }} />
+
+        {/* Assignee filter row */}
         {members.length > 0 && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>
+            <span className="text-[9.5px] font-black uppercase tracking-wider" style={{ color: "var(--text-subtle)" }}>
               Assignee
             </span>
             <div className="flex items-center">
-              {/* All chip */}
               <button
                 onClick={() => setFilters((f) => ({ ...f, assignees: [] }))}
-                className="flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-black transition-all"
+                className="flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-black transition-all"
                 style={{
                   background: filters.assignees.length === 0 ? "var(--accent)" : "var(--bg-elevated)",
                   color: filters.assignees.length === 0 ? "#fff" : "var(--text-muted)",
                   border: "2px solid var(--bg-sidebar)",
                   zIndex: members.length + 1,
+                  fontSize: 9,
                 }}
-              >
-                All
-              </button>
+              >All</button>
               {members.map((m, idx) => {
                 const active = filters.assignees.includes(m.id);
                 return (
-                  <button
-                    key={m.id}
-                    onClick={() => toggleAssignee(m.id)}
-                    title={m.name ?? m.email}
+                  <button key={m.id} onClick={() => toggleAssignee(m.id)} title={m.name ?? m.email}
                     className="transition-all"
                     style={{
-                      marginLeft: -6, zIndex: members.length - idx,
-                      opacity: active ? 1 : filters.assignees.length === 0 ? 0.7 : 0.35,
-                      outline: active ? `2px solid var(--accent)` : "none",
-                      outlineOffset: 2, borderRadius: "50%",
-                      transform: active ? "scale(1.12)" : "scale(1)",
-                      transition: "transform 0.14s, opacity 0.14s",
-                    }}
-                  >
+                      marginLeft: -5, zIndex: members.length - idx,
+                      opacity: active ? 1 : filters.assignees.length === 0 ? 0.75 : 0.3,
+                      outline: active ? "2px solid var(--accent)" : "none",
+                      outlineOffset: 1, borderRadius: "50%",
+                      transform: active ? "scale(1.15)" : "scale(1)",
+                      transition: "transform 0.12s, opacity 0.12s",
+                    }}>
                     <Avatar name={m.name ?? m.email} image={m.image ?? undefined} size="xs" />
                   </button>
                 );
@@ -526,11 +521,11 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
           </div>
         )}
 
-        {/* Toolbar buttons */}
+        {/* Right-side actions */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
           <button
             onClick={() => { setShowSearch((v) => { if (!v) setTimeout(() => searchRef.current?.focus(), 60); else setSearchQuery(""); return !v; }); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all"
             style={{
               background: showSearch ? "var(--accent-muted)" : "var(--bg-elevated)",
               border: `1px solid ${showSearch ? "var(--accent-glow)" : "var(--border)"}`,
@@ -539,12 +534,12 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
             title="Search tasks (Ctrl+F)"
           >
             <Search className="w-3.5 h-3.5" />
-            {showSearch ? "Close" : "Search"}
+            Search
           </button>
 
           <button
             onClick={() => setShowFilters((v) => !v)}
-            className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+            className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all"
             style={{
               background: showFilters || hasActiveFilters ? "var(--accent-muted)" : "var(--bg-elevated)",
               border: `1px solid ${showFilters || hasActiveFilters ? "var(--accent-glow)" : "var(--border)"}`,
@@ -573,15 +568,16 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
             transition={{ duration: 0.2 }}
             className="overflow-hidden shrink-0"
           >
-            <div className="flex items-center gap-3 px-6 py-2.5"
-              style={{ background: `${aiBanner.color}10`, borderBottom: `1px solid ${aiBanner.color}25` }}>
-              <div className="flex items-center gap-2 shrink-0">
-                <Sparkles className="w-3.5 h-3.5" style={{ color: aiBanner.color }} />
-                <span className="text-[9px] font-black uppercase tracking-[0.12em]" style={{ color: aiBanner.color }}>
-                  AI Copilot · {aiBanner.label}
+            <div className="flex items-center gap-3 px-6 py-2"
+              style={{ background: `${aiBanner.color}0D`, borderBottom: `1px solid ${aiBanner.color}20` }}>
+              <div className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-full"
+                style={{ background: `${aiBanner.color}18` }}>
+                <Sparkles className="w-3 h-3" style={{ color: aiBanner.color }} />
+                <span className="text-[9px] font-black uppercase tracking-[0.1em]" style={{ color: aiBanner.color }}>
+                  AI · {aiBanner.label}
                 </span>
               </div>
-              <p className="flex-1 text-[11.5px] font-medium" style={{ color: "var(--text-foreground)" }}>
+              <p className="flex-1 text-[11px] font-medium" style={{ color: "var(--text-foreground)" }}>
                 {aiBanner.message}
               </p>
               {aiBanner.action && aiBanner.actionFn && (
