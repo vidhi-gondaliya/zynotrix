@@ -66,6 +66,14 @@ export default function NewProjectPage() {
   const [editColumns, setEditColumns] = useState<BoardColumnConfig[]>([]);
   const [colorPickerIdx, setColorPickerIdx] = useState<number | null>(null);
 
+  // Custom from scratch
+  const [buildingCustom, setBuildingCustom] = useState(false);
+  const [customCols, setCustomCols] = useState<BoardColumnConfig[]>([
+    { id: "TODO", label: "To Do", color: "#60A5FA", group: "progress" },
+    { id: "IN_PROGRESS", label: "In Progress", color: "#A78BFA", group: "progress" },
+  ]);
+  const [customColorIdx, setCustomColorIdx] = useState<number | null>(null);
+
   const generateDescription = async () => {
     if (!form.name.trim()) { toast.error("Enter a project name first"); return; }
     setGeneratingDesc(true);
@@ -530,6 +538,85 @@ export default function NewProjectPage() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Custom from scratch */}
+                <div className="rounded-2xl overflow-hidden"
+                  style={{
+                    background: buildingCustom || chosenTemplate?.id === "custom" ? `${form.color}10` : "var(--bg-elevated)",
+                    border: `1.5px dashed ${buildingCustom || chosenTemplate?.id === "custom" ? form.color + "60" : "var(--border)"}`,
+                  }}>
+                  <button type="button"
+                    onClick={() => { setBuildingCustom((v) => !v); setEditingTemplateId(null); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all">
+                    <span className="text-xl">✏️</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold" style={{ color: "var(--text-foreground)" }}>Start from Scratch</p>
+                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Build your own custom columns</p>
+                    </div>
+                    <div style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 700 }}>
+                      {buildingCustom ? "▲ Hide" : "▼ Open"}
+                    </div>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {buildingCustom && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                        <div className="px-4 pb-4 space-y-2" style={{ borderTop: "1px solid var(--border)" }}>
+                          <p className="text-[10px] font-black uppercase tracking-wider pt-3" style={{ color: "var(--text-muted)" }}>Your columns</p>
+                          {customCols.map((col, idx) => (
+                            <div key={col.id} className="flex items-center gap-2">
+                              <div className="relative">
+                                <button type="button" onClick={() => setCustomColorIdx(customColorIdx === idx ? null : idx)}
+                                  className="w-6 h-6 rounded-lg border-2" style={{ background: col.color, borderColor: col.color + "60" }} />
+                                {customColorIdx === idx && (
+                                  <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setCustomColorIdx(null)} />
+                                    <div className="absolute top-full mt-1 left-0 z-20 p-2 rounded-xl grid grid-cols-6 gap-1"
+                                      style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-float)" }}>
+                                      {COLOR_PALETTE.map((hex) => (
+                                        <button key={hex} type="button"
+                                          onClick={() => { setCustomCols((p) => p.map((c, i) => i === idx ? { ...c, color: hex } : c)); setCustomColorIdx(null); }}
+                                          className="w-5 h-5 rounded-md" style={{ background: hex, outline: col.color === hex ? "2px solid white" : "none" }} />
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <input value={col.label} onChange={(e) => setCustomCols((p) => p.map((c, i) => i === idx ? { ...c, label: e.target.value } : c))}
+                                className="flex-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold outline-none"
+                                style={{ background: "var(--bg-base)", border: "1px solid var(--border)", color: "var(--text-foreground)" }}
+                                placeholder={`Column ${idx + 1}`} />
+                              {customCols.length > 1 && (
+                                <button type="button" onClick={() => setCustomCols((p) => p.filter((_, i) => i !== idx))}
+                                  className="p-1 rounded-lg" style={{ color: "var(--text-subtle)" }}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          <div className="flex items-center gap-2 pt-1">
+                            <button type="button"
+                              onClick={() => setCustomCols((p) => [...p, { id: `COL_${Date.now()}`, label: "", color: COLOR_PALETTE[p.length % COLOR_PALETTE.length], group: "progress" as const }])}
+                              className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg"
+                              style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px dashed var(--border)" }}>
+                              <Plus className="w-3 h-3" /> Add column
+                            </button>
+                            <button type="button"
+                              onClick={() => {
+                                const allCols = [...customCols.filter((c) => c.label.trim()), ...DONE_COLUMNS];
+                                setChosenTemplate({ id: "custom", config: { templateId: "custom", columns: allCols } });
+                                setBuildingCustom(false);
+                                toast.success("Custom board saved");
+                              }}
+                              className="flex items-center gap-1 text-[10px] font-bold px-3 py-1.5 rounded-lg text-white ml-auto"
+                              style={{ background: form.color }}>
+                              <Check className="w-3 h-3" /> Use this board
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {!chosenTemplate && (

@@ -253,6 +253,23 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
     });
   };
 
+  const handleAddSection = async () => {
+    const id = `SECTION_${Date.now()}`;
+    const sectionColors = ["#9D6BFF","#00CFFF","#00F090","#FF4466","#FFC107","#EC4899"];
+    const color = sectionColors[columns.length % sectionColors.length];
+    const updated = [...columns, { id, label: "New Section", color, group: "progress" as const }];
+    setColumns(updated);
+    setTasks((p) => ({ ...p, [id]: [] }));
+    try {
+      await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ boardConfig: JSON.stringify({ templateId: "custom", columns: updated }) }),
+      });
+      toast.success("Section added");
+    } catch { toast.error("Failed to add section"); loadBoard(); }
+  };
+
   const handleRenameColumn = async (colStatus: string, newLabel: string) => {
     const updated = columns.map((c) => c.id === colStatus ? { ...c, label: newLabel } : c);
     setColumns(updated);
@@ -710,9 +727,9 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
         onDragEnd={handleDragEnd}
       >
         <div
-          className="flex gap-4 px-6 pt-5 pb-14 overflow-x-auto relative"
+          className="flex gap-4 px-6 pt-4 pb-8 overflow-x-auto relative"
           style={{
-            minHeight: "calc(100vh - 200px)",
+            minHeight: "calc(100vh - 160px)",
             backgroundImage: `radial-gradient(circle, rgba(99,102,241,0.055) 1px, transparent 1px)`,
             backgroundSize: "28px 28px",
           }}
@@ -741,6 +758,26 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
               onSetWipLimit={(limit) => handleSetWipLimit(col.id, limit)}
             />
           ))}
+
+          {/* ── Add Section ghost column ──────────────────────────── */}
+          <button
+            type="button"
+            onClick={handleAddSection}
+            className="flex-shrink-0 flex flex-col items-center justify-center gap-2 rounded-2xl transition-all group"
+            style={{
+              width: 240,
+              minHeight: 120,
+              alignSelf: "flex-start",
+              background: "transparent",
+              border: "1.5px dashed var(--border)",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-elevated)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--text-muted)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"; }}
+          >
+            <span className="w-7 h-7 rounded-full flex items-center justify-center text-base"
+              style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>＋</span>
+            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Add Section</span>
+          </button>
         </div>
 
         <DragOverlay>
