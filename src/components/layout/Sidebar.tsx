@@ -279,7 +279,11 @@ export function Sidebar() {
 
   const [open, setOpen] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
-    SECTIONS.forEach((s) => { init[s.key] = false; });
+    SECTIONS.forEach((s) => {
+      init[s.key] = s.items.some((item) =>
+        pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"))
+      );
+    });
     return init;
   });
 
