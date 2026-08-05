@@ -113,6 +113,7 @@ export function AIChatBubble() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setOpen(true)}
+            data-tour-id="tour-ai"
             className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl"
             style={{
               background: "linear-gradient(135deg, var(--accent), #EC4899)",

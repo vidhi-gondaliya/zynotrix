@@ -6,8 +6,9 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useTheme } from "@/store/useTheme";
 import {
   Sun, Moon, Key, User, Bell, Monitor, Mail, MessageCircle,
-  Check, Loader2, Sparkles, Clock, Filter, Zap, BellOff, Volume2,
+  Check, Loader2, Sparkles, Clock, Filter, Zap, BellOff, Volume2, Map,
 } from "lucide-react";
+import { useTour } from "@/store/useTour";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { getApiError } from "@/lib/api-error";
@@ -43,6 +44,7 @@ const PRIORITY_LEVELS = [
 export default function SettingsPage() {
   const { data: session } = useSession();
   const { theme } = useTheme();
+  const { start: startTour } = useTour();
   const [prefs, setPrefs] = useState<NotifPrefs | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -119,11 +121,25 @@ export default function SettingsPage() {
         </h3>
         <div className="flex items-center gap-4">
           <Avatar name={session?.user?.name} image={session?.user?.image} size="lg" />
-          <div>
+          <div className="flex-1">
             <p className="font-bold text-foreground">{session?.user?.name ?? "User"}</p>
             <p className="text-sm text-muted">{session?.user?.email}</p>
             <p className="text-xs text-subtle mt-0.5 capitalize">{(session?.user as { role?: string })?.role?.toLowerCase() ?? "member"}</p>
           </div>
+          <button
+            onClick={startTour}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all"
+            style={{
+              background: "var(--accent-muted)",
+              border: "1px solid var(--accent-glow)",
+              color: "var(--accent)",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+          >
+            <Map className="w-3.5 h-3.5" />
+            Show Tour
+          </button>
         </div>
       </div>
 

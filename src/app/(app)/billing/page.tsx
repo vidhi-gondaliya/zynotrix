@@ -327,6 +327,11 @@ export default function BillingPage() {
   );
 }
 
+type DemoCheckoutState = {
+  planId: string; planName: string; price: number; cycle: "monthly" | "annual";
+  step: "confirm" | "payment" | "processing" | "done";
+} | null;
+
 function BillingContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -335,6 +340,8 @@ function BillingContent() {
   const [loading, setLoading]   = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const [toast, setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
+  const [stripeEnabled, setStripeEnabled] = useState(true);
+  const [demoCheckout, setDemoCheckout]   = useState<DemoCheckoutState>(null);
 
   const showToast = useCallback((msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -344,8 +351,12 @@ function BillingContent() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/billing/usage");
-      if (res.ok) setData(await res.json());
+      const [usageRes, cfgRes] = await Promise.all([
+        fetch("/api/billing/usage"),
+        fetch("/api/billing/config"),
+      ]);
+      if (usageRes.ok) setData(await usageRes.json());
+      if (cfgRes.ok) { const cfg = await cfgRes.json(); setStripeEnabled(cfg.stripeEnabled); }
     } finally { setLoading(false); }
   }, []);
 
@@ -358,6 +369,15 @@ function BillingContent() {
   }, []);
 
   const handleUpgrade = async (planId: string, cycle: "monthly" | "annual") => {
+    if (!stripeEnabled) {
+      const plan = PLANS[planId as keyof typeof PLANS];
+      if (!plan) return;
+      const price = plan.isFlat
+        ? (cycle === "annual" ? plan.flatAnnual! : plan.flatMonthly!)
+        : (cycle === "annual" ? plan.annualPrice! : plan.monthlyPrice!);
+      setDemoCheckout({ planId, planName: plan.name, price, cycle, step: "confirm" });
+      return;
+    }
     setActionId(`plan_${planId}`);
     try {
       const res = await fetch("/api/billing/checkout", {
@@ -745,10 +765,133 @@ function BillingContent() {
     </div>
   );
 
+  /* ── Demo checkout modal ─────────────────────────────────────────────── */
+  const DemoCheckoutModal = () => {
+    if (!demoCheckout) return null;
+    const { planName, price, cycle, step, planId } = demoCheckout;
+    const advance = async () => {
+      if (step === "confirm") { setDemoCheckout((d) => d && { ...d, step: "payment" }); return; }
+      if (step === "payment") {
+        setDemoCheckout((d) => d && { ...d, step: "processing" });
+        await new Promise((r) => setTimeout(r, 2000));
+        await fetch("/api/billing/demo-upgrade", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId }),
+        });
+        setDemoCheckout((d) => d && { ...d, step: "done" });
+        load();
+        return;
+      }
+      if (step === "done") { setDemoCheckout(null); setTab("overview"); }
+    };
+
+    const STEPS = ["confirm", "payment", "processing", "done"];
+    const stepIdx = STEPS.indexOf(step);
+
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(5,5,20,0.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+        onClick={(e) => { if (e.target === e.currentTarget && step !== "processing") setDemoCheckout(null); }}>
+        <div style={{ width: "100%", maxWidth: 440, background: "#fff", borderRadius: 24, overflow: "hidden", boxShadow: "0 32px 120px rgba(0,0,0,0.4)" }}>
+          {/* Header bar */}
+          <div style={{ background: "linear-gradient(135deg,#7C3AED,#6366F1)", padding: "22px 24px", position: "relative" }}>
+            {/* step dots */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+              {["Plan", "Payment", "Processing", "Done"].map((label, i) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: i <= stepIdx ? "#fff" : "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, color: i <= stepIdx ? "#7C3AED" : "rgba(255,255,255,0.5)", transition: "all .3s" }}>
+                    {i < stepIdx ? "✓" : i + 1}
+                  </div>
+                  {i < 3 && <div style={{ flex: 1, height: 1, width: 18, background: i < stepIdx ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)", transition: "background .3s" }} />}
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: 0 }}>
+              {step === "confirm" && `Upgrade to ${planName}`}
+              {step === "payment" && "Payment Details"}
+              {step === "processing" && "Processing…"}
+              {step === "done" && "🎉 Plan Activated!"}
+            </p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
+              {step === "confirm" && `${planName} plan · billed ${cycle}`}
+              {step === "payment" && "Secure demo checkout"}
+              {step === "processing" && "Setting up your account…"}
+              {step === "done" && "Your plan has been upgraded successfully"}
+            </p>
+            {step !== "processing" && (
+              <button onClick={() => setDemoCheckout(null)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", padding: "4px 8px", fontSize: 16, lineHeight: 1 }}>×</button>
+            )}
+          </div>
+
+          {/* Body */}
+          <div style={{ padding: "24px" }}>
+            {step === "confirm" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ background: "#F9FAFB", borderRadius: 14, padding: "16px 18px", border: "1px solid #E5E7EB" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{planName} Plan</span>
+                    <span style={{ fontSize: 20, fontWeight: 900, color: "#111827" }}>${price}<span style={{ fontSize: 12, fontWeight: 500, color: "#9CA3AF" }}>/mo</span></span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6B7280", background: "#FEF3C7", borderRadius: 8, padding: "8px 12px", border: "1px solid #FDE68A" }}>
+                    🧪 <strong>Demo Mode</strong> — No real payment will be charged. This simulates the checkout experience.
+                  </div>
+                </div>
+                <button onClick={advance} style={{ width: "100%", padding: "14px", borderRadius: 14, background: "linear-gradient(135deg,#7C3AED,#6366F1)", border: "none", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 6px 24px rgba(124,58,237,0.35)" }}>
+                  Continue to Payment →
+                </button>
+              </div>
+            )}
+
+            {step === "payment" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {[
+                  { label: "Card number", value: "4242  4242  4242  4242" },
+                  { label: "Expiry", value: "12 / 28" },
+                  { label: "CVC", value: "•••" },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".06em" }}>{label}</p>
+                    <div style={{ padding: "11px 14px", borderRadius: 12, border: "1px solid #E5E7EB", background: "#F9FAFB", fontSize: 14, fontWeight: 600, color: "#374151", fontFamily: "monospace", letterSpacing: ".05em" }}>{value}</div>
+                  </div>
+                ))}
+                <p style={{ fontSize: 11, color: "#9CA3AF", textAlign: "center" }}>🔒 Secure & encrypted · Demo data only</p>
+                <button onClick={advance} style={{ width: "100%", padding: "14px", borderRadius: 14, background: "linear-gradient(135deg,#7C3AED,#6366F1)", border: "none", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", marginTop: 4 }}>
+                  Pay ${price} & Activate →
+                </button>
+              </div>
+            )}
+
+            {step === "processing" && (
+              <div style={{ textAlign: "center", padding: "24px 0" }}>
+                <div style={{ fontSize: 40, marginBottom: 14 }}>⚙️</div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 8 }}>Setting up your {planName} plan…</p>
+                <p style={{ fontSize: 12, color: "#9CA3AF" }}>Granting features and credits</p>
+                <div style={{ width: 160, height: 4, background: "#F3F4F6", borderRadius: 99, margin: "20px auto 0", overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#7C3AED,#6366F1)", animation: "demoProgress 1.8s ease-in-out forwards" }} />
+                </div>
+              </div>
+            )}
+
+            {step === "done" && (
+              <div style={{ textAlign: "center", padding: "16px 0" }}>
+                <div style={{ fontSize: 52, marginBottom: 12 }}>🎉</div>
+                <p style={{ fontSize: 16, fontWeight: 800, color: "#111827", marginBottom: 8 }}>Welcome to {planName}!</p>
+                <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 24 }}>Your plan is now active. Enjoy all the new features.</p>
+                <button onClick={advance} style={{ padding: "12px 32px", borderRadius: 14, background: "linear-gradient(135deg,#7C3AED,#6366F1)", border: "none", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+                  Go to Overview
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   /* ── Render ─────────────────────────────────────────────────────────── */
   return (
     <div style={{ minHeight: "100vh", background: "#F9FAFB" }}>
       {toast && <Toast msg={toast.msg} ok={toast.ok} onClose={() => setToast(null)} />}
+      <DemoCheckoutModal />
 
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "32px 32px 60px" }}>
 
@@ -757,6 +900,11 @@ function BillingContent() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <CreditCard size={20} style={{ color: "#6366F1" }} />
             <h1 style={{ fontSize: 24, fontWeight: 900, color: "#111827", letterSpacing: "-0.02em" }}>Billing & Subscription</h1>
+            {!stripeEnabled && (
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", padding: "3px 10px", borderRadius: 99, background: "#FEF3C7", color: "#92400E", border: "1px solid #FDE68A" }}>
+                🧪 Demo Mode
+              </span>
+            )}
           </div>
           <p style={{ fontSize: 13, color: "#9CA3AF" }}>Manage your plan, credits, top-ups, and invoices.</p>
         </div>
@@ -793,6 +941,7 @@ function BillingContent() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+        @keyframes demoProgress { from { width:0; } to { width:100%; } }
       `}</style>
     </div>
   );

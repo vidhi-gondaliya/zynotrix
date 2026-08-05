@@ -49,6 +49,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
 
   return (
     <header
+      data-tour-id="tour-header"
       className="flex items-center gap-3 sticky top-0 z-[var(--z-overlay)]"
       style={{
         height: "var(--header-h)",

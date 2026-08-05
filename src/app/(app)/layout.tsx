@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { NotificationProvider } from "@/components/layout/NotificationBell";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { AIChatBubble } from "@/components/ai/AIChatBubble";
+import { TourGuide } from "@/components/ui/TourGuide";
 import { useEffect, useState } from "react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -65,6 +66,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} projects={projects} />
       <AIChatBubble />
+      <TourGuide />
     </NotificationProvider>
   );
 }

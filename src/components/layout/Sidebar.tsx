@@ -380,6 +380,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <motion.nav
+        data-tour-id="tour-sidebar"
         initial="hidden"
         animate="show"
         variants={navVariants}
@@ -437,7 +438,7 @@ export function Sidebar() {
       {/* Bottom dock */}
       <div style={{ flexShrink: 0, padding: "8px 10px 10px", borderTop: `1px solid ${SB.border}` }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+          <motion.div data-tour-id="tour-notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
             <NavLink
               item={{ href: "/notifications", icon: Bell, label: "Notifications" }}
               badge={unreadCount > 0 ? <Badge count={unreadCount} /> : null}
@@ -450,13 +451,13 @@ export function Sidebar() {
               <NavLink item={{ href: "/admin", icon: ShieldCheck, label: "Admin Panel" }} collapsed={collapsed} active={isActive("/admin")} />
             </motion.div>
           )}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.46 }}>
+          <motion.div data-tour-id="tour-billing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.46 }}>
             <NavLink item={{ href: "/billing", icon: CreditCard, label: "Billing" }} collapsed={collapsed} active={isActive("/billing")} />
           </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.48 }}>
             <NavLink item={{ href: "/audit", icon: Receipt, label: "Audit Log" }} collapsed={collapsed} active={isActive("/audit")} />
           </motion.div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.50 }}>
+          <motion.div data-tour-id="tour-settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.50 }}>
             <NavLink item={{ href: "/settings", icon: Settings, label: "Settings" }} collapsed={collapsed} active={isActive("/settings")} />
           </motion.div>
         </div>
