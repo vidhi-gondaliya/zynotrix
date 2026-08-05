@@ -9,6 +9,7 @@ import {
   Workflow, LayoutTemplate, ArrowLeftRight, Puzzle, Shield,
   Bell, Settings, ShieldCheck, LogOut, CreditCard,
   Zap, PanelLeftClose, PanelLeftOpen, ChevronDown, Receipt,
+  Target, Briefcase, PieChart,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useNotifications } from "@/store/useNotifications";
@@ -36,9 +37,11 @@ export const useSidebar = create<SidebarStore>((set) => ({
 interface NavItem { href: string; icon: React.ElementType; label: string; }
 
 const PINNED: NavItem[] = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/projects",  icon: FolderKanban,    label: "Projects"  },
-  { href: "/tasks",     icon: CheckSquare,     label: "My Tasks"  },
+  { href: "/dashboard",  icon: LayoutDashboard, label: "Dashboard"  },
+  { href: "/portfolio",  icon: Briefcase,       label: "Portfolio"  },
+  { href: "/dashboards", icon: PieChart,        label: "Dashboards" },
+  { href: "/projects",   icon: FolderKanban,    label: "Projects"   },
+  { href: "/tasks",      icon: CheckSquare,     label: "My Tasks"   },
 ];
 
 const SECTIONS = [
@@ -63,9 +66,10 @@ const SECTIONS = [
   {
     key: "people", label: "People", dot: "#4ADE80",
     items: [
-      { href: "/workload",   icon: BarChart2,      label: "Workload"   },
-      { href: "/attendance", icon: ClipboardCheck, label: "Attendance" },
-      { href: "/rewards",    icon: Trophy,         label: "Rewards"    },
+      { href: "/goals",      icon: Target,         label: "Goals & OKRs" },
+      { href: "/workload",   icon: BarChart2,      label: "Workload"     },
+      { href: "/attendance", icon: ClipboardCheck, label: "Attendance"   },
+      { href: "/rewards",    icon: Trophy,         label: "Rewards"      },
     ] as NavItem[],
   },
   {

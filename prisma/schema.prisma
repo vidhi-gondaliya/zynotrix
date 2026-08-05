@@ -34,6 +34,8 @@ model Organization {
   attendanceRecords AttendanceRecord[]
   subscription     Subscription?
   aiCreditBalance  AiCreditBalance?
+  goals            Goal[]
+  dashboards       Dashboard[]
 
   @@map("organizations")
 }
@@ -96,6 +98,8 @@ model User {
   projectTemplates        ProjectTemplate[]
   integrations            Integration[]
   organizationMembers     OrganizationMember[]
+  ownedGoals              Goal[]       @relation("GoalOwner")
+  dashboards              Dashboard[]  @relation("DashboardOwner")
 
   @@map("users")
 }
@@ -995,6 +999,67 @@ model AiCreditTransaction {
 
   @@index([organizationId, createdAt])
   @@map("ai_credit_transactions")
+}
+
+// ── GOALS / OKRs ─────────────────────────────────────────────────────────────
+
+model Goal {
+  id             String      @id @default(cuid())
+  organizationId String
+  ownerId        String
+  title          String
+  description    String?
+  type           String      @default("COMPANY") // COMPANY | TEAM | PERSONAL
+  status         String      @default("ON_TRACK") // ON_TRACK | AT_RISK | OFF_TRACK | COMPLETED | ARCHIVED
+  dueDate        DateTime?
+  parentGoalId   String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner        User         @relation("GoalOwner", fields: [ownerId], references: [id])
+  parentGoal   Goal?        @relation("GoalHierarchy", fields: [parentGoalId], references: [id])
+  childGoals   Goal[]       @relation("GoalHierarchy")
+  keyResults   KeyResult[]
+
+  @@index([organizationId])
+  @@map("goals")
+}
+
+model KeyResult {
+  id           String    @id @default(cuid())
+  goalId       String
+  title        String
+  unit         String?
+  targetValue  Float     @default(100)
+  currentValue Float     @default(0)
+  dueDate      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("key_results")
+}
+
+// ── CUSTOM DASHBOARDS ────────────────────────────────────────────────────────
+
+model Dashboard {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  title          String
+  isDefault      Boolean  @default(false)
+  layout         String   @default("[]") // JSON array of widget configs
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation("DashboardOwner", fields: [userId], references: [id])
+
+  @@index([organizationId, userId])
+  @@map("dashboards")
 }
 
 model BillingInvoice {
