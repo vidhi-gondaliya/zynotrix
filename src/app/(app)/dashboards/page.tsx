@@ -98,9 +98,10 @@ type DataBundle = {
 
 function renderWidget(w: WidgetConfig, data: DataBundle) {
   const { meta, trends, projects, members, goals, overdue, allTasks } = data;
-  const limit = Number(w.config.limit ?? 10);
-  const timeRange = Number(w.config.timeRange ?? 7);
-  const chartType = (w.config.chartType as string) ?? "bar";
+  const cfg = w.config ?? {};
+  const limit = Number(cfg.limit ?? 10);
+  const timeRange = Number(cfg.timeRange ?? 7);
+  const chartType = (cfg.chartType as string) ?? "bar";
 
   switch (w.type) {
     case "overview_stats": {
@@ -248,7 +249,7 @@ function renderWidget(w: WidgetConfig, data: DataBundle) {
     }
 
     case "goals_progress": {
-      const goalType = (w.config.goalType as string) ?? "ALL";
+      const goalType = ((w.config ?? {}).goalType as string) ?? "ALL";
       const filtered = goalType === "ALL" ? goals : goals.filter((g) => g.type === goalType);
       const TYPE_COLOR: Record<string, string> = { COMPANY: "#7C3AED", TEAM: "#2563EB", PERSONAL: "#059669" };
       if (filtered.length === 0) return <p className="text-xs text-center pt-8" style={{ color: "var(--text-muted)" }}>No goals</p>;
@@ -274,7 +275,7 @@ function renderWidget(w: WidgetConfig, data: DataBundle) {
     }
 
     case "velocity_chart": {
-      const weeks = Number(w.config.weeks ?? 8);
+      const weeks = Number((w.config ?? {}).weeks ?? 8);
       const now = new Date();
       const weekData: { week: string; done: number }[] = [];
       for (let i = weeks - 1; i >= 0; i--) {
@@ -401,7 +402,7 @@ function WidgetSettings({ w, onSave, onClose }: {
 }) {
   const [title, setTitle]       = useState(w.title);
   const [size,  setSize]        = useState<WidgetSize>(w.size);
-  const [cfg,   setCfg]         = useState<Record<string, unknown>>(w.config);
+  const [cfg,   setCfg]         = useState<Record<string, unknown>>(w.config ?? {});
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95, y: -8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
