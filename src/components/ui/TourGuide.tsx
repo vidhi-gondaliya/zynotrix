@@ -1,13 +1,13 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
 import { useTour, TOUR_STEPS } from "@/store/useTour";
 
-const TIP_W   = 380;
-const TIP_H   = 330; // conservative estimate for clamping
-const GAP     = 16;  // gap between spotlight edge and tooltip
-const SPOT_PAD = 8;  // padding around highlighted element
+const TIP_W    = 380;
+const TIP_H    = 420; // generous upper-bound for initial clamping calculation
+const GAP      = 16;  // gap between spotlight edge and tooltip
+const SPOT_PAD = 8;   // padding around highlighted element
 
 interface SpotRect { top: number; left: number; w: number; h: number }
 interface TipPos   { top: number; left: number }
@@ -75,6 +75,7 @@ export function TourGuide() {
   const [spot, setSpot] = useState<SpotRect | null>(null);
   const [tip,  setTip]  = useState<TipPos>({ top: 0, left: 0 });
   const rafRef = useRef<number | null>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
   const isFirst = step === 0;
   const isLast  = step === total - 1;
 
@@ -105,6 +106,20 @@ export function TourGuide() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [active, measure]);
+
+  // After the card renders, measure its actual height and re-clamp if it overflows
+  useLayoutEffect(() => {
+    if (!active || !tipRef.current) return;
+    const actualH = tipRef.current.offsetHeight;
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
+    setTip((prev) => {
+      const clampedTop  = Math.max(20, Math.min(prev.top,  vh - actualH - 20));
+      const clampedLeft = Math.max(20, Math.min(prev.left, vw - TIP_W  - 20));
+      if (clampedTop === prev.top && clampedLeft === prev.left) return prev;
+      return { top: clampedTop, left: clampedLeft };
+    });
+  }, [active, step]);
 
   if (!active || !cur) return null;
 
@@ -161,6 +176,7 @@ export function TourGuide() {
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
+              ref={tipRef}
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.94 }}
