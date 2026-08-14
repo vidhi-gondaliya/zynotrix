@@ -1,23 +1,39 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { consumeCredits, CREDIT_COSTS, type CreditTier } from "./credits";
 
-const globalForClaude = globalThis as unknown as { claude: Anthropic };
+// NVIDIA NIM — OpenAI-compatible endpoint
+// Models ranked by accuracy (all free on NVIDIA build):
+//   nvidia/llama-3.1-nemotron-70b-instruct  ← best accuracy (RLHF-tuned by NVIDIA)
+//   meta/llama-3.3-70b-instruct             ← strong general purpose
+//   meta/llama-3.1-8b-instruct              ← fast, lower accuracy
 
-export const claude =
-  globalForClaude.claude ??
-  new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const NVIDIA_BASE = "https://integrate.api.nvidia.com/v1";
 
-if (process.env.NODE_ENV !== "production") globalForClaude.claude = claude;
+const globalForNvidia = globalThis as unknown as { nvidiaClient: OpenAI };
 
-const MODEL = process.env.CLAUDE_MODEL ?? "claude-opus-4-5";
-const FAST_MODEL = "claude-haiku-4-5-20251001";
+export const claude =           // kept as "claude" so all imports stay unchanged
+  globalForNvidia.nvidiaClient ??
+  new OpenAI({
+    apiKey:  process.env.NVIDIA_API_KEY ?? "",
+    baseURL: NVIDIA_BASE,
+  });
+
+if (process.env.NODE_ENV !== "production") globalForNvidia.nvidiaClient = claude;
+
+// Best accuracy model for complex reasoning / streaming
+const MODEL      = process.env.NVIDIA_MODEL ?? "nvidia/llama-3.1-nemotron-70b-instruct";
+// Fast model for structured JSON tasks
+const FAST_MODEL = process.env.NVIDIA_FAST_MODEL ?? "meta/llama-3.3-70b-instruct";
 
 /**
  * Attempt to consume AI credits before an AI call.
- * Returns a 402 Response if the org has no credits; null if ok or no orgId provided.
+ * Returns a 402 Response if the org has no credits; null if ok.
  */
-export async function checkAndConsumeCredits(orgId: string | null | undefined, tier: CreditTier): Promise<Response | null> {
-  if (!orgId) return null; // no org context — allow (e.g. admin routes)
+export async function checkAndConsumeCredits(
+  orgId: string | null | undefined,
+  tier:  CreditTier
+): Promise<Response | null> {
+  if (!orgId) return null;
   const cost = CREDIT_COSTS[tier];
   const ok   = await consumeCredits(orgId, cost);
   if (!ok) {
@@ -29,30 +45,32 @@ export async function checkAndConsumeCredits(orgId: string | null | undefined, t
   return null;
 }
 
+/**
+ * Stream a chat completion back as a plain-text streaming Response.
+ */
 export async function streamToResponse(
-  messages: Anthropic.MessageParam[],
-  system: string,
-  fast = false
+  messages: { role: "user" | "assistant"; content: string }[],
+  system:   string,
+  fast      = false
 ): Promise<Response> {
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        const claudeStream = claude.messages.stream({
-          model: fast ? FAST_MODEL : MODEL,
+        const nvidiaStream = await claude.chat.completions.create({
+          model:  fast ? FAST_MODEL : MODEL,
           max_tokens: 4096,
-          system,
-          messages,
+          stream: true,
+          messages: [
+            { role: "system", content: system },
+            ...messages,
+          ],
         });
 
-        for await (const chunk of claudeStream) {
-          if (
-            chunk.type === "content_block_delta" &&
-            chunk.delta.type === "text_delta"
-          ) {
-            controller.enqueue(encoder.encode(chunk.delta.text));
-          }
+        for await (const chunk of nvidiaStream) {
+          const delta = chunk.choices[0]?.delta?.content;
+          if (delta) controller.enqueue(encoder.encode(delta));
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "AI error";
@@ -65,31 +83,35 @@ export async function streamToResponse(
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache",
+      "Content-Type":    "text/plain; charset=utf-8",
+      "Cache-Control":   "no-cache",
       "X-Accel-Buffering": "no",
     },
   });
 }
 
+/**
+ * Non-streaming call that parses and returns JSON from the response.
+ */
 export async function generateJSON<T>(
-  messages: Anthropic.MessageParam[],
-  system: string,
-  fast = false
+  messages: { role: "user" | "assistant"; content: string }[],
+  system:   string,
+  fast      = false
 ): Promise<T> {
-  const response = await claude.messages.create({
-    model: fast ? FAST_MODEL : MODEL,
+  const response = await claude.chat.completions.create({
+    model:      fast ? FAST_MODEL : MODEL,
     max_tokens: 2048,
-    system,
-    messages,
+    messages:   [
+      { role: "system", content: system },
+      ...messages,
+    ],
   });
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "";
-  // Match JSON code fences, then bare objects, then bare arrays
+  const text = response.choices[0]?.message?.content ?? "";
   const match =
     text.match(/```json\n?([\s\S]*?)\n?```/) ??
-    text.match(/```\n?([\s\S]*?)\n?```/) ??
-    text.match(/(\{[\s\S]*\})/) ??
+    text.match(/```\n?([\s\S]*?)\n?```/)     ??
+    text.match(/(\{[\s\S]*\})/)              ??
     text.match(/(\[[\s\S]*\])/);
   if (!match) throw new Error("No JSON in AI response");
   return JSON.parse(match[1]) as T;

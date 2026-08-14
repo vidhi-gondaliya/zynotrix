@@ -44,14 +44,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
   }
 
-  const msg = await claude.messages.create({
-    model:      "claude-haiku-4-5-20251001",
+  const msg = await claude.chat.completions.create({
+    model:      process.env.NVIDIA_FAST_MODEL ?? "meta/llama-3.3-70b-instruct",
     max_tokens: 400,
-    system:     SYSTEM,
-    messages:   [{ role: "user", content: prompt.trim() }],
+    messages:   [
+      { role: "system", content: SYSTEM },
+      { role: "user",   content: prompt.trim() },
+    ],
   });
 
-  const text = msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
+  const text = (msg.choices[0]?.message?.content ?? "").trim();
 
   // Strip any accidental markdown fences
   const clean = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
