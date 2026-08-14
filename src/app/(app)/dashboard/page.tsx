@@ -19,12 +19,18 @@ const PRIORITY_ORDER: Record<string, number> = { URGENT: 0, HIGH: 1, MEDIUM: 2, 
 const BRIEFING_KEY  = "colliq_briefing_v3";
 const BRIEFING_TTL  = 30 * 60 * 1000;
 
-const PRI: Record<string, { label: string; color: string }> = {
-  URGENT: { label: "URGENT", color: "#EF4444" },
-  HIGH:   { label: "HIGH",   color: "#F59E0B" },
-  MEDIUM: { label: "MED",    color: "#60A5FA" },
-  LOW:    { label: "LOW",    color: "#94A3B8" },
+// color = bar/dot stroke; bg = tinted badge bg; txt = WCAG AA-safe dark text on bg
+const PRI: Record<string, { label: string; color: string; bg: string; txt: string }> = {
+  URGENT: { label: "URGENT", color: "#EF4444", bg: "rgba(239,68,68,0.14)",  txt: "#B91C1C" },
+  HIGH:   { label: "HIGH",   color: "#F59E0B", bg: "rgba(245,158,11,0.14)", txt: "#92400E" },
+  MEDIUM: { label: "MED",    color: "#60A5FA", bg: "rgba(96,165,250,0.14)", txt: "#1E40AF" },
+  LOW:    { label: "LOW",    color: "#94A3B8", bg: "rgba(148,163,184,0.14)",txt: "#374151" },
 };
+// Returns inline style for an accessible priority/overdue badge
+function priBadgeStyle(pri: typeof PRI[string], isOverdue = false) {
+  if (isOverdue) return { background: "#EF4444", color: "#fff" };
+  return { background: pri.bg, color: pri.txt };
+}
 
 const STATUS_COLORS: Record<string, string> = {
   DONE:        "#22C55E",
@@ -456,15 +462,20 @@ function ProjectRoadmap({
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
                   {daysLeft !== null && (
                     <span style={{
-                      fontSize: 9.5, fontWeight: 700,
-                      color: daysLeft <= 3 ? "#EF4444" : daysLeft <= 7 ? "#F59E0B" : "var(--text-subtle)",
-                      background: daysLeft <= 3 ? "rgba(239,68,68,0.08)" : "var(--bg-elevated)",
-                      padding: "2px 6px", borderRadius: 5,
+                      fontSize: 9.5, fontWeight: 800, letterSpacing: "0.04em",
+                      padding: "3px 7px", borderRadius: 6,
+                      // Solid badges for guaranteed contrast in both themes
+                      ...(daysLeft <= 0
+                        ? { background: "#EF4444", color: "#fff" }
+                        : daysLeft <= 7
+                          ? { background: "rgba(245,158,11,0.15)", color: "#92400E" }
+                          : { background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }
+                      ),
                     }}>
                       {daysLeft <= 0 ? "OVERDUE" : `${daysLeft}d left`}
                     </span>
                   )}
-                  <span style={{ fontSize: 9.5, color: "var(--text-subtle)" }}>{r.tasks} tasks</span>
+                  <span style={{ fontSize: 9.5, color: "var(--text-muted)" }}>{r.tasks} tasks</span>
                   <span style={{ fontSize: 11.5, fontWeight: 800, color: hc, minWidth: 24, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                     {r.score > 0 ? Math.round(r.score) : "—"}
                   </span>
@@ -799,7 +810,7 @@ function YourDayPanel({ tasks }: { tasks: TaskWithProject[] }) {
                 <span style={{
                   fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase",
                   padding: "2.5px 7px", borderRadius: 100,
-                  background: `${color}14`, color,
+                  ...priBadgeStyle(pri, isOv),
                 }}>
                   {isOv ? "OVERDUE" : pri.label}
                 </span>
@@ -983,7 +994,10 @@ function TeamPulse({ data }: { data: { name: string; tasks: number }[] }) {
           const inits = member.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
           const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
           const load  = member.tasks >= 10 ? "high" : member.tasks >= 5 ? "medium" : "low";
+          // bar stroke color + accessible badge: dark text on light tint (WCAG AA ≥ 4.5:1)
           const lc    = load === "high" ? "#EF4444" : load === "medium" ? "#F59E0B" : "#22C55E";
+          const badgeBg   = load === "high" ? "rgba(239,68,68,0.14)"  : load === "medium" ? "rgba(245,158,11,0.14)" : "rgba(34,197,94,0.14)";
+          const badgeTxt  = load === "high" ? "#B91C1C"               : load === "medium" ? "#92400E"               : "#166534";
           return (
             <div key={member.name} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
@@ -1005,7 +1019,7 @@ function TeamPulse({ data }: { data: { name: string; tasks: number }[] }) {
                 <p style={{ fontSize: 20, fontWeight: 900, color: "var(--text-foreground)", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
                   {member.tasks}
                 </p>
-                <p style={{ fontSize: 8.5, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>tasks</p>
+                <p style={{ fontSize: 8.5, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>tasks</p>
               </div>
               <div style={{
                 height: 3, width: "100%", background: "var(--bg-card)", borderRadius: 2, overflow: "hidden",
@@ -1013,8 +1027,8 @@ function TeamPulse({ data }: { data: { name: string; tasks: number }[] }) {
                 <div style={{ height: "100%", width: `${pct}%`, background: lc, borderRadius: 2, transition: "width 0.8s" }} />
               </div>
               <span style={{
-                fontSize: 8, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase",
-                padding: "2px 6px", borderRadius: 100, background: `${lc}14`, color: lc,
+                fontSize: 9, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase",
+                padding: "3px 7px", borderRadius: 100, background: badgeBg, color: badgeTxt,
               }}>
                 {load}
               </span>
@@ -1112,7 +1126,8 @@ function QuickWinsPanel({ tasks }: { tasks: TaskWithProject[] }) {
               </div>
               <span style={{
                 fontSize: 8.5, fontWeight: 800, padding: "2px 6px", borderRadius: 4,
-                background: `${pri.color}12`, color: pri.color, letterSpacing: "0.06em", flexShrink: 0,
+                letterSpacing: "0.06em", flexShrink: 0,
+                ...priBadgeStyle(pri),
               }}>
                 {pri.label}
               </span>
@@ -1595,7 +1610,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; }}
                       >
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-                          <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", padding: "2px 6px", borderRadius: 100, background: `${color}14`, color }}>
+                          <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", padding: "2px 6px", borderRadius: 100, ...priBadgeStyle(pri, isOv) }}>
                             {isOv ? "OVERDUE" : pri.label}
                           </span>
                           {task.priority === "URGENT" && <span style={{ fontSize: 11 }}>🔥</span>}
