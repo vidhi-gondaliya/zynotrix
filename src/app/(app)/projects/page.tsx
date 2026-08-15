@@ -24,9 +24,10 @@ interface PortfolioProject {
 interface PortfolioSummary { total: number; onTrack: number; atRisk: number; offTrack: number; }
 
 const HEALTH = {
-  ON_TRACK:  { label: "On Track",  color: "#16A34A", Icon: CheckCircle2  },
-  AT_RISK:   { label: "At Risk",   color: "#D97706", Icon: AlertTriangle  },
-  OFF_TRACK: { label: "Off Track", color: "#DC2626", Icon: TrendingDown   },
+  // color = dot/filter accent; txt = dark shade for white-bg chip (WCAG AA ≥ 4.5:1 on white)
+  ON_TRACK:  { label: "On Track",  color: "#16A34A", txt: "#166534", Icon: CheckCircle2  },
+  AT_RISK:   { label: "At Risk",   color: "#D97706", txt: "#92400E", Icon: AlertTriangle  },
+  OFF_TRACK: { label: "Off Track", color: "#DC2626", txt: "#991B1B", Icon: TrendingDown   },
 } as const;
 
 const STATUS_META: Record<string, { label: string; dot: string }> = {
@@ -152,9 +153,10 @@ function ProjectCard({
                   display: "flex", alignItems: "center", gap: 4,
                   fontSize: 9.5, fontWeight: 800,
                   padding: "4px 9px", borderRadius: 100,
-                  background: `${healthInfo.color}22`,
-                  color: healthInfo.color,
-                  border: `1px solid ${healthInfo.color}55`,
+                  // White pill on any card gradient — dark semantic text for WCAG AA contrast
+                  background: "rgba(255,255,255,0.92)",
+                  color: healthInfo.txt,
+                  backdropFilter: "blur(4px)",
                 }}>
                   <healthInfo.Icon style={{ width: 9, height: 9 }} />
                   {healthInfo.label}
