@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { isPast, format, differenceInDays } from "date-fns";
 import type { AnalyticsData, Task } from "@/types";
 import { useClaude } from "@/hooks/useClaude";
@@ -12,6 +12,10 @@ import {
   CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar,
 } from "recharts";
+import {
+  Sun, FolderKanban, ListChecks, TrendingUp, AlertTriangle,
+  Activity, Clock, Eye, CheckCircle2,
+} from "lucide-react";
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -92,8 +96,9 @@ function ChartTip({ active, payload, label }: any) {
 }
 
 /* ── KPI tile ─────────────────────────────────────────────────────────────── */
-function KpiTile({ label, value, sub, accent, trend }: {
+function KpiTile({ label, value, sub, accent, trend, icon: Icon }: {
   label: string; value: string | number; sub: string; accent?: string; trend?: number;
+  icon?: React.ElementType;
 }) {
   const hasTrend = trend !== undefined && trend !== 0;
   const up = (trend ?? 0) > 0;
@@ -102,35 +107,45 @@ function KpiTile({ label, value, sub, accent, trend }: {
     <div style={{
       background: "var(--bg-card)",
       border: "1px solid var(--border)",
-      borderRadius: 18,
-      padding: "20px 22px 18px",
-      position: "relative",
-      overflow: "hidden",
+      borderRadius: 20,
+      padding: "22px 22px 20px",
+      display: "flex",
+      gap: 16,
+      alignItems: "flex-start",
     }}>
-      {/* Top accent stripe */}
-      <div style={{
-        position: "absolute", top: 0, left: 22, right: 22, height: 2.5,
-        background: accentColor, borderRadius: "0 0 4px 4px", opacity: 0.75,
-      }} />
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-        <p style={{ color: "var(--text-subtle)", fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase" }}>
-          {label}
+      {/* Icon badge */}
+      {Icon && (
+        <div style={{
+          width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+          background: `${accentColor}18`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Icon size={22} color={accentColor} strokeWidth={2} />
+        </div>
+      )}
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <p style={{ color: "var(--text-subtle)", fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase" }}>
+            {label}
+          </p>
+          {hasTrend && (
+            <span style={{
+              fontSize: 9.5, fontWeight: 800, letterSpacing: "0.03em",
+              padding: "2px 7px", borderRadius: 100, flexShrink: 0,
+              display: "flex", alignItems: "center", gap: 1,
+              background: up ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.10)",
+              color: up ? "#16A34A" : "#DC2626",
+            }}>
+              {up ? "↑" : "↓"}{Math.abs(trend!)}%
+            </span>
+          )}
+        </div>
+        <p style={{ color: accentColor, fontSize: 36, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>
+          {value}
         </p>
-        {hasTrend && (
-          <span style={{
-            fontSize: 9.5, fontWeight: 800, letterSpacing: "0.04em",
-            padding: "2.5px 7px", borderRadius: 100, flexShrink: 0,
-            background: up ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.10)",
-            color: up ? "#16A34A" : "#DC2626",
-          }}>
-            {up ? "↑" : "↓"}{Math.abs(trend!)}%
-          </span>
-        )}
+        <p style={{ color: "var(--text-muted)", fontSize: 11.5 }}>{sub}</p>
       </div>
-      <p style={{ color: accentColor, fontSize: 34, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>
-        {value}
-      </p>
-      <p style={{ color: "var(--text-muted)", fontSize: 11.5 }}>{sub}</p>
     </div>
   );
 }
@@ -143,86 +158,104 @@ function HeroStrip({
   tasksByStatus: Record<string, number>;
 }) {
   const chips = [
-    { label: "Active",     key: "IN_PROGRESS", color: "#6366F1", glow: "rgba(99,102,241,0.45)" },
-    { label: "Pending",    key: "TODO",         color: "#FBBF24", glow: "rgba(251,191,36,0.40)" },
-    { label: "In Review",  key: "REVIEW",       color: "#60A5FA", glow: "rgba(96,165,250,0.40)" },
-    { label: "Completed",  key: "DONE",         color: "#22C55E", glow: "rgba(34,197,94,0.38)" },
+    { label: "Active",    key: "IN_PROGRESS", color: "#60A5FA", Icon: Activity    },
+    { label: "Pending",   key: "TODO",         color: "#FBBF24", Icon: Clock       },
+    { label: "In Review", key: "REVIEW",       color: "#A78BFA", Icon: Eye         },
+    { label: "Completed", key: "DONE",         color: "#34D399", Icon: CheckCircle2 },
   ] as const;
 
   return (
     <div style={{
       position: "relative", overflow: "hidden",
-      background: "linear-gradient(135deg, #0C0D26 0%, #12144A 45%, #0A0C22 100%)",
+      background: "linear-gradient(135deg, #0F0E2E 0%, #1A1560 40%, #0D1340 70%, #080B22 100%)",
       borderRadius: 24,
       padding: "32px 36px",
       marginBottom: 20,
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 24,
-      minHeight: 130,
+      gap: 28,
+      minHeight: 148,
     }}>
       {/* Dot-grid texture */}
       <div aria-hidden style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: "radial-gradient(rgba(255,255,255,0.065) 1px, transparent 1px)",
-        backgroundSize: "22px 22px",
+        backgroundImage: "radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1px)",
+        backgroundSize: "24px 24px",
       }} />
-      {/* Ambient orb */}
+      {/* Large ambient orb — left-center */}
       <div aria-hidden style={{
-        position: "absolute", top: -60, right: "30%",
-        width: 260, height: 260, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%)",
+        position: "absolute", top: -80, left: "20%",
+        width: 320, height: 320, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(99,102,241,0.28) 0%, transparent 65%)",
+        pointerEvents: "none",
+      }} />
+      {/* Second orb — right edge */}
+      <div aria-hidden style={{
+        position: "absolute", bottom: -60, right: "25%",
+        width: 220, height: 220, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(139,92,246,0.20) 0%, transparent 70%)",
         pointerEvents: "none",
       }} />
 
-      {/* Left: greeting */}
+      {/* Left: date + greeting + subtitle */}
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <p style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.38)", marginBottom: 5 }}>
-          {format(new Date(), "EEEE, MMMM d")}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <Sun size={14} color="rgba(255,255,255,0.45)" strokeWidth={2.5} />
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>
+            {format(new Date(), "EEEE, MMMM d")}
+          </p>
+        </div>
         <h1 style={{
-          fontSize: 26, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1.1,
-          background: "linear-gradient(120deg, #ffffff 10%, #a5b4fc 90%)",
+          fontSize: 30, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 8,
+          background: "linear-gradient(120deg, #ffffff 20%, #c4b5fd 100%)",
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         }}>
-          Good {greeting}, {firstName}
+          Good {greeting}, {firstName} 👋
         </h1>
-        {urgentCount > 0 && (
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#FCA5A5", marginTop: 7, display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ fontSize: 13 }}>⚡</span>
-            {urgentCount} urgent {urgentCount === 1 ? "task" : "tasks"} need{urgentCount === 1 ? "s" : ""} attention
-          </p>
-        )}
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.42)", fontWeight: 500 }}>
+          {urgentCount > 0
+            ? `⚡ ${urgentCount} urgent task${urgentCount > 1 ? "s" : ""} need${urgentCount === 1 ? "s" : ""} your attention`
+            : "Let's make today productive and awesome!"}
+        </p>
       </div>
 
-      {/* Right: stat chips */}
-      <div style={{ position: "relative", display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
-        {chips.map(({ label, key, color, glow }) => {
+      {/* Right: stat tiles with icons */}
+      <div style={{ position: "relative", display: "flex", gap: 10, flexShrink: 0 }}>
+        {chips.map(({ label, key, color, Icon }) => {
           const count = tasksByStatus[key] ?? 0;
           return (
             <div key={key} style={{
-              display: "flex", flexDirection: "column", alignItems: "center",
-              padding: "12px 18px",
-              borderRadius: 16,
-              background: "rgba(255,255,255,0.05)",
-              border: `1px solid rgba(255,255,255,0.09)`,
-              backdropFilter: "blur(8px)",
-              minWidth: 78,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+              padding: "18px 20px",
+              borderRadius: 18,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              backdropFilter: "blur(12px)",
+              minWidth: 86,
             }}>
-              <span style={{
-                fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1,
-                color, textShadow: `0 0 18px ${glow}`,
-                fontVariantNumeric: "tabular-nums",
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: `${color}22`,
+                border: `1px solid ${color}44`,
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                {count}
-              </span>
-              <span style={{
-                fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "rgba(255,255,255,0.38)", marginTop: 5,
-              }}>
-                {label}
-              </span>
+                <Icon size={18} color={color} strokeWidth={2} />
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{
+                  fontSize: 26, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1,
+                  color, fontVariantNumeric: "tabular-nums",
+                }}>
+                  {count}
+                </p>
+                <p style={{
+                  fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.38)", marginTop: 5,
+                }}>
+                  {label}
+                </p>
+              </div>
             </div>
           );
         })}
@@ -1459,10 +1492,10 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
 
         {/* ════ KPI TILES ════ */}
         <div className="grid grid-cols-4 gap-3 mb-5">
-          <KpiTile label="Active Projects" value={d.activeProjects}       sub={`${d.totalProjects} total`}           accent="#6366F1" trend={trendDeltas.projects} />
-          <KpiTile label="Total Tasks"     value={d.totalTasks}           sub={`${d.activeTasks} in progress`}       accent="#60A5FA" trend={trendDeltas.tasks} />
-          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}           accent="#22C55E" trend={trendDeltas.rate} />
-          <KpiTile label="Overdue"         value={d.overdueTasks}         sub={d.overdueTasks === 0 ? "all on track" : urgentCount > 0 ? `${urgentCount} urgent` : "needs attention"} accent={d.overdueTasks > 0 ? "#EF4444" : "#22C55E"} />
+          <KpiTile label="Active Projects" value={d.activeProjects}       sub={`${d.totalProjects} total`}           accent="#6366F1" trend={trendDeltas.projects} icon={FolderKanban} />
+          <KpiTile label="Total Tasks"     value={d.totalTasks}           sub={`${d.activeTasks} in progress`}       accent="#EC4899" trend={trendDeltas.tasks}    icon={ListChecks} />
+          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}           accent="#22C55E" trend={trendDeltas.rate}     icon={TrendingUp} />
+          <KpiTile label="Overdue"         value={d.overdueTasks}         sub={d.overdueTasks === 0 ? "all on track" : urgentCount > 0 ? `${urgentCount} urgent` : "needs attention"} accent={d.overdueTasks > 0 ? "#F59E0B" : "#22C55E"} icon={AlertTriangle} />
         </div>
 
         {/* ════ CHARTS — Row 1: Velocity + Status Donut ════ */}
