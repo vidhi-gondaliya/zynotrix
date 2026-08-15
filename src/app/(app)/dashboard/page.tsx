@@ -97,32 +97,40 @@ function KpiTile({ label, value, sub, accent, trend }: {
 }) {
   const hasTrend = trend !== undefined && trend !== 0;
   const up = (trend ?? 0) > 0;
+  const accentColor = accent ?? "var(--accent)";
   return (
     <div style={{
       background: "var(--bg-card)",
       border: "1px solid var(--border)",
       borderRadius: 18,
-      padding: "18px 20px",
+      padding: "20px 22px 18px",
       position: "relative",
+      overflow: "hidden",
     }}>
-      {hasTrend && (
-        <span style={{
-          position: "absolute", top: 14, right: 14,
-          fontSize: 10, fontWeight: 800, letterSpacing: "0.04em",
-          padding: "3px 7px", borderRadius: 100,
-          background: up ? "rgba(34,197,94,0.13)" : "rgba(239,68,68,0.11)",
-          color: up ? "#22C55E" : "#EF4444",
-        }}>
-          {up ? "↑" : "↓"} {up ? "+" : ""}{trend}%
-        </span>
-      )}
-      <p style={{ color: "var(--text-subtle)", fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", marginBottom: 8 }}>
-        {label}
-      </p>
-      <p style={{ color: accent ?? "var(--text-foreground)", fontSize: 30, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.03em", marginBottom: 5, fontVariantNumeric: "tabular-nums" }}>
+      {/* Top accent stripe */}
+      <div style={{
+        position: "absolute", top: 0, left: 22, right: 22, height: 2.5,
+        background: accentColor, borderRadius: "0 0 4px 4px", opacity: 0.75,
+      }} />
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+        <p style={{ color: "var(--text-subtle)", fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase" }}>
+          {label}
+        </p>
+        {hasTrend && (
+          <span style={{
+            fontSize: 9.5, fontWeight: 800, letterSpacing: "0.04em",
+            padding: "2.5px 7px", borderRadius: 100, flexShrink: 0,
+            background: up ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.10)",
+            color: up ? "#16A34A" : "#DC2626",
+          }}>
+            {up ? "↑" : "↓"}{Math.abs(trend!)}%
+          </span>
+        )}
+      </div>
+      <p style={{ color: accentColor, fontSize: 34, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>
         {value}
       </p>
-      <p style={{ color: "var(--text-muted)", fontSize: 11 }}>{sub}</p>
+      <p style={{ color: "var(--text-muted)", fontSize: 11.5 }}>{sub}</p>
     </div>
   );
 }
@@ -144,15 +152,15 @@ function HeroStrip({
   return (
     <div style={{
       position: "relative", overflow: "hidden",
-      background: "linear-gradient(135deg, #0C0D26 0%, #11123A 50%, #0A0C22 100%)",
-      borderRadius: 22,
-      padding: "28px 32px",
+      background: "linear-gradient(135deg, #0C0D26 0%, #12144A 45%, #0A0C22 100%)",
+      borderRadius: 24,
+      padding: "32px 36px",
       marginBottom: 20,
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
       gap: 24,
-      minHeight: 110,
+      minHeight: 130,
     }}>
       {/* Dot-grid texture */}
       <div aria-hidden style={{
@@ -1451,10 +1459,10 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
 
         {/* ════ KPI TILES ════ */}
         <div className="grid grid-cols-4 gap-3 mb-5">
-          <KpiTile label="Active Projects" value={d.activeProjects} sub={`${d.totalProjects} total`}         accent="var(--accent)" trend={trendDeltas.projects} />
-          <KpiTile label="Total Tasks"     value={d.totalTasks}     sub={`${d.activeTasks} in progress`}                           trend={trendDeltas.tasks} />
-          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}  accent="#22C55E"       trend={trendDeltas.rate} />
-          <KpiTile label="Overdue"         value={d.overdueTasks}   sub={d.overdueTasks === 0 ? "all on track" : `${urgentCount > 0 ? urgentCount + " urgent" : "needs attention"}`} accent={d.overdueTasks > 0 ? "#EF4444" : "#22C55E"} />
+          <KpiTile label="Active Projects" value={d.activeProjects}       sub={`${d.totalProjects} total`}           accent="#6366F1" trend={trendDeltas.projects} />
+          <KpiTile label="Total Tasks"     value={d.totalTasks}           sub={`${d.activeTasks} in progress`}       accent="#60A5FA" trend={trendDeltas.tasks} />
+          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}           accent="#22C55E" trend={trendDeltas.rate} />
+          <KpiTile label="Overdue"         value={d.overdueTasks}         sub={d.overdueTasks === 0 ? "all on track" : urgentCount > 0 ? `${urgentCount} urgent` : "needs attention"} accent={d.overdueTasks > 0 ? "#EF4444" : "#22C55E"} />
         </div>
 
         {/* ════ CHARTS — Row 1: Velocity + Status Donut ════ */}
@@ -1486,28 +1494,66 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
           </div>
         )}
 
+        {/* ════ TODAY'S FOCUS — horizontal scrollable cards ════ */}
+        {upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <Label text="Today's Focus" count={upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").length} />
+              <Link href="/tasks" className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--accent)" }}>View all →</Link>
+            </div>
+            <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6 }} className="no-scrollbar">
+              {upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").slice(0, 8).map(task => {
+                const pri  = PRI[task.priority] ?? PRI.MEDIUM;
+                const isOv = !!(task.dueDate && isPast(new Date(task.dueDate)));
+                return (
+                  <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
+                    style={{
+                      display: "flex", flexDirection: "column", gap: 8,
+                      minWidth: 176, maxWidth: 200, flexShrink: 0,
+                      padding: "14px 15px", borderRadius: 18,
+                      background: "var(--bg-card)",
+                      border: `1px solid ${isOv ? "rgba(239,68,68,0.25)" : "var(--border)"}`,
+                      textDecoration: "none",
+                      transition: "transform 0.14s",
+                      boxShadow: isOv ? "0 0 0 1px rgba(239,68,68,0.12) inset" : undefined,
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", padding: "2.5px 7px", borderRadius: 100, ...priBadgeStyle(pri, isOv) }}>
+                        {isOv ? "OVERDUE" : pri.label}
+                      </span>
+                      {task.priority === "URGENT" && <span style={{ fontSize: 12 }}>🔥</span>}
+                    </div>
+                    <p style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, color: "var(--text-foreground)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                      {task.title}
+                    </p>
+                    {task.project && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: "auto" }}>
+                        <span style={{ width: 5, height: 5, borderRadius: "50%", background: task.project.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 9.5, color: "var(--text-subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.project.name}</span>
+                      </div>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ════ BODY — two column ════ */}
         <div className="grid grid-cols-[1fr_296px] gap-8 items-start">
 
           {/* ── LEFT ── */}
-          <div className="space-y-8">
+          <div className="space-y-7">
 
             {/* YOUR NEXT ACTION */}
             {actionFeed.length > 0 && (
               <NextActionCard task={actionFeed[0]} urgentCount={urgentCount} />
             )}
 
-            {/* REQUIRES ACTION */}
-            {actionFeed.length > 1 && (
-              <section>
-                <Label text="Requires Action" count={actionFeed.length - 1} danger={urgentCount > 1} className="mb-3" />
-                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {actionFeed.slice(1).map((task, i) => <ActionRow key={task.id} task={task} index={i} />)}
-                </div>
-              </section>
-            )}
-
-            {/* AI BRIEF — promoted higher */}
+            {/* AI BRIEF */}
             <section>
               <div className="flex items-center justify-between mb-3">
                 <Label text="AI Brief" />
@@ -1520,7 +1566,17 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
               </div>
             </section>
 
-            {/* ACTIVITY — promoted higher */}
+            {/* REQUIRES ACTION */}
+            {actionFeed.length > 1 && (
+              <section>
+                <Label text="Requires Action" count={actionFeed.length - 1} danger={urgentCount > 1} className="mb-3" />
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                  {actionFeed.slice(1).map((task, i) => <ActionRow key={task.id} task={task} index={i} />)}
+                </div>
+              </section>
+            )}
+
+            {/* RECENT ACTIVITY */}
             {d.recentTasks && d.recentTasks.length > 0 && (
               <section>
                 <Label text="Recent Activity" count={d.recentTasks.length} className="mb-3" />
@@ -1532,15 +1588,12 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
               </section>
             )}
 
-            {/* STANDUP GENERATOR */}
-            <StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} />
-
-            {/* RISKS — merged: computed + API alerts */}
+            {/* RISKS */}
             {allRisks.length > 0 && (
               <section>
                 <Label text="Risks" count={allRisks.length} danger={allRisks.some(r => r.level === "critical")} className="mb-3" />
                 <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {allRisks.slice(0, 6).map((r, i) => (
+                  {allRisks.slice(0, 4).map((r, i) => (
                     <div key={i} style={{
                       display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 16px",
                       borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
@@ -1559,7 +1612,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                         fontSize: 8, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase",
                         padding: "2px 7px", borderRadius: 100, flexShrink: 0,
                         background: r.level === "critical" ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
-                        color: r.level === "critical" ? "#EF4444" : "#F59E0B",
+                        color: r.level === "critical" ? "#B91C1C" : "#92400E",
                       }}>
                         {r.level}
                       </span>
@@ -1574,83 +1627,32 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
               <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} />
             )}
 
+            {/* STANDUP GENERATOR */}
+            <StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} />
+
           </div>
 
           {/* ── RIGHT ── */}
-          <div className="space-y-6">
+          <div className="space-y-5">
 
-            {/* YOUR DAY — moved from top of page */}
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <Label text="Your Day" count={upcomingToday.filter(t => t.status !== "DONE").length} />
-                <Link href="/tasks" className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--accent)" }}>All →</Link>
-              </div>
-              {upcomingToday.filter(t => t.status !== "DONE").length === 0 ? (
-                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: "20px 16px", textAlign: "center" }}>
-                  <p style={{ fontSize: 20, marginBottom: 6 }}>✅</p>
-                  <p style={{ fontSize: 12, color: "var(--text-subtle)", fontWeight: 600 }}>You're all caught up!</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {upcomingToday.filter(t => t.status !== "DONE").slice(0, 5).map(task => {
-                    const pri   = PRI[task.priority] ?? PRI.MEDIUM;
-                    const isOv  = !!(task.dueDate && isPast(new Date(task.dueDate)));
-                    const color = isOv ? "#EF4444" : pri.color;
-                    return (
-                      <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
-                        style={{
-                          display: "flex", flexDirection: "column", gap: 5,
-                          padding: "11px 13px", borderRadius: 14,
-                          background: "var(--bg-card)",
-                          border: `1px solid ${isOv ? "rgba(239,68,68,0.2)" : "var(--border)"}`,
-                          textDecoration: "none",
-                          transition: "transform 0.12s",
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateX(2px)"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-                          <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", padding: "2px 6px", borderRadius: 100, ...priBadgeStyle(pri, isOv) }}>
-                            {isOv ? "OVERDUE" : pri.label}
-                          </span>
-                          {task.priority === "URGENT" && <span style={{ fontSize: 11 }}>🔥</span>}
-                        </div>
-                        <p style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.35, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {task.title}
-                        </p>
-                        {task.project && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <span style={{ width: 5, height: 5, borderRadius: "50%", background: task.project.color, flexShrink: 0 }} />
-                            <span style={{ fontSize: 9.5, color: "var(--text-subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.project.name}</span>
-                          </div>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-
-            {/* WINS TODAY — moved from top of page */}
+            {/* WINS TODAY */}
             {winsToday.length > 0 && (
-              <section>
-                <Label text="Wins Today" count={winsToday.length} className="mb-3" />
-                <div style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 16, padding: "12px 14px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {winsToday.slice(0, 4).map(task => (
-                      <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span style={{ fontSize: 10, color: "#22C55E", fontWeight: 900, flexShrink: 0 }}>✓</span>
-                        <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {task.title}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+              <div style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 18, padding: "14px 16px" }}>
+                <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "#16A34A", marginBottom: 10 }}>
+                  ✓ Wins Today · {winsToday.length}
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {winsToday.slice(0, 5).map(task => (
+                    <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {task.title}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              </section>
+              </div>
             )}
-
-            <Divider />
 
             {/* PROJECTS */}
             <section>
@@ -1658,17 +1660,17 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                 <Label text="Projects" />
                 <Link href="/projects" className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--accent)" }}>All →</Link>
               </div>
-              <div className="space-y-px">
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 18, padding: "6px 8px", overflow: "hidden" }}>
                 {projects.length === 0 ? (
-                  <p className="text-[12.5px]" style={{ color: "var(--text-subtle)" }}>No projects yet.</p>
+                  <p className="text-[12.5px] px-2 py-3" style={{ color: "var(--text-subtle)" }}>No projects yet.</p>
                 ) : projects.slice(0, 7).map((p) => (
                   <Link key={p.id} href={`/projects/${p.id}/board`}>
-                    <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg -mx-2 cursor-pointer"
+                    <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer"
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}>
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color, boxShadow: `0 0 6px ${p.color}88` }} />
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color, boxShadow: `0 0 6px ${p.color}80` }} />
                       <span className="flex-1 text-[12.5px] font-medium truncate" style={{ color: "var(--text-foreground)" }}>{p.name}</span>
-                      <span className="text-[10px] tabular-nums shrink-0" style={{ color: "var(--text-subtle)" }}>{p._count?.tasks ?? 0}</span>
+                      <span className="text-[10px] tabular-nums shrink-0 font-semibold" style={{ color: "var(--text-subtle)" }}>{p._count?.tasks ?? 0}</span>
                     </div>
                   </Link>
                 ))}
@@ -1676,12 +1678,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
             </section>
 
             {/* QUICK WINS */}
-            {quickWins.length > 0 && (
-              <>
-                <Divider />
-                <QuickWinsPanel tasks={quickWins} />
-              </>
-            )}
+            {quickWins.length > 0 && <QuickWinsPanel tasks={quickWins} />}
 
             <Divider />
 
