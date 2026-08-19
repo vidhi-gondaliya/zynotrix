@@ -2,10 +2,7 @@ import OpenAI from "openai";
 import { consumeCredits, CREDIT_COSTS, type CreditTier } from "./credits";
 
 // NVIDIA NIM — OpenAI-compatible endpoint
-// Models ranked by accuracy (all free on NVIDIA build):
-//   nvidia/llama-3.1-nemotron-70b-instruct  ← best accuracy (RLHF-tuned by NVIDIA)
-//   meta/llama-3.3-70b-instruct             ← strong general purpose
-//   meta/llama-3.1-8b-instruct              ← fast, lower accuracy
+// nvidia/nemotron-3-super-120b-a12b — confirmed available for this account's API key
 
 const NVIDIA_BASE = "https://integrate.api.nvidia.com/v1";
 
@@ -21,9 +18,9 @@ export const claude =           // kept as "claude" so all imports stay unchange
 if (process.env.NODE_ENV !== "production") globalForNvidia.nvidiaClient = claude;
 
 // Best accuracy model for complex reasoning / streaming
-const MODEL      = process.env.NVIDIA_MODEL ?? "nvidia/llama-3.1-nemotron-70b-instruct";
+const MODEL      = process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-super-120b-a12b";
 // Fast model for structured JSON tasks
-const FAST_MODEL = process.env.NVIDIA_FAST_MODEL ?? "meta/llama-3.3-70b-instruct";
+const FAST_MODEL = process.env.NVIDIA_FAST_MODEL ?? "nvidia/nemotron-3-super-120b-a12b";
 
 /**
  * Attempt to consume AI credits before an AI call.
