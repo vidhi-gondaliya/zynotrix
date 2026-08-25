@@ -245,7 +245,7 @@ export default function ProjectSettingsPage() {
                 <span className="text-sm font-semibold text-foreground flex-1">{f.name}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{ background: "var(--bg-card)", color: "var(--text-muted)" }}>{f.type}</span>
-                <button onClick={() => deleteCustomField(f.id)} className="p-1 rounded text-muted hover:text-red-400 transition-colors">
+                <button onClick={() => deleteCustomField(f.id)} className="p-1 rounded text-muted hover:text-danger transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -313,14 +313,14 @@ export default function ProjectSettingsPage() {
         )}
       </div>
 
-      <div className="glass-card p-6 mt-6 border border-red-500/20">
+      <div className="glass-card p-6 mt-6 border border-danger/20">
         <div className="flex items-center gap-2 mb-3">
-          <AlertTriangle className="w-4 h-4 text-red-400" />
-          <h2 className="text-sm font-semibold text-red-400">Danger Zone</h2>
+          <AlertTriangle className="w-4 h-4 text-danger" />
+          <h2 className="text-sm font-semibold text-danger">Danger Zone</h2>
         </div>
         <p className="text-xs text-muted mb-4">Deleting this project will permanently remove all tasks, comments, and associated data. This action cannot be undone.</p>
         {confirmDelete && (
-          <p className="text-xs text-red-400 mb-3 font-medium">Are you sure? Click again to confirm permanent deletion.</p>
+          <p className="text-xs text-danger mb-3 font-medium">Are you sure? Click again to confirm permanent deletion.</p>
         )}
         <Button variant="danger" loading={deleting} icon={<Trash2 className="w-4 h-4" />} onClick={handleDelete}>
           {confirmDelete ? "Confirm Delete" : "Delete Project"}

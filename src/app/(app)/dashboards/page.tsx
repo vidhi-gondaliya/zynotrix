@@ -239,7 +239,7 @@ function renderWidget(w: WidgetConfig, data: DataBundle) {
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-1.5 h-1.5 rounded-full" style={{ background: t.projectColor }} />
                   <span className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>{t.projectName}</span>
-                  <span className="text-[10px] text-red-400 ml-auto">{format(new Date(t.dueDate), "MMM d")}</span>
+                  <span className="text-[10px] ml-auto" style={{ color: "var(--danger)" }}>{format(new Date(t.dueDate), "MMM d")}</span>
                 </div>
               </div>
             </div>

@@ -566,7 +566,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
                                 if (!task) return;
                                 await fetch(`/api/tasks/${task.id}/links`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ linkId: link.id }) });
                                 setTaskLinks((p) => p.filter((l) => l.id !== link.id));
-                              }} className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted hover:text-red-400 transition-all shrink-0">
+                              }} className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted hover:text-danger transition-all shrink-0">
                                 <X className="w-3 h-3" />
                               </button>
                             </div>
@@ -923,7 +923,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
                               });
                               setTimeLogs((p) => p.filter((l) => l.id !== log.id));
                               setTotalMinutes((p) => p - (log.duration ?? 0));
-                            }} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-muted hover:text-red-400 transition-all">
+                            }} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-muted hover:text-danger transition-all">
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
@@ -978,8 +978,8 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
                     {blockedBy.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-1.5">
-                          <Link2 className="w-3 h-3 text-red-400" />
-                          <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Blocked by</span>
+                          <Link2 className="w-3 h-3 text-danger" />
+                          <span className="text-[10px] font-bold text-danger uppercase tracking-widest">Blocked by</span>
                         </div>
                         {blockedBy.map((dep) => (
                           <div key={dep.dependencyId} className="flex items-center gap-2 px-3 py-2 rounded-xl group"
@@ -987,7 +987,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
                             <span className="w-2 h-2 rounded-full shrink-0"
                               style={{ background: dep.status === "DONE" ? "#00F090" : "#FF4466" }} />
                             <span className={`flex-1 text-xs text-foreground truncate ${dep.status === "DONE" ? "line-through opacity-50" : ""}`}>{dep.title}</span>
-                            {dep.status === "DONE" && <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />}
+                            {dep.status === "DONE" && <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />}
                             <button onClick={async () => {
                               if (!task) return;
                               await fetch(`/api/tasks/${task.id}/dependencies`, {
@@ -995,7 +995,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
                                 body: JSON.stringify({ dependencyId: dep.dependencyId }),
                               });
                               setBlockedBy((p) => p.filter((d) => d.dependencyId !== dep.dependencyId));
-                            }} className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted hover:text-red-400 transition-all shrink-0">
+                            }} className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted hover:text-danger transition-all shrink-0">
                               <X className="w-3 h-3" />
                             </button>
                           </div>
@@ -1007,8 +1007,8 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
                     {blocking.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-1.5">
-                          <Link2 className="w-3 h-3 text-amber-400" />
-                          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Blocking</span>
+                          <Link2 className="w-3 h-3 text-warning" />
+                          <span className="text-[10px] font-bold text-warning uppercase tracking-widest">Blocking</span>
                         </div>
                         {blocking.map((dep) => (
                           <div key={dep.dependencyId} className="flex items-center gap-2 px-3 py-2 rounded-xl"

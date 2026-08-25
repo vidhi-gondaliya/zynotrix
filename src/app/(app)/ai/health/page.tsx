@@ -314,9 +314,9 @@ export default function AIHealthPage() {
                             <ScoreRing score={analysis.score} />
                             <div>
                               <span className={`text-2xl font-bold ${
-                                analysis.grade === "A" ? "text-emerald-500" :
-                                analysis.grade === "B" ? "text-blue-500" :
-                                analysis.grade === "C" ? "text-amber-500" : "text-red-500"
+                                analysis.grade === "A" ? "text-success" :
+                                analysis.grade === "B" ? "text-info" :
+                                analysis.grade === "C" ? "text-warning" : "text-danger"
                               }`}>Grade {analysis.grade}</span>
                               <p className="text-xs text-muted mt-1">{analysis.summary}</p>
                             </div>

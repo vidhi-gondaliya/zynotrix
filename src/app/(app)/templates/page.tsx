@@ -229,7 +229,7 @@ export default function TemplatesPage() {
                   </div>
                   {t.createdById === userId && (
                     <button onClick={() => deleteTemplate(t.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-muted hover:text-red-400">
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-muted hover:text-danger">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -239,7 +239,7 @@ export default function TemplatesPage() {
                   <div className="flex items-center gap-3 text-xs text-muted">
                     <span>{tasks.length} tasks</span>
                     <span>{t.usageCount} uses</span>
-                    {t.isPublic && <span className="text-green-400 font-bold">Public</span>}
+                    {t.isPublic && <span className="text-success font-bold">Public</span>}
                   </div>
                   <button
                     onClick={() => {
