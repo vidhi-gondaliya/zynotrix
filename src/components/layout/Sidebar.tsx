@@ -7,13 +7,12 @@ import {
   Bot, Sparkles, Heart, Search,
   ClipboardCheck, BarChart2, Trophy,
   Workflow, LayoutTemplate, ArrowLeftRight, Puzzle, Shield,
-  Bell, Settings, ShieldCheck, LogOut, CreditCard,
-  Zap, PanelLeftClose, PanelLeftOpen, ChevronDown, Receipt,
+  Settings, LogOut,
+  Zap, PanelLeftClose, PanelLeftOpen, ChevronDown,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useNotifications } from "@/store/useNotifications";
 import { motion, AnimatePresence } from "framer-motion";
-import { hasPermission } from "@/lib/permissions";
 import { Avatar } from "@/components/ui/Avatar";
 import { create } from "zustand";
 import { useEffect, useState } from "react";
@@ -98,8 +97,8 @@ const submenuVariants = {
 const SB = {
   bg:      "linear-gradient(180deg, #0C0D26 0%, #08091C 100%)",
   border:  "rgba(255,255,255,0.07)",
-  text:    "rgba(255,255,255,0.52)",
-  hover:   "rgba(255,255,255,0.88)",
+  text:    "#ffffff",
+  hover:   "#ffffff",
   hoverBg: "rgba(255,255,255,0.065)",
   active:  "#ffffff",
   section: "rgba(255,255,255,0.28)",
@@ -271,7 +270,6 @@ export function Sidebar() {
   const { data: session } = useSession();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
   const userRole = (session?.user as { role?: string })?.role ?? "MEMBER";
-  const isAdmin  = hasPermission(userRole, "admin:access");
 
   const isActive = (href: string) =>
     pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
@@ -441,25 +439,6 @@ export function Sidebar() {
       {/* Bottom dock */}
       <div style={{ flexShrink: 0, padding: "8px 10px 10px", borderTop: `1px solid ${SB.border}` }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <motion.div data-tour-id="tour-notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-            <NavLink
-              item={{ href: "/notifications", icon: Bell, label: "Notifications" }}
-              badge={unreadCount > 0 ? <Badge count={unreadCount} /> : null}
-              collapsed={collapsed}
-              active={isActive("/notifications")}
-            />
-          </motion.div>
-          {(isAdmin || pathname.startsWith("/admin")) && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.44 }}>
-              <NavLink item={{ href: "/admin", icon: ShieldCheck, label: "Admin Panel" }} collapsed={collapsed} active={isActive("/admin")} />
-            </motion.div>
-          )}
-          <motion.div data-tour-id="tour-billing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.46 }}>
-            <NavLink item={{ href: "/billing", icon: CreditCard, label: "Billing" }} collapsed={collapsed} active={isActive("/billing")} />
-          </motion.div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.48 }}>
-            <NavLink item={{ href: "/audit", icon: Receipt, label: "Audit Log" }} collapsed={collapsed} active={isActive("/audit")} />
-          </motion.div>
           <motion.div data-tour-id="tour-settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.50 }}>
             <NavLink item={{ href: "/settings", icon: Settings, label: "Settings" }} collapsed={collapsed} active={isActive("/settings")} />
           </motion.div>

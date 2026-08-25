@@ -66,7 +66,7 @@ function UpgradeCard({ feature }: { feature: PlanFeature }) {
         </div>
       </div>
 
-      <Link href="/billing" style={{
+      <Link href="/settings/billing" style={{
         display: "inline-flex", alignItems: "center", gap: 7,
         background: "var(--accent, #E05C42)", color: "#fff",
         padding: "9px 20px", borderRadius: 8,
@@ -78,7 +78,7 @@ function UpgradeCard({ feature }: { feature: PlanFeature }) {
 
       <div style={{ fontSize: 11, color: "var(--text-muted, #6B7FA3)" }}>
         View all plans on the{" "}
-        <Link href="/billing" style={{ color: "var(--accent, #E05C42)" }}>
+        <Link href="/settings/billing" style={{ color: "var(--accent, #E05C42)" }}>
           Billing page
         </Link>
       </div>
@@ -102,7 +102,7 @@ function UpgradeOverlay({ feature }: { feature: PlanFeature }) {
     }}>
       <Lock size={18} style={{ color: "var(--accent, #E05C42)" }} />
       <div style={{ fontSize: 14, fontWeight: 700 }}>Requires {planName}</div>
-      <Link href="/billing" style={{
+      <Link href="/settings/billing" style={{
         display: "inline-flex", alignItems: "center", gap: 6,
         background: "var(--accent, #E05C42)", color: "#fff",
         padding: "7px 16px", borderRadius: 8,
@@ -122,7 +122,7 @@ export function PlanBadge({ feature }: { feature: PlanFeature }) {
 
   const planName = FEATURE_MIN_PLAN_NAME[feature] ?? "higher";
   return (
-    <Link href="/billing" title={`Requires ${planName} plan`} style={{
+    <Link href="/settings/billing" title={`Requires ${planName} plan`} style={{
       display: "inline-flex", alignItems: "center", gap: 4,
       fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
       background: "var(--accent-bg, #fdf0ed)", color: "var(--accent, #E05C42)",

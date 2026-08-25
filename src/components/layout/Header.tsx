@@ -1,11 +1,11 @@
 "use client";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Bell, Search, Plus, Command, Menu, Sparkles } from "lucide-react";
+import { Search, Plus, Command, Menu, Sparkles } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ThemeToggle } from "./ThemeToggle";
 import { PunchClock } from "./PunchClock";
-import { useNotifications } from "@/store/useNotifications";
+import { NotificationsPopover } from "./NotificationsPopover";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./Sidebar";
 
@@ -24,21 +24,20 @@ const PAGE_TITLES: Record<string, { title: string; sub?: string; emoji?: string 
   "/ai/reports":            { title: "Colliq Reports",     sub: "AI-generated insights",      emoji: "✨" },
   "/ai/health":             { title: "Project Health",     sub: "Colliq risk analysis",       emoji: "💚" },
   "/ai/search":             { title: "Smart Search",       sub: "Find anything, instantly",   emoji: "🔍" },
-  "/notifications":         { title: "Notifications",      sub: "Inbox",                      emoji: "🔔" },
   "/settings":              { title: "Settings",           sub: "Your preferences",           emoji: "⚙️" },
   "/settings/organization": { title: "Organization",       sub: "Workspace & members",        emoji: "🏢" },
-  "/admin":                 { title: "Admin Panel",        sub: "Workspace management",       emoji: "🛡️" },
+  "/settings/admin":        { title: "Admin Panel",        sub: "Workspace management",       emoji: "🛡️" },
+  "/settings/billing":      { title: "Billing",            sub: "Plan & payments",            emoji: "💳" },
+  "/settings/audit":        { title: "Audit Log",          sub: "Activity history",           emoji: "📜" },
   "/automations":           { title: "Automations",        sub: "Workflow rules",             emoji: "⚡" },
   "/templates":             { title: "Templates",          sub: "Reusable patterns",          emoji: "📋" },
   "/integrations":          { title: "Integrations",       sub: "Connected services",         emoji: "🔗" },
-  "/audit":                 { title: "Audit Log",          sub: "Activity history",           emoji: "📜" },
 };
 
 interface HeaderProps { onOpenCommand?: () => void; }
 
 export function Header({ onOpenCommand }: HeaderProps) {
   const { data: session } = useSession();
-  const { unreadCount } = useNotifications();
   const pathname = usePathname();
   const { setMobileOpen } = useSidebar();
 
@@ -157,33 +156,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
       <ThemeToggle />
 
       {/* Notifications */}
-      <Link
-        href="/notifications"
-        className="relative w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150 shrink-0"
-        style={{ color: "var(--text-muted)" }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "var(--bg-elevated)";
-          el.style.color = "var(--text-foreground)";
-          el.style.boxShadow = "0 0 0 1px var(--border)";
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          el.style.background = "transparent";
-          el.style.color = "var(--text-muted)";
-          el.style.boxShadow = "none";
-        }}
-      >
-        <Bell className="w-[15px] h-[15px]" />
-        {unreadCount > 0 && (
-          <span
-            className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full text-white text-[8px] font-bold flex items-center justify-center"
-            style={{ background: "var(--danger)", boxShadow: "0 0 0 2px var(--bg-base)" }}
-          >
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </Link>
+      <NotificationsPopover />
 
       {/* User avatar */}
       <Link href="/settings" className="flex items-center gap-2 shrink-0 group">

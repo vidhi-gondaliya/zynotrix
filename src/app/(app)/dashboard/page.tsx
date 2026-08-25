@@ -477,7 +477,7 @@ function ProjectRoadmap({
   const rows = health
     .map(h => {
       const proj = projects.find(p => p.name === h.name);
-      return { ...h, tasks: proj?._count?.tasks ?? 0, deadline: proj?.deadline ?? null };
+      return { ...h, tasks: proj?._count?.tasks ?? 0, deadline: proj?.deadline ?? null, projId: proj?.id };
     })
     .filter(r => r.tasks > 0 || r.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -494,7 +494,13 @@ function ProjectRoadmap({
           const dlMs = r.deadline ? new Date(r.deadline).getTime() : NaN;
           const daysLeft = !isNaN(dlMs) ? Math.ceil((dlMs - Date.now()) / 86400000) : null;
           return (
-            <div key={i} style={{ padding: "13px 18px", borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)" }}>
+            <Link
+              key={i}
+              href={r.projId ? `/projects/${r.projId}/board` : "/projects"}
+              style={{ display: "block", padding: "13px 18px", borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)", cursor: "pointer" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-foreground)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -531,7 +537,7 @@ function ProjectRoadmap({
                   transition: "width 1.1s cubic-bezier(0.4,0,0.2,1)",
                 }} />
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -542,43 +548,6 @@ function ProjectRoadmap({
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  LAYOUT ATOMS                                                               */
 /* ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Signal Bar ───────────────────────────────────────────────────────────── */
-function SignalBar({ projects }: { projects: Project[] }) {
-  if (!projects.length) return null;
-  const total = projects.reduce((s, p) => s + Math.max(p._count?.tasks ?? 1, 1), 0);
-  return (
-    <div className="mb-1.5">
-      <div className="flex items-stretch h-[3px] gap-[3px] overflow-hidden rounded-full">
-        {projects.map((p) => {
-          const weight = Math.max(p._count?.tasks ?? 1, 1) / total;
-          return (
-            <Link key={p.id} href={`/projects/${p.id}/board`} title={p.name}
-              className="h-full rounded-full transition-all duration-300 hover:opacity-70"
-              style={{ flex: `${weight} 0 0`, minWidth: 12, background: p.color }}
-            />
-          );
-        })}
-      </div>
-      <div className="flex items-center gap-4 mt-2 flex-wrap">
-        {projects.slice(0, 6).map(p => (
-          <Link key={p.id} href={`/projects/${p.id}/board`}
-            className="flex items-center gap-1.5 hover:opacity-60 transition-opacity">
-            <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: p.color }} />
-            <span className="text-[10px] font-semibold" style={{ color: "var(--text-subtle)" }}>
-              {p.name.length > 20 ? p.name.slice(0, 18) + "…" : p.name}
-            </span>
-          </Link>
-        ))}
-        {projects.length > 6 && (
-          <Link href="/projects" className="text-[10px] hover:opacity-60 transition-opacity" style={{ color: "var(--text-subtle)" }}>
-            +{projects.length - 6} more
-          </Link>
-        )}
-      </div>
-    </div>
-  );
-}
 
 /* ── Section header ───────────────────────────────────────────────────────── */
 function Label({ text, count, danger, className }: { text: string; count?: number; danger?: boolean; className?: string }) {
@@ -611,7 +580,8 @@ function ActionRow({ task, index }: { task: TaskWithProject; index: number }) {
   const daysLate  = isOverdue && task.dueDate ? differenceInDays(new Date(), new Date(task.dueDate)) : 0;
 
   return (
-    <div
+    <Link
+      href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
       className="flex items-center gap-4 px-4 py-3.5 cursor-pointer transition-colors"
       style={{ borderTop: index === 0 ? "none" : "1px solid var(--border-subtle)" }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
@@ -645,7 +615,7 @@ function ActionRow({ task, index }: { task: TaskWithProject; index: number }) {
           </span>
         ); })()}
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -672,7 +642,8 @@ function statusVerb(s: string): string {
 function ActivityRow({ task, index }: { task: TaskWithProject; index: number }) {
   const actor = task.assignee?.name ?? "Someone";
   return (
-    <div
+    <Link
+      href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
       className="flex items-center gap-3 px-4 py-3 transition-colors cursor-pointer"
       style={{ borderTop: index === 0 ? "none" : "1px solid var(--border-subtle)" }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
@@ -692,29 +663,7 @@ function ActivityRow({ task, index }: { task: TaskWithProject; index: number }) 
       <span className="text-[10px] shrink-0 tabular-nums" style={{ color: "var(--text-subtle)" }}>
         {relTime(task.updatedAt)}
       </span>
-    </div>
-  );
-}
-
-/* ── Risk row ─────────────────────────────────────────────────────────────── */
-function RiskRow({ alert, index }: { alert: { severity: string; title: string; detail: string }; index: number }) {
-  const isCritical = alert.severity === "critical";
-  return (
-    <div
-      className="flex items-start gap-3 px-4 py-3"
-      style={{ borderTop: index === 0 ? "none" : "1px solid var(--border-subtle)" }}
-    >
-      <span className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
-        style={{ background: isCritical ? "#EF4444" : "#F59E0B" }} />
-      <div className="flex-1 min-w-0">
-        <p className="text-[12.5px] font-semibold leading-snug" style={{ color: "var(--text-foreground)" }}>
-          {alert.title}
-        </p>
-        <p className="text-[11px] mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>
-          {alert.detail}
-        </p>
-      </div>
-    </div>
+    </Link>
   );
 }
 
@@ -1040,10 +989,10 @@ function TeamPulse({ data }: { data: { name: string; tasks: number }[] }) {
           const badgeBg   = load === "high" ? "rgba(239,68,68,0.14)"  : load === "medium" ? "rgba(245,158,11,0.14)" : "rgba(34,197,94,0.14)";
           const badgeTxt  = load === "high" ? "#B91C1C"               : load === "medium" ? "#92400E"               : "#166534";
           return (
-            <div key={member.name} style={{
+            <Link key={member.name} href="/workload" className="hover:opacity-80 transition-opacity" style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
               minWidth: 80, padding: "12px 10px", borderRadius: 16,
-              background: "var(--bg-elevated)", flexShrink: 0,
+              background: "var(--bg-elevated)", flexShrink: 0, cursor: "pointer",
             }}>
               <div style={{
                 width: 38, height: 38, borderRadius: "50%",
@@ -1073,7 +1022,7 @@ function TeamPulse({ data }: { data: { name: string; tasks: number }[] }) {
               }}>
                 {load}
               </span>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -1106,7 +1055,12 @@ function HealthMatrix({ health, projects }: {
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {rows.slice(0, 6).map((r, i) => (
-          <div key={i}>
+          <Link
+            key={i}
+            href={r.projId ? `/projects/${r.projId}/board` : "/projects"}
+            style={{ display: "block", cursor: "pointer" }}
+            className="hover:opacity-80 transition-opacity"
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: r.color, flexShrink: 0, boxShadow: `0 0 5px ${r.color}` }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-foreground)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1134,7 +1088,7 @@ function HealthMatrix({ health, projects }: {
                 {r.pct >= 80 ? "good" : r.pct >= 55 ? "risk" : r.pct > 0 ? "critical" : "—"}
               </span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
@@ -1151,11 +1105,14 @@ function QuickWinsPanel({ tasks }: { tasks: TaskWithProject[] }) {
         {tasks.slice(0, 5).map((task, i) => {
           const pri = PRI[task.priority] ?? PRI.MEDIUM;
           return (
-            <div key={task.id} style={{
+            <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"} style={{
               display: "flex", alignItems: "center", gap: 9,
-              padding: "10px 14px",
+              padding: "10px 14px", cursor: "pointer",
               borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-            }}>
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}
+            >
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: pri.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1172,7 +1129,7 @@ function QuickWinsPanel({ tasks }: { tasks: TaskWithProject[] }) {
               }}>
                 {pri.label}
               </span>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -1442,7 +1399,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
   const hasHealthData   = (d.projectHealth ?? []).length > 0;
 
   /* Merged risks: computed alerts + API alerts */
-  const allRisks: { level: "critical" | "warn"; title: string; detail: string }[] = [];
+  const allRisks: { level: "critical" | "warn"; title: string; detail: string; href: string }[] = [];
 
   // Computed: overdue high-priority tasks
   const overdueHigh = upcomingToday.filter(t =>
@@ -1450,20 +1407,21 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
     (t.priority === "URGENT" || t.priority === "HIGH") && t.status !== "DONE"
   );
   if (overdueHigh.length > 0) {
-    allRisks.push({ level: "critical", title: `${overdueHigh.length} overdue high-priority task${overdueHigh.length > 1 ? "s" : ""}`, detail: overdueHigh.map(t => t.title).slice(0, 2).join(" · ") });
+    allRisks.push({ level: "critical", title: `${overdueHigh.length} overdue high-priority task${overdueHigh.length > 1 ? "s" : ""}`, detail: overdueHigh.map(t => t.title).slice(0, 2).join(" · "), href: "/tasks" });
   }
 
   // API alerts
   if (d.alerts && d.alerts.length > 0) {
-    d.alerts.slice(0, 4).forEach((a: { severity: string; title: string; detail: string }) => {
-      allRisks.push({ level: a.severity === "critical" ? "critical" : "warn", title: a.title, detail: a.detail });
+    d.alerts.slice(0, 4).forEach((a: { severity: string; title: string; detail: string; projectId?: string; userId?: string }) => {
+      const href = a.projectId ? `/projects/${a.projectId}/board` : a.userId ? "/workload" : "/tasks";
+      allRisks.push({ level: a.severity === "critical" ? "critical" : "warn", title: a.title, detail: a.detail, href });
     });
   }
 
   // Computed: stale projects
   const stalePjs = projects.filter(p => (p._count?.tasks ?? 0) === 0);
   if (stalePjs.length > 0) {
-    allRisks.push({ level: "warn", title: `${stalePjs.length} project${stalePjs.length > 1 ? "s" : ""} with no tasks`, detail: stalePjs.map(p => p.name).slice(0, 2).join(", ") });
+    allRisks.push({ level: "warn", title: `${stalePjs.length} project${stalePjs.length > 1 ? "s" : ""} with no tasks`, detail: stalePjs.map(p => p.name).slice(0, 2).join(", "), href: "/projects" });
   }
 
   return (
@@ -1477,11 +1435,8 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
 
       <div className="max-w-[1200px] mx-auto px-8 pt-8 pb-20">
 
-        {/* ════ SIGNAL BAR ════ */}
-        <SignalBar projects={projects} />
-
         {/* ════ HERO STRIP ════ */}
-        <div className="mt-6">
+        <div>
           <HeroStrip
             greeting={greeting}
             firstName={firstName}
@@ -1627,11 +1582,15 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                 <Label text="Risks" count={allRisks.length} danger={allRisks.some(r => r.level === "critical")} className="mb-3" />
                 <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
                   {allRisks.slice(0, 4).map((r, i) => (
-                    <div key={i} style={{
+                    <Link key={i} href={r.href} style={{
                       display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 16px",
                       borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
                       background: r.level === "critical" ? "rgba(239,68,68,0.025)" : undefined,
-                    }}>
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = r.level === "critical" ? "rgba(239,68,68,0.025)" : ""; }}
+                    >
                       <span style={{
                         width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 5,
                         background: r.level === "critical" ? "#EF4444" : "#F59E0B",
@@ -1649,7 +1608,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                       }}>
                         {r.level}
                       </span>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </section>
@@ -1676,12 +1635,14 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {winsToday.slice(0, 5).map(task => (
-                    <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
+                      className="hover:opacity-70 transition-opacity"
+                      style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
                       <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
                       <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {task.title}
                       </span>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

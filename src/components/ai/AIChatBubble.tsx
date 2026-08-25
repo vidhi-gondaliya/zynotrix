@@ -25,7 +25,7 @@ function getPageContext(pathname: string): string {
   if (pathname === "/meetings") return "User is viewing meetings.";
   if (pathname === "/documents") return "User is on the documents page.";
   if (pathname.startsWith("/ai/")) return "User is using an AI feature.";
-  if (pathname === "/admin") return "User is on the admin panel.";
+  if (pathname === "/settings/admin") return "User is on the admin panel.";
   return `User is on page: ${pathname}.`;
 }
 
