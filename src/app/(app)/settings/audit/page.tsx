@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Shield, Loader2, RefreshCw, Filter } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { PlanGate } from "@/components/ui/PlanGate";
 
 interface AuditLog {
   id: string; action: string; entityType: string; entityId: string;
@@ -32,7 +33,13 @@ export default function AuditPage() {
     const currentOffset = reset ? 0 : offset;
     const qs = new URLSearchParams({ limit: String(LIMIT), offset: String(currentOffset) });
     if (entityType) qs.set("entityType", entityType);
-    const res = await fetch(`/api/audit?${qs}`).then((r) => r.json());
+    const response = await fetch(`/api/audit?${qs}`);
+    const res = await response.json();
+    if (!response.ok || !Array.isArray(res)) {
+      setHasMore(false);
+      setLoading(false);
+      return;
+    }
     if (reset) {
       setLogs(res);
       setOffset(LIMIT);
@@ -52,6 +59,7 @@ export default function AuditPage() {
   }
 
   return (
+    <PlanGate feature="audit_log">
     <div className="p-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -157,5 +165,6 @@ export default function AuditPage() {
         </div>
       )}
     </div>
+    </PlanGate>
   );
 }

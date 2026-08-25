@@ -96,15 +96,16 @@ function ChartTip({ active, payload, label }: any) {
 }
 
 /* ── KPI tile ─────────────────────────────────────────────────────────────── */
-function KpiTile({ label, value, sub, accent, trend, icon: Icon }: {
+function KpiTile({ label, value, sub, accent, trend, icon: Icon, href }: {
   label: string; value: string | number; sub: string; accent?: string; trend?: number;
-  icon?: React.ElementType;
+  icon?: React.ElementType; href?: string;
 }) {
   const hasTrend = trend !== undefined && trend !== 0;
   const up = (trend ?? 0) > 0;
   const accentColor = accent ?? "var(--accent)";
+  const Wrapper = href ? Link : "div";
   return (
-    <div style={{
+    <Wrapper {...(href ? { href } : {})} className={href ? "hover:opacity-85 transition-opacity" : undefined} style={{
       background: "var(--bg-card)",
       border: "1px solid var(--border)",
       borderRadius: 20,
@@ -112,6 +113,7 @@ function KpiTile({ label, value, sub, accent, trend, icon: Icon }: {
       display: "flex",
       gap: 16,
       alignItems: "flex-start",
+      cursor: href ? "pointer" : undefined,
     }}>
       {/* Icon badge */}
       {Icon && (
@@ -146,7 +148,7 @@ function KpiTile({ label, value, sub, accent, trend, icon: Icon }: {
         </p>
         <p style={{ color: "var(--text-muted)", fontSize: 11.5 }}>{sub}</p>
       </div>
-    </div>
+    </Wrapper>
   );
 }
 
@@ -225,7 +227,7 @@ function HeroStrip({
         {chips.map(({ label, key, color, Icon }) => {
           const count = tasksByStatus[key] ?? 0;
           return (
-            <div key={key} style={{
+            <Link key={key} href={`/tasks?filter=all&status=${key}`} className="hover:opacity-80 transition-opacity" style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
               padding: "18px 20px",
               borderRadius: 18,
@@ -233,6 +235,7 @@ function HeroStrip({
               border: "1px solid rgba(255,255,255,0.10)",
               backdropFilter: "blur(12px)",
               minWidth: 86,
+              cursor: "pointer",
             }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
@@ -256,7 +259,7 @@ function HeroStrip({
                   {label}
                 </p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -282,13 +285,16 @@ function VelocityChart({ data, prediction }: { data: { date: string; completed: 
           </p>
           {prediction}
         </div>
-        <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center", flexShrink: 0 }}>
           {[{ label: "Created", color: "#6366F1" }, { label: "Completed", color: "#22C55E" }].map(l => (
             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 16, height: 2, background: l.color, borderRadius: 1, display: "inline-block" }} />
               <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{l.label}</span>
             </div>
           ))}
+          <Link href="/dashboards" className="hover:opacity-70 transition-opacity" style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>
+            View analytics →
+          </Link>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={150}>
@@ -344,9 +350,14 @@ function StatusDonut({ data }: { data: Record<string, number> }) {
 
   return (
     <div>
-      <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 14 }}>
-        Status Mix
-      </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "var(--text-subtle)" }}>
+          Status Mix
+        </p>
+        <Link href="/tasks?filter=all" className="hover:opacity-70 transition-opacity" style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>
+          View tasks →
+        </Link>
+      </div>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
         <div style={{ position: "relative", flexShrink: 0 }}>
           <PieChart width={110} height={110}>
@@ -1447,10 +1458,10 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
 
         {/* ════ KPI TILES ════ */}
         <div className="grid grid-cols-4 gap-3 mb-5">
-          <KpiTile label="Active Projects" value={d.activeProjects}       sub={`${d.totalProjects} total`}           accent="#6366F1" trend={trendDeltas.projects} icon={FolderKanban} />
-          <KpiTile label="Total Tasks"     value={d.totalTasks}           sub={`${d.activeTasks} in progress`}       accent="#EC4899" trend={trendDeltas.tasks}    icon={ListChecks} />
-          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}           accent="#22C55E" trend={trendDeltas.rate}     icon={TrendingUp} />
-          <KpiTile label="Overdue"         value={d.overdueTasks}         sub={d.overdueTasks === 0 ? "all on track" : urgentCount > 0 ? `${urgentCount} urgent` : "needs attention"} accent={d.overdueTasks > 0 ? "#F59E0B" : "#22C55E"} icon={AlertTriangle} />
+          <KpiTile label="Active Projects" value={d.activeProjects}       sub={`${d.totalProjects} total`}           accent="#6366F1" trend={trendDeltas.projects} icon={FolderKanban} href="/projects" />
+          <KpiTile label="Total Tasks"     value={d.totalTasks}           sub={`${d.activeTasks} in progress`}       accent="#EC4899" trend={trendDeltas.tasks}    icon={ListChecks} href="/tasks?filter=all" />
+          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}           accent="#22C55E" trend={trendDeltas.rate}     icon={TrendingUp} href="/tasks?filter=all&status=DONE" />
+          <KpiTile label="Overdue"         value={d.overdueTasks}         sub={d.overdueTasks === 0 ? "all on track" : urgentCount > 0 ? `${urgentCount} urgent` : "needs attention"} accent={d.overdueTasks > 0 ? "#F59E0B" : "#22C55E"} icon={AlertTriangle} href="/tasks?filter=overdue" />
         </div>
 
         {/* ════ CHARTS — Row 1: Velocity + Status Donut ════ */}

@@ -346,12 +346,13 @@ function BulkBar({ selected, onClear, onAction }: {
 function TeamPanel() {
   const searchParams = useSearchParams();
   const initialFilter = (searchParams.get("filter") as QuickFilter) ?? "mine";
+  const initialStatus = searchParams.get("status") ?? "";
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [quick, setQuick] = useState<QuickFilter>(initialFilter);
-  const [statusFilter, setStatusFilter]   = useState("");
+  const [statusFilter, setStatusFilter]   = useState(initialStatus);
   const [priorityFilter, setPriorityFilter] = useState("");
   const [projectFilter, setProjectFilter]  = useState("");
   const [search, setSearch] = useState("");
