@@ -228,32 +228,35 @@ function SectionToggle({
       variants={itemVariant}
       onClick={onToggle}
       style={{
-        width: "100%", display: "flex", alignItems: "center", gap: 7,
-        padding: "8px 10px 4px", background: "none", border: "none", cursor: "pointer",
-        marginTop: 6,
+        width: "100%", display: "flex", alignItems: "center", gap: 10,
+        padding: "9px 13px", background: "none", border: "none", cursor: "pointer",
+        marginTop: 6, borderRadius: 13,
+        transition: "background 0.16s ease",
       }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = SB.hoverBg; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "none"; }}
     >
       <motion.span
         animate={{ scale: hasActive ? [1, 1.3, 1] : 1 }}
         transition={{ duration: 0.4 }}
         style={{
-          width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
-          background: hasActive ? section.dot : "rgba(255,255,255,0.18)",
+          width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+          background: hasActive ? section.dot : "rgba(255,255,255,0.32)",
           boxShadow: hasActive ? `0 0 7px ${section.dot}` : "none",
           transition: "background 0.2s, box-shadow 0.2s",
         }}
       />
       <span style={{
-        fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase",
-        color: hasActive ? "rgba(255,255,255,0.72)" : SB.section,
+        fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
+        color: hasActive ? SB.active : SB.hover,
         flex: 1, textAlign: "left",
         transition: "color 0.2s",
       }}>
         {section.label}
       </span>
       <ChevronDown style={{
-        width: 11, height: 11, flexShrink: 0,
-        color: "rgba(255,255,255,0.2)",
+        width: 13, height: 13, flexShrink: 0,
+        color: "rgba(255,255,255,0.4)",
         transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
         transition: "transform 0.22s ease",
       }} />
