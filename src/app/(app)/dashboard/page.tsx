@@ -103,18 +103,18 @@ function KpiTile({ label, value, sub, accent, trend, icon: Icon, href }: {
   const hasTrend = trend !== undefined && trend !== 0;
   const up = (trend ?? 0) > 0;
   const accentColor = accent ?? "var(--accent)";
-  const Wrapper = href ? Link : "div";
-  return (
-    <Wrapper {...(href ? { href } : {})} className={href ? "hover:opacity-85 transition-opacity" : undefined} style={{
-      background: "var(--bg-card)",
-      border: "1px solid var(--border)",
-      borderRadius: 20,
-      padding: "22px 22px 20px",
-      display: "flex",
-      gap: 16,
-      alignItems: "flex-start",
-      cursor: href ? "pointer" : undefined,
-    }}>
+  const tileStyle: React.CSSProperties = {
+    background: "var(--bg-card)",
+    border: "1px solid var(--border)",
+    borderRadius: 20,
+    padding: "22px 22px 20px",
+    display: "flex",
+    gap: 16,
+    alignItems: "flex-start",
+    cursor: href ? "pointer" : undefined,
+  };
+  const content = (
+    <>
       {/* Icon badge */}
       {Icon && (
         <div style={{
@@ -148,8 +148,13 @@ function KpiTile({ label, value, sub, accent, trend, icon: Icon, href }: {
         </p>
         <p style={{ color: "var(--text-muted)", fontSize: 11.5 }}>{sub}</p>
       </div>
-    </Wrapper>
+    </>
   );
+
+  if (href) {
+    return <Link href={href} className="hover:opacity-85 transition-opacity" style={tileStyle}>{content}</Link>;
+  }
+  return <div style={tileStyle}>{content}</div>;
 }
 
 /* ── Hero Strip ───────────────────────────────────────────────────────────── */
