@@ -122,7 +122,7 @@ function RegisterPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-[15px] font-black tracking-[-0.04em] leading-none" style={{ color: "var(--text-foreground)" }}>COLLIQ</span>
-              <span className="text-[8px] font-semibold tracking-widest uppercase leading-none mt-0.5" style={{ color: "var(--text-subtle)" }}>by Zynotrix</span>
+              <span className="text-[8px] font-semibold tracking-widest uppercase leading-none mt-0.5" style={{ color: "var(--text-subtle)" }}>by autonoid.ai</span>
             </div>
           </div>
 

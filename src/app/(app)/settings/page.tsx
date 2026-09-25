@@ -418,7 +418,7 @@ export default function SettingsPage() {
       {/* Product attribution */}
       <div className="pt-4 pb-2 text-center">
         <p className="text-[11px]" style={{ color: "var(--text-subtle)" }}>
-          Part of the <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Zynotrix</span> ecosystem &nbsp;·&nbsp; Colliq v1.0
+          Powered by <a href="https://www.autonoid.ai/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-muted)", fontWeight: 600 }}>autonoid.ai</a> &nbsp;·&nbsp; Colliq v1.0
         </p>
       </div>
     </div>

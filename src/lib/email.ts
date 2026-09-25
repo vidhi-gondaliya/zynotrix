@@ -26,7 +26,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
         <div style="margin-bottom:24px">
           <span style="font-size:18px;font-weight:900;letter-spacing:-0.04em;color:#0a0a14">COLLIQ</span>
-          <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-top:2px">by Zynotrix</span>
+          <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-top:2px">by autonoid.ai</span>
         </div>
         <h1 style="font-size:22px;font-weight:800;color:#0a0a14;margin:0 0 8px">Reset your password</h1>
         <p style="font-size:14px;color:#6b7280;margin:0 0 24px;line-height:1.6">
@@ -60,7 +60,7 @@ export async function sendInvitationEmail(
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
         <div style="margin-bottom:24px">
           <span style="font-size:18px;font-weight:900;letter-spacing:-0.04em;color:#0a0a14">COLLIQ</span>
-          <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-top:2px">by Zynotrix</span>
+          <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-top:2px">by autonoid.ai</span>
         </div>
         <h1 style="font-size:22px;font-weight:800;color:#0a0a14;margin:0 0 8px">You're invited!</h1>
         <p style="font-size:14px;color:#6b7280;margin:0 0 24px;line-height:1.6">
@@ -95,7 +95,7 @@ export async function sendNewMemberNotification(
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
         <div style="margin-bottom:24px">
           <span style="font-size:18px;font-weight:900;letter-spacing:-0.04em;color:#0a0a14">COLLIQ</span>
-          <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-top:2px">by Zynotrix</span>
+          <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;margin-top:2px">by autonoid.ai</span>
         </div>
         <h1 style="font-size:22px;font-weight:800;color:#0a0a14;margin:0 0 8px">New member joined your workspace</h1>
         <p style="font-size:14px;color:#6b7280;margin:0 0 20px;line-height:1.6">

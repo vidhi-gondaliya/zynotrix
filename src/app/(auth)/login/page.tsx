@@ -81,7 +81,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "demo@nexusdigital.io", password: "password123" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -125,7 +125,7 @@ function LoginForm() {
             </div>
             <div>
               <span className="text-[17px] font-black tracking-tight text-white">COLLIQ</span>
-              <p className="text-[10px] font-medium tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>by Zynotrix</p>
+              <p className="text-[10px] font-medium tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>by autonoid.ai</p>
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@ function LoginForm() {
 
         <div className="relative z-10 px-12 pb-8">
           <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-            © 2026 Zynotrix · <Link href="/privacy" className="hover:text-white/40 transition-colors">Privacy</Link>
+            © 2026 · Powered by <a href="https://www.autonoid.ai/" target="_blank" rel="noopener noreferrer" className="hover:text-white/40 transition-colors">autonoid.ai</a> · <Link href="/privacy" className="hover:text-white/40 transition-colors">Privacy</Link>
             {" · "}
             <Link href="/terms" className="hover:text-white/40 transition-colors">Terms</Link>
           </p>
@@ -209,6 +209,13 @@ function LoginForm() {
             <p className="text-[14px] mt-1.5" style={{ color: "var(--text-muted)" }}>
               Sign in to continue to your workspace
             </p>
+          </div>
+
+          {/* Demo credentials notice */}
+          <div className="mb-5 px-3.5 py-3 rounded-xl text-[12.5px] leading-relaxed"
+            style={{ background: "var(--accent-muted)", border: "1px solid var(--accent)", color: "var(--text-foreground)" }}>
+            <span className="font-semibold">Demo mode:</span> credentials are pre-filled — just hit{" "}
+            <span className="font-semibold">Sign in</span> to explore the full platform.
           </div>
 
           {/* Google SSO — primary option */}

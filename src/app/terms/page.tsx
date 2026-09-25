@@ -32,7 +32,7 @@ export default function TermsPage() {
         {[
           {
             title: "1. Acceptance of Terms",
-            body: `By accessing or using Colliq ("the Service"), operated by Zynotrix, you agree to be bound by these Terms of Service. If you do not agree, do not use the Service. These Terms apply to all users, including workspace owners, administrators, and members.`,
+            body: `By accessing or using Colliq ("the Service"), operated by autonoid.ai, you agree to be bound by these Terms of Service. If you do not agree, do not use the Service. These Terms apply to all users, including workspace owners, administrators, and members.`,
           },
           {
             title: "2. The Service",
@@ -40,7 +40,7 @@ export default function TermsPage() {
           },
           {
             title: "3. Account Registration",
-            body: `You must provide accurate, current, and complete information during registration. You are responsible for maintaining the confidentiality of your credentials and for all activity under your account. Notify us immediately at support@zynotrix.com of any unauthorized access.\n\nYou must be at least 16 years old to use the Service.`,
+            body: `You must provide accurate, current, and complete information during registration. You are responsible for maintaining the confidentiality of your credentials and for all activity under your account. Notify us immediately at support@autonoid.ai of any unauthorized access.\n\nYou must be at least 16 years old to use the Service.`,
           },
           {
             title: "4. Free and Paid Plans",
@@ -52,19 +52,19 @@ export default function TermsPage() {
           },
           {
             title: "6. Your Content",
-            body: `You retain ownership of all content you create in Colliq. By uploading content, you grant Zynotrix a limited license to store, process, and display it solely to provide the Service. We do not claim intellectual property rights over your content.`,
+            body: `You retain ownership of all content you create in Colliq. By uploading content, you grant autonoid.ai a limited license to store, process, and display it solely to provide the Service. We do not claim intellectual property rights over your content.`,
           },
           {
             title: "7. Intellectual Property",
-            body: `All rights, title, and interest in the Service — including its software, design, and trademarks — belong exclusively to Zynotrix. Nothing in these Terms transfers any intellectual property rights to you.`,
+            body: `All rights, title, and interest in the Service — including its software, design, and trademarks — belong exclusively to autonoid.ai. Nothing in these Terms transfers any intellectual property rights to you.`,
           },
           {
             title: "8. Limitation of Liability",
-            body: `To the maximum extent permitted by law, Zynotrix shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service. Our total liability to you for any claim shall not exceed the fees you paid us in the 12 months preceding the claim.`,
+            body: `To the maximum extent permitted by law, autonoid.ai shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service. Our total liability to you for any claim shall not exceed the fees you paid us in the 12 months preceding the claim.`,
           },
           {
             title: "9. Indemnification",
-            body: `You agree to defend, indemnify, and hold harmless Zynotrix and its officers, employees, and agents from any claims, damages, or expenses arising from your use of the Service or violation of these Terms.`,
+            body: `You agree to defend, indemnify, and hold harmless autonoid.ai and its officers, employees, and agents from any claims, damages, or expenses arising from your use of the Service or violation of these Terms.`,
           },
           {
             title: "10. Termination",
@@ -72,7 +72,7 @@ export default function TermsPage() {
           },
           {
             title: "11. Governing Law",
-            body: `These Terms are governed by the laws of the jurisdiction in which Zynotrix is incorporated, without regard to conflict of law principles. Disputes shall be resolved through binding arbitration, unless prohibited by applicable law.`,
+            body: `These Terms are governed by the laws of the jurisdiction in which autonoid.ai is incorporated, without regard to conflict of law principles. Disputes shall be resolved through binding arbitration, unless prohibited by applicable law.`,
           },
           {
             title: "12. Changes to Terms",
@@ -80,7 +80,7 @@ export default function TermsPage() {
           },
           {
             title: "13. Contact",
-            body: `For questions about these Terms:\n\nZynotrix · legal@zynotrix.com`,
+            body: `For questions about these Terms:\n\nautonoid.ai · legal@autonoid.ai`,
           },
         ].map((section) => (
           <section key={section.title} className="space-y-3">
@@ -94,7 +94,7 @@ export default function TermsPage() {
         ))}
 
         <div className="pt-8 border-t flex items-center justify-between flex-wrap gap-4" style={{ borderColor: "var(--border)" }}>
-          <p className="text-sm" style={{ color: "var(--text-subtle)" }}>© 2026 Zynotrix. All rights reserved.</p>
+          <p className="text-sm" style={{ color: "var(--text-subtle)" }}>© 2026 autonoid.ai. All rights reserved.</p>
           <div className="flex gap-4 text-sm" style={{ color: "var(--accent)" }}>
             <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
             <Link href="/login" className="hover:underline">Sign In</Link>

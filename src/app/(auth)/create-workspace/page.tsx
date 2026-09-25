@@ -44,7 +44,7 @@ export default function CreateWorkspacePage() {
             <div style={{ width: 52, height: 52, borderRadius: 14, background: "linear-gradient(135deg, var(--accent), #A78BFA)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", boxShadow: "0 8px 24px rgba(79,82,217,0.35)" }}>
               <span style={{ color: "#fff", fontSize: 20, fontWeight: 900, letterSpacing: "-0.04em" }}>C</span>
             </div>
-            <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--text-subtle)" }}>A Zynotrix Product</p>
+            <p style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--text-subtle)" }}>Powered by autonoid.ai</p>
           </div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 8 }}>Create your workspace</h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.65 }}>

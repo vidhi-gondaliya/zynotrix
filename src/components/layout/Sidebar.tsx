@@ -347,7 +347,7 @@ export function Sidebar() {
                   COLLIQ
                 </span>
                 <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
-                  by Zynotrix
+                  by autonoid.ai
                 </span>
               </motion.div>
             )}

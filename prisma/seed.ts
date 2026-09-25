@@ -9,7 +9,7 @@ const daysFromNow = (n: number) => new Date(now.getTime() + n * 86400000);
 const hoursAgo = (n: number) => new Date(now.getTime() - n * 3600000);
 
 async function main() {
-  console.log("🌱 Seeding ZYNOTRIX demo database...");
+  console.log("🌱 Seeding demo database...");
 
   const hash = await bcrypt.hash("password123", 12);
 

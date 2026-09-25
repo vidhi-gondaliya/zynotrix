@@ -159,7 +159,7 @@ export default function LandingPage() {
           </div>
           <div>
             <span className="text-[15px] font-black tracking-[-0.04em] text-white">COLLIQ</span>
-            <span className="hidden sm:block text-[8px] font-bold tracking-widest uppercase ml-1" style={{ color: "rgba(255,255,255,0.3)" }}>by Zynotrix</span>
+            <span className="hidden sm:block text-[8px] font-bold tracking-widest uppercase ml-1" style={{ color: "rgba(255,255,255,0.3)" }}>by autonoid.ai</span>
           </div>
         </Link>
 
@@ -465,7 +465,7 @@ export default function LandingPage() {
             </div>
             <div>
               <span className="text-[13px] font-black tracking-[-0.04em] text-white">COLLIQ</span>
-              <span className="text-[9px] font-semibold tracking-widest uppercase ml-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>by Zynotrix</span>
+              <span className="text-[9px] font-semibold tracking-widest uppercase ml-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>by autonoid.ai</span>
             </div>
           </div>
           <div className="flex items-center gap-8">
@@ -482,7 +482,9 @@ export default function LandingPage() {
             ))}
           </div>
           <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-            © 2026 Zynotrix · All rights reserved
+            © 2026 · Powered by{" "}
+            <a href="https://www.autonoid.ai/" target="_blank" rel="noopener noreferrer"
+              className="hover:text-white/40 transition-colors">autonoid.ai</a>
           </p>
         </div>
       </footer>

@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         {[
           {
             title: "1. Who We Are",
-            body: `Colliq is a project management and AI work operating system built by Zynotrix. This Privacy Policy explains how we collect, use, share, and protect your personal information when you use Colliq ("the Service"). By using Colliq, you agree to the practices described here.`,
+            body: `Colliq is a project management and AI work operating system built by autonoid.ai. This Privacy Policy explains how we collect, use, share, and protect your personal information when you use Colliq ("the Service"). By using Colliq, you agree to the practices described here.`,
           },
           {
             title: "2. Information We Collect",
@@ -56,7 +56,7 @@ export default function PrivacyPage() {
           },
           {
             title: "7. Your Rights",
-            body: `Depending on your location, you may have rights to access, correct, delete, or export your personal data. To exercise these rights, contact us at privacy@zynotrix.com. We respond within 30 days.`,
+            body: `Depending on your location, you may have rights to access, correct, delete, or export your personal data. To exercise these rights, contact us at privacy@autonoid.ai. We respond within 30 days.`,
           },
           {
             title: "8. Cookies",
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
           },
           {
             title: "10. Contact",
-            body: `Questions about this policy? Reach us at:\n\nZynotrix · privacy@zynotrix.com`,
+            body: `Questions about this policy? Reach us at:\n\nautonoid.ai · privacy@autonoid.ai`,
           },
         ].map((section) => (
           <section key={section.title} className="space-y-3">
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
         ))}
 
         <div className="pt-8 border-t flex items-center justify-between flex-wrap gap-4" style={{ borderColor: "var(--border)" }}>
-          <p className="text-sm" style={{ color: "var(--text-subtle)" }}>© 2026 Zynotrix. All rights reserved.</p>
+          <p className="text-sm" style={{ color: "var(--text-subtle)" }}>© 2026 autonoid.ai. All rights reserved.</p>
           <div className="flex gap-4 text-sm" style={{ color: "var(--accent)" }}>
             <Link href="/terms" className="hover:underline">Terms of Service</Link>
             <Link href="/login" className="hover:underline">Sign In</Link>
