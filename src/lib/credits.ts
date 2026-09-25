@@ -17,8 +17,14 @@ async function getOrCreateBalance(orgId: string) {
     where: { organizationId: orgId },
   });
   if (!balance) {
+    const sub = await (prisma as any).subscription.findUnique({
+      where: { organizationId: orgId },
+      select: { plan: true, seats: true },
+    });
+    const org = sub ? null : await prisma.organization.findUnique({ where: { id: orgId }, select: { plan: true } });
+    const quota = monthlyAiQuota(sub?.plan ?? org?.plan ?? "FREE", sub?.seats ?? 1);
     balance = await (prisma as any).aiCreditBalance.create({
-      data: { organizationId: orgId, balance: 100, usedThisMonth: 0, lastResetAt: new Date() },
+      data: { organizationId: orgId, balance: quota, usedThisMonth: 0, lastResetAt: new Date() },
     });
   }
   return balance;
@@ -35,7 +41,8 @@ async function maybeCycleReset(orgId: string, balance: { lastResetAt: Date; id: 
     where: { organizationId: orgId },
     select: { plan: true, seats: true },
   });
-  const quota = monthlyAiQuota(sub?.plan ?? "FREE", sub?.seats ?? 1);
+  const org = sub ? null : await prisma.organization.findUnique({ where: { id: orgId }, select: { plan: true } });
+  const quota = monthlyAiQuota(sub?.plan ?? org?.plan ?? "FREE", sub?.seats ?? 1);
 
   await (prisma as any).aiCreditBalance.update({
     where: { organizationId: orgId },

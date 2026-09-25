@@ -11,8 +11,10 @@ const globalForNvidia = globalThis as unknown as { nvidiaClient: OpenAI };
 export const claude =           // kept as "claude" so all imports stay unchanged
   globalForNvidia.nvidiaClient ??
   new OpenAI({
-    apiKey:  process.env.NVIDIA_API_KEY ?? "",
-    baseURL: NVIDIA_BASE,
+    apiKey:     process.env.NVIDIA_API_KEY ?? "",
+    baseURL:    NVIDIA_BASE,
+    maxRetries: 3,
+    timeout:    55_000,
   });
 
 if (process.env.NODE_ENV !== "production") globalForNvidia.nvidiaClient = claude;
@@ -97,7 +99,7 @@ export async function generateJSON<T>(
 ): Promise<T> {
   const response = await claude.chat.completions.create({
     model:      fast ? FAST_MODEL : MODEL,
-    max_tokens: 2048,
+    max_tokens: 4096,
     messages:   [
       { role: "system", content: system },
       ...messages,
@@ -110,7 +112,10 @@ export async function generateJSON<T>(
     text.match(/```\n?([\s\S]*?)\n?```/)     ??
     text.match(/(\{[\s\S]*\})/)              ??
     text.match(/(\[[\s\S]*\])/);
-  if (!match) throw new Error("No JSON in AI response");
+  if (!match) {
+    const reason = response.choices[0]?.finish_reason;
+    throw new Error(`No JSON in AI response${reason === "length" ? " (response truncated — try again)" : ""}`);
+  }
   return JSON.parse(match[1]) as T;
 }
 
