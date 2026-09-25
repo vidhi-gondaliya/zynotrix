@@ -1,5 +1,9 @@
 import { prisma } from "./prisma";
 import { monthlyAiQuota } from "./stripe";
+import { isDemoOrg } from "./demo";
+
+// Sentinel balance shown/used for demo orgs — consumeCredits never decrements it.
+const UNLIMITED_DEMO_BALANCE = 999_999;
 
 // ── Credit costs by AI action type ────────────────────────────────────────────
 export const CREDIT_COSTS = {
@@ -63,6 +67,7 @@ async function maybeCycleReset(orgId: string, balance: { lastResetAt: Date; id: 
 
 /** Returns current balance without deducting. */
 export async function getCredits(orgId: string): Promise<{ balance: number; usedThisMonth: number }> {
+  if (isDemoOrg(orgId)) return { balance: UNLIMITED_DEMO_BALANCE, usedThisMonth: 0 };
   const bal = await getOrCreateBalance(orgId);
   await maybeCycleReset(orgId, bal);
   const fresh = await (prisma as any).aiCreditBalance.findUnique({ where: { organizationId: orgId } });
@@ -74,6 +79,7 @@ export async function getCredits(orgId: string): Promise<{ balance: number; used
  * Returns `true` if successful, `false` if insufficient balance (caller should block the AI action).
  */
 export async function consumeCredits(orgId: string, amount: number): Promise<boolean> {
+  if (isDemoOrg(orgId)) return true;
   const bal = await getOrCreateBalance(orgId);
   await maybeCycleReset(orgId, bal);
   const current = await (prisma as any).aiCreditBalance.findUnique({ where: { organizationId: orgId } });

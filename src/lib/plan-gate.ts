@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "./prisma";
 import { getPlan, type PlanId } from "./stripe";
+import { isDemoOrg } from "./demo";
 
 // ── Feature catalogue ─────────────────────────────────────────────────────────
 
@@ -69,10 +70,8 @@ async function getOrgPlanId(orgId: string): Promise<PlanId> {
  * Returns a 402 Response if the org's plan doesn't include `feature`.
  * Returns null if allowed — call `if (block) return block;` after.
  */
-const DEMO_ORG_IDS = (process.env.DEMO_ORG_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-
 export async function requireFeature(orgId: string, feature: PlanFeature): Promise<Response | null> {
-  if (DEMO_ORG_IDS.includes(orgId)) return null;
+  if (isDemoOrg(orgId)) return null;
   const planId  = await getOrgPlanId(orgId);
   const allowed = FEATURE_PLANS[feature];
 
@@ -96,7 +95,7 @@ export async function requireFeature(orgId: string, feature: PlanFeature): Promi
  * Returns null if within limits.
  */
 export async function requireUnderLimit(orgId: string, limit: PlanLimit): Promise<Response | null> {
-  if (DEMO_ORG_IDS.includes(orgId)) return null;
+  if (isDemoOrg(orgId)) return null;
   const planId = await getOrgPlanId(orgId);
   const plan   = getPlan(planId);
 
