@@ -237,7 +237,7 @@ function Workflow() {
   );
 }
 
-type WorkView = "Board" | "List" | "Timeline" | "Sprint";
+
 const taskExamples = ["Define campaign story", "Finalise launch page", "QA responsive states", "Client review"];
 
 function ProductPanel({ view }: { view: WorkView }) {
