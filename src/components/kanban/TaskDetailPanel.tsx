@@ -315,7 +315,7 @@ export function TaskDetailPanel({ task, open, onClose, onUpdate, onDelete }: Tas
           <motion.div
             initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 360, damping: 34 }}
-            className="fixed right-0 top-0 h-full z-50 flex flex-col"
+            className="cx-task-detail-panel fixed right-0 top-0 h-full z-50 flex flex-col"
             style={{
               width: "min(600px, 96vw)",
               background: "var(--bg-card)",
