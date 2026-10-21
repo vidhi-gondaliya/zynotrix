@@ -1550,6 +1550,15 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
                 {(d.recentTasks ?? []).length ? (d.recentTasks as TaskWithProject[]).slice(0,5).map((task,i) => <ActivityRow key={task.id} task={task} index={i} />) : <div className="cx-activity-empty">Your workspace activity will show up here as your team gets moving.</div>}
               </div>
             </div>
+          <section className="cx-studio-section">
+            <div className="cx-section-heading"><div><span className="cx-section-index">05 / PATTERNS & MOMENTUM</span><h2>Zoom out. <em>See more.</em></h2></div><p className="cx-section-aside">YOUR WORK, OVER TIME</p></div>
+            <div className="cx-chart-grid">
+              <div className="cx-chart-card cx-chart-wide"><div className="cx-chart-title"><div><span>THE PACE</span><h3>Work velocity</h3></div><span className="cx-chart-index">01</span></div><VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} /></div>
+              <div className="cx-chart-card"><div className="cx-chart-title"><div><span>THE MIX</span><h3>Task status</h3></div><span className="cx-chart-index">02</span></div><StatusDonut data={d.tasksByStatus ?? {}} /></div>
+              <div className="cx-chart-card"><div className="cx-chart-title"><div><span>THE LOAD</span><h3>Priority split</h3></div><span className="cx-chart-index">03</span></div>{hasPriorityData ? <PriorityBars data={d.tasksByPriority ?? {}} /> : <p className="cx-chart-empty">Priority signals will appear as tasks are added.</p>}</div>
+              <div className="cx-chart-card cx-chart-wide"><div className="cx-chart-title"><div><span>THE FINISH LINE</span><h3>Project roadmap</h3></div><span className="cx-chart-index">04</span></div>{hasHealthData ? <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} /> : <BurndownChart data={burndownData} />}</div>
+            </div>
+          </section>
           </div>
           <aside className="cx-signal-side">
             <div className="cx-wins-card"><div className="cx-aside-heading"><span>THE GOOD STUFF</span><b>✳</b></div><h3>Little wins.<br /><em>Big energy.</em></h3>{winsToday.length ? <ul>{winsToday.slice(0,5).map(task => <li key={task.id}><span>✓</span>{task.title}</li>)}</ul> : <p className="cx-aside-empty">Finished work will land here. Every checked-off task counts.</p>}<div className="cx-wins-footer">{winsToday.length} COMPLETED <span>✳</span></div></div>
@@ -1557,16 +1566,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
             <div className="cx-projects-card"><div className="cx-aside-heading"><span>PROJECT WORLDS</span><Link href="/projects">VIEW ALL ↗</Link></div><h3>Every idea needs<br />a <em>place to grow.</em></h3>{projects.length ? <div className="cx-project-list">{projects.slice(0,6).map((project,i) => <Link key={project.id} href={`/projects/${project.id}/board`} className="cx-project-row"><span className="cx-project-color" style={{background:project.color}} /><span>{project.name}</span><small>{project._count?.tasks ?? 0}</small><b>↗</b></Link>)}</div> : <div className="cx-project-empty"><p>Your next big thing starts with a project.</p><Link href="/projects">Create your first ↗</Link></div>}</div>
             <div className="cx-quick-card"><div className="cx-aside-heading"><span>SHORTCUTS</span><b>✳</b></div><button onClick={() => setShowNLCreator(true)}><span>✳</span> Make a task with AI <b>↗</b></button><Link href="/attendance"><span>◷</span> Clock in / out <b>↗</b></Link><Link href="/ai/assistant"><span>✧</span> Talk to Colliq <b>↗</b></Link><Link href="/workload"><span>◌</span> Team workload <b>↗</b></Link></div>
           </aside>
-        </section>
 
-        <section className="cx-studio-section">
-          <div className="cx-section-heading"><div><span className="cx-section-index">05 / PATTERNS & MOMENTUM</span><h2>Zoom out. <em>See more.</em></h2></div><p className="cx-section-aside">YOUR WORK, OVER TIME</p></div>
-          <div className="cx-chart-grid">
-            <div className="cx-chart-card cx-chart-wide"><div className="cx-chart-title"><div><span>THE PACE</span><h3>Work velocity</h3></div><span className="cx-chart-index">01</span></div><VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} /></div>
-            <div className="cx-chart-card"><div className="cx-chart-title"><div><span>THE MIX</span><h3>Task status</h3></div><span className="cx-chart-index">02</span></div><StatusDonut data={d.tasksByStatus ?? {}} /></div>
-            <div className="cx-chart-card"><div className="cx-chart-title"><div><span>THE LOAD</span><h3>Priority split</h3></div><span className="cx-chart-index">03</span></div>{hasPriorityData ? <PriorityBars data={d.tasksByPriority ?? {}} /> : <p className="cx-chart-empty">Priority signals will appear as tasks are added.</p>}</div>
-            <div className="cx-chart-card cx-chart-wide"><div className="cx-chart-title"><div><span>THE FINISH LINE</span><h3>Project roadmap</h3></div><span className="cx-chart-index">04</span></div>{hasHealthData ? <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} /> : <BurndownChart data={burndownData} />}</div>
-          </div>
         </section>
 
         <section className="cx-standup-section">
