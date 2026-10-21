@@ -16,11 +16,9 @@ export default auth((req) => {
   // Always allow API routes, public portal, and public static pages
   if (isApiRoute || isPortal || isPublicPage) return NextResponse.next();
 
-  // Root: unauthenticated users go to login; logged-in users can view the landing page
-  if (isRoot) {
-    if (!isLoggedIn) return NextResponse.redirect(new URL("/login", req.url));
-    return NextResponse.next();
-  }
+  // Public marketing landing page: accessible to signed-out and signed-in visitors.
+  // All authenticated application routes remain protected below.
+  if (isRoot) return NextResponse.next();
 
   // Not logged in → login page
   if (!isLoggedIn && !isAuthPage) {
