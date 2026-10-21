@@ -1,5 +1,8 @@
 "use client";
 
+import "./marketing.css";
+import type React from "react";
+
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -140,7 +143,7 @@ function Frustration() {
 function BrandMoment() {
   return (
     <section className="mk-brand-moment mk-section-pad" id="platform">
-      <Reveal className="mk-brand-word" aria-label="Colliq"><span>COLL</span><span>IQ</span></Reveal>
+      <Reveal className="mk-brand-word"><span>COLL</span><span>IQ</span></Reveal>
       <Reveal className="mk-brand-definition">
         <Kicker>COLLEAGUE + INTELLIGENCE</Kicker>
         <h2>Meet the colleague<br />who <em>connects the dots.</em></h2>
