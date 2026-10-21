@@ -1131,88 +1131,111 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 }
 
 
-/* ── Direct Messages — Colliq editorial workspace ─────────────────────────── */
-.cx-messages-page {
+/* ── Editorial refresh: Attendance + Workload ─────────────────────────────── */
+.cx-attendance-page,
+.cx-workload-page {
   --cx-paper: #f6f2e9;
   --cx-white: #fffdf8;
   --cx-ink: #191919;
   --cx-blue: #315bff;
   --cx-orange: #ff6243;
   --cx-green: #176b54;
-  --cx-muted: #77746d;
   --cx-line: rgba(25,25,25,.14);
   color: var(--cx-ink);
   padding: clamp(20px, 3vw, 42px) clamp(16px, 3.4vw, 52px) 32px !important;
   font-family: "DM Sans", sans-serif;
 }
-.cx-messages-page h1,
-.cx-messages-page h2,
-.cx-messages-page h3 {
-  font-family: "Space Grotesk", sans-serif;
-  letter-spacing: -.055em;
+.cx-attendance-page > div:first-child,
+.cx-workload-page > div:first-child {
+  max-width: 1580px;
+  margin-left: auto;
+  margin-right: auto;
 }
-.cx-messages-page h1 {
-  font-size: clamp(34px, 4vw, 52px) !important;
+.cx-attendance-page h1,
+.cx-workload-page h1 {
+  font-family: "Space Grotesk", sans-serif !important;
+  font-size: clamp(34px, 4vw, 54px) !important;
   font-weight: 600 !important;
+  letter-spacing: -.075em !important;
   line-height: 1 !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--cx-ink) !important;
   color: var(--cx-ink) !important;
 }
-.cx-messages-page > div:first-child {
-  align-items: flex-end;
-  gap: 16px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--cx-line);
+.cx-attendance-page h1::after,
+.cx-workload-page h1::after {
+  content: ".";
+  color: var(--cx-blue);
 }
-.cx-messages-page > div:first-child > div:first-child > div:first-child {
-  border-radius: 4px 16px 4px 16px !important;
-  box-shadow: 4px 4px 0 rgba(25,25,25,.08) !important;
+.cx-attendance-page > div,
+.cx-workload-page > div { min-width: 0; }
+.cx-attendance-page [class*="rounded-2xl"],
+.cx-attendance-page [class*="rounded-[24px]"],
+.cx-workload-page [class*="rounded-2xl"],
+.cx-workload-page [class*="rounded-[16px]"] {
+  box-shadow: none;
 }
-.cx-messages-page button,
-.cx-messages-page a,
-.cx-messages-page input {
-  transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
-}
-.cx-messages-page button:focus-visible,
-.cx-messages-page a:focus-visible,
-.cx-messages-page input:focus-visible {
+.cx-attendance-page button,
+.cx-workload-page button,
+.cx-attendance-page a,
+.cx-workload-page a { transition: transform .18s ease, background-color .18s ease, border-color .18s ease; }
+.cx-attendance-page button:focus-visible,
+.cx-workload-page button:focus-visible,
+.cx-attendance-page a:focus-visible,
+.cx-workload-page a:focus-visible {
   outline: 3px solid var(--cx-orange);
   outline-offset: 3px;
 }
-.cx-messages-page input:not([type="checkbox"]),
-.cx-messages-page textarea,
-.cx-messages-page select {
-  background: var(--cx-white) !important;
-  color: var(--cx-ink) !important;
-  border: 1px solid var(--cx-line) !important;
-  border-radius: 4px 14px 4px 14px !important;
+.cx-attendance-page > .flex.items-center.justify-between,
+.cx-workload-page > .flex.items-center.justify-between {
+  align-items: flex-end;
+  gap: 18px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--cx-line);
 }
-.cx-messages-page input::placeholder,
-.cx-messages-page textarea::placeholder { color: #88847b !important; }
-.cx-messages-page [style*="var(--bg-card)"],
-.cx-messages-page [style*="var(--bg-elevated)"] {
-  border-color: var(--cx-line) !important;
+.cx-attendance-page > .flex.items-center.justify-between > div:first-child > div:first-child,
+.cx-workload-page > .flex.items-center.justify-between > div:first-child > div:first-child {
+  border-radius: 4px 16px 4px 16px !important;
+  box-shadow: 4px 4px 0 rgba(25,25,25,.08) !important;
 }
-.cx-messages-page [class*="rounded-2xl"],
-.cx-messages-page [class*="rounded-xl"] {
-  box-shadow: none;
+.cx-attendance-page .text-subtle,
+.cx-workload-page .text-subtle,
+.cx-attendance-page .text-muted,
+.cx-workload-page .text-muted {
+  color: #77746d;
 }
-.cx-messages-page button[style*="var(--accent)"] {
-  background: var(--cx-blue) !important;
-  color: white !important;
-  border-radius: 999px !important;
+.cx-attendance-page [style*="var(--bg-card)"],
+.cx-workload-page [style*="var(--bg-card)"] {
+  border-color: var(--cx-line);
 }
-.cx-messages-page button[style*="var(--accent)"]:hover {
-  background: var(--cx-ink) !important;
-  transform: translateY(-1px);
+.cx-workload-page > .grid.grid-cols-2 > div {
+  border-radius: 4px 20px 4px 20px !important;
+  box-shadow: none !important;
 }
-.cx-messages-page [class*="hover\\:bg-"]:hover {
-  background-color: rgba(49,91,255,.06);
+.cx-workload-page > .grid.grid-cols-2 > div:nth-child(1) { background: #d9d5ff !important; }
+.cx-workload-page > .grid.grid-cols-2 > div:nth-child(2) { background: #ffd0c4 !important; }
+.cx-workload-page > .grid.grid-cols-2 > div:nth-child(3) { background: #c6e4d2 !important; }
+.cx-workload-page > .grid.grid-cols-2 > div:nth-child(4) { background: #f4d76b !important; }
+.cx-workload-page > .grid.grid-cols-2 > div p { color: var(--cx-ink) !important; }
+.cx-workload-page > .grid.grid-cols-2 > div > div { opacity: .18; }
+.cx-attendance-page .grid.grid-cols-7 > div,
+.cx-attendance-page .grid.grid-cols-7 > button {
+  border-radius: 5px;
 }
 @media (max-width: 780px) {
-  .cx-messages-page { padding: 22px 14px 24px !important; }
-  .cx-messages-page > div:first-child { align-items: flex-start; flex-wrap: wrap; }
-  .cx-messages-page > div:first-child > button { width: 100%; justify-content: center; }
+  .cx-attendance-page,
+  .cx-workload-page { padding: 22px 14px 24px !important; }
+  .cx-attendance-page > .flex.items-center.justify-between,
+  .cx-workload-page > .flex.items-center.justify-between {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .cx-workload-page > .grid.grid-cols-2 > div { min-width: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cx-messages-page * { transition-duration: .01ms !important; }
+  .cx-attendance-page *,
+  .cx-workload-page * { transition-duration: .01ms !important; }
+}
+
+.cx-messages-page * { transition-duration: .01ms !important; }
 }
