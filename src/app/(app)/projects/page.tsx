@@ -417,7 +417,7 @@ export default function ProjectsPage() {
     id === "ALL" ? projects.length : projects.filter((p) => p.status === id).length;
 
   return (
-    <div style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="cx-projects-page" style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
       {/* Header */}
       <div style={{
