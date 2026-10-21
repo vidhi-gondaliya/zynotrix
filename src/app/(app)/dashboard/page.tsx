@@ -1467,9 +1467,7 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
           <div className="cx-intelligence-art" aria-hidden="true">
             <div className="cx-orbit cx-orbit-one" /><div className="cx-orbit cx-orbit-two" /><div className="cx-orbit cx-orbit-three" />
             <span className="cx-art-star cx-art-star-one">✳</span><span className="cx-art-star cx-art-star-two">✦</span>
-            <div className="cx-floating-note cx-floating-note-top"><span className="cx-note-dot" /> THE BIG PICTURE <b>01</b></div>
-            <div className="cx-floating-note cx-floating-note-bottom">LESS STATUS CHASING <span>↗</span></div>
-          </div>
+                      </div>
           <div className="cx-intelligence-main">
             <div className="cx-intelligence-kicker"><span className="cx-spark">✳</span> COLLIQ INTELLIGENCE <span className="cx-live"><i /> WORKSPACE SIGNAL</span></div>
             <h2>Make room for<br /><em>the work that matters.</em></h2>

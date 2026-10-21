@@ -291,3 +291,103 @@
 @media (prefers-reduced-motion: reduce) {
   .cx-home *, .cx-home *::before, .cx-home *::after { transition-duration:.01ms!important; animation-duration:.01ms!important; }
 }
+
+
+/* Colliq Intelligence hero — final contrast and composition correction. */
+.cx-home .cx-intelligence {
+  grid-template-columns: minmax(0, 1fr) 170px;
+  align-items: stretch;
+  gap: 28px;
+  min-height: 360px;
+  padding: clamp(26px, 3.2vw, 48px);
+  background-color: #191919;
+}
+.cx-home .cx-intelligence-main {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+}
+.cx-home .cx-intelligence-kicker {
+  position: relative;
+  z-index: 2;
+  color: #f5f1e8;
+}
+.cx-home .cx-intelligence h2,
+.cx-home .cx-intelligence h2:not(em) {
+  color: #fffdf8 !important;
+  text-shadow: none !important;
+}
+.cx-home .cx-intelligence h2 em {
+  color: #f4d76b !important;
+}
+.cx-home .cx-intelligence-description {
+  color: rgba(255,253,248,.76) !important;
+}
+.cx-home .cx-intelligence-art {
+  z-index: 0;
+  right: 115px;
+  top: 15px;
+  bottom: 0;
+  width: 280px;
+  opacity: .48;
+  pointer-events: none;
+}
+.cx-home .cx-orbit-one { width: 230px; right: 2px; top: 15px; }
+.cx-home .cx-orbit-two { width: 174px; right: 30px; top: 43px; }
+.cx-home .cx-orbit-three { width: 118px; right: 58px; top: 71px; }
+.cx-home .cx-intelligence-side {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  min-width: 0;
+  padding: 7px 0 3px;
+  text-align: right;
+}
+.cx-home .cx-side-sticker {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  max-width: 142px;
+  padding: 13px 14px 14px;
+  background: #f4d76b;
+  color: #191919;
+  font: 700 9px/1.4 "Space Grotesk", sans-serif;
+  letter-spacing: .12em;
+  text-align: left;
+  transform: rotate(3deg);
+  box-shadow: 5px 5px 0 rgba(0,0,0,.18);
+}
+.cx-home .cx-side-sticker em {
+  display: inline-block;
+  margin-top: 2px;
+  color: #315bff !important;
+  font: italic 400 27px/1 "Instrument Serif", Georgia, serif;
+  letter-spacing: -.03em;
+}
+.cx-home .cx-side-caption {
+  position: relative;
+  z-index: 2;
+  max-width: 150px;
+  color: rgba(255,253,248,.8);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.cx-home .cx-floating-note { display: none !important; }
+.cx-home .cx-art-star-one { top: 45px; right: 48px; }
+.cx-home .cx-art-star-two { top: 150px; right: 245px; }
+@media (max-width: 1100px) {
+  .cx-home .cx-intelligence { grid-template-columns: minmax(0, 1fr) 135px; gap: 16px; }
+  .cx-home .cx-intelligence-art { right: 40px; width: 210px; opacity: .3; }
+  .cx-home .cx-side-sticker { max-width: 125px; padding: 10px; font-size: 8px; }
+  .cx-home .cx-side-sticker em { font-size: 23px; }
+}
+@media (max-width: 780px) {
+  .cx-home .cx-intelligence { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .cx-home .cx-intelligence-side { display: none; }
+  .cx-home .cx-intelligence-art { right: -75px; top: 0; width: 210px; opacity: .2; }
+  .cx-home .cx-intelligence h2 { font-size: clamp(32px, 8vw, 48px); }
+}
