@@ -1449,262 +1449,248 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
         />
       )}
 
-      <div className="max-w-[1200px] mx-auto px-8 pt-8 pb-20">
-
-        {/* ════ HERO STRIP ════ */}
-        <div>
-          <HeroStrip
-            greeting={greeting}
-            firstName={firstName}
-            urgentCount={urgentCount}
-            tasksByStatus={d.tasksByStatus ?? {}}
-          />
-        </div>
-
-        {/* ════ KPI TILES ════ */}
-        <div className="grid grid-cols-4 gap-3 mb-5">
-          <KpiTile label="Active Projects" value={d.activeProjects}       sub={`${d.totalProjects} total`}           accent="#6366F1" trend={trendDeltas.projects} icon={FolderKanban} href="/projects" />
-          <KpiTile label="Total Tasks"     value={d.totalTasks}           sub={`${d.activeTasks} in progress`}       accent="#EC4899" trend={trendDeltas.tasks}    icon={ListChecks} href="/tasks?filter=all" />
-          <KpiTile label="Completion Rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} done`}           accent="#22C55E" trend={trendDeltas.rate}     icon={TrendingUp} href="/tasks?filter=all&status=DONE" />
-          <KpiTile label="Overdue"         value={d.overdueTasks}         sub={d.overdueTasks === 0 ? "all on track" : urgentCount > 0 ? `${urgentCount} urgent` : "needs attention"} accent={d.overdueTasks > 0 ? "#F59E0B" : "#22C55E"} icon={AlertTriangle} href="/tasks?filter=overdue" />
-        </div>
-
-        {/* ════ CHARTS — Row 1: Velocity + Status Donut ════ */}
-        <div className="grid grid-cols-[1fr_280px] gap-4 mb-4">
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-            <VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} />
+      <div className="mx-auto w-full max-w-[1480px] px-4 pb-12 pt-5 sm:px-6 lg:px-8 lg:pt-7">
+        {/* Page heading: useful, quiet, action-oriented */}
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "var(--text-subtle)" }}>
+              {format(new Date(), "EEEE, MMMM d")} · YOUR WORKSPACE
+            </p>
+            <h1 className="text-3xl font-black tracking-[-0.055em] sm:text-[38px]" style={{ color: "var(--text-foreground)", lineHeight: 1.08 }}>
+              Good {greeting.toLowerCase()}, {firstName}.
+            </h1>
+            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+              {urgentCount > 0
+                ? `You have ${urgentCount} items that need attention. Let’s make a plan.`
+                : "Here’s the signal from your projects, team, and priorities today."}
+            </p>
           </div>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 20px" }}>
-            <StatusDonut data={d.tasksByStatus ?? {}} />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/projects" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-75"
+              style={{ color: "var(--text-foreground)", border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+              Explore projects
+            </Link>
+            <button onClick={() => setShowNLCreator(true)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
+              style={{ background: "var(--accent)", boxShadow: "0 8px 22px rgba(99,102,241,0.22)" }}>
+              + Create with AI
+            </button>
           </div>
-        </div>
+        </header>
 
-        {/* ════ CHARTS — Row 2: Burndown + Priority ════ */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-            <BurndownChart data={burndownData} />
-          </div>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: "20px 24px" }}>
-            {hasPriorityData
-              ? <PriorityBars data={d.tasksByPriority ?? {}} />
-              : <StatusDonut data={d.tasksByStatus ?? {}} />}
-          </div>
-        </div>
-
-        {/* ════ TEAM PULSE — full width ════ */}
-        {hasTeamData && (
-          <div className="mb-5">
-            <TeamPulse data={d.teamActivity ?? []} />
-          </div>
-        )}
-
-        {/* ════ TODAY'S FOCUS — horizontal scrollable cards ════ */}
-        {upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <Label text="Today's Focus" count={upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").length} />
-              <Link href="/tasks" className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--accent)" }}>View all →</Link>
-            </div>
-            <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6 }} className="no-scrollbar">
-              {upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").slice(0, 8).map(task => {
-                const pri  = PRI[task.priority] ?? PRI.MEDIUM;
-                const isOv = !!(task.dueDate && isPast(new Date(task.dueDate)));
-                return (
-                  <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
-                    style={{
-                      display: "flex", flexDirection: "column", gap: 8,
-                      minWidth: 176, maxWidth: 200, flexShrink: 0,
-                      padding: "14px 15px", borderRadius: 18,
-                      background: "var(--bg-card)",
-                      border: `1px solid ${isOv ? "rgba(239,68,68,0.25)" : "var(--border)"}`,
-                      textDecoration: "none",
-                      transition: "transform 0.14s",
-                      boxShadow: isOv ? "0 0 0 1px rgba(239,68,68,0.12) inset" : undefined,
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", padding: "2.5px 7px", borderRadius: 100, ...priBadgeStyle(pri, isOv) }}>
-                        {isOv ? "OVERDUE" : pri.label}
-                      </span>
-                      {task.priority === "URGENT" && <span style={{ fontSize: 12 }}>🔥</span>}
-                    </div>
-                    <p style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, color: "var(--text-foreground)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                      {task.title}
-                    </p>
-                    {task.project && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: "auto" }}>
-                        <span style={{ width: 5, height: 5, borderRadius: "50%", background: task.project.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 9.5, color: "var(--text-subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.project.name}</span>
-                      </div>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ════ BODY — two column ════ */}
-        <div className="grid grid-cols-[1fr_296px] gap-8 items-start">
-
-          {/* ── LEFT ── */}
-          <div className="space-y-7">
-
-            {/* YOUR NEXT ACTION */}
-            {actionFeed.length > 0 && (
-              <NextActionCard task={actionFeed[0]} urgentCount={urgentCount} />
-            )}
-
-            {/* AI BRIEF */}
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <Label text="AI Brief" />
-                <button onClick={() => generateBrief(true)} className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--text-subtle)" }}>
-                  Refresh
-                </button>
+        {/* AI-first daily brief — the first destination, not another metric dashboard */}
+        <section className="relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7"
+          style={{ background: "linear-gradient(118deg, #11112D 0%, #211B5B 58%, #312E81 100%)", border: "1px solid rgba(165,180,252,0.2)", boxShadow: "0 16px 45px rgba(31,27,91,0.12)" }}>
+          <div aria-hidden="true" style={{ position: "absolute", right: -35, top: -90, width: 270, height: 270, borderRadius: "50%", background: "radial-gradient(circle, rgba(129,140,248,0.28), transparent 68%)", pointerEvents: "none" }} />
+          <div aria-hidden="true" style={{ position: "absolute", right: "22%", bottom: -145, width: 230, height: 230, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.09)", boxShadow: "0 0 0 24px rgba(255,255,255,0.025), 0 0 0 48px rgba(255,255,255,0.02)", pointerEvents: "none" }} />
+          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-center">
+            <div>
+              <div className="mb-4 flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg text-sm" style={{ background: "rgba(196,181,253,0.16)", color: "#DDD6FE", border: "1px solid rgba(196,181,253,0.18)" }}>✦</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.17em]" style={{ color: "#C4B5FD" }}>Colliq intelligence · Daily brief</span>
+                <span className="rounded-full px-2 py-1 text-[9px] font-bold" style={{ background: "rgba(52,211,153,0.12)", color: "#6EE7B7" }}>LIVE CONTEXT</span>
               </div>
-              <div className="rounded-2xl px-5 py-4" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+              <h2 className="mb-2 max-w-2xl text-xl font-bold tracking-[-0.035em] text-white sm:text-2xl">
+                Your work, distilled into what matters next.
+              </h2>
+              <p className="mb-5 max-w-2xl text-[12px] leading-relaxed sm:text-[13px]" style={{ color: "rgba(255,255,255,0.62)" }}>
+                A concise read on priorities, momentum, and possible blockers—grounded in your workspace activity.
+              </p>
+              <div className="max-w-3xl rounded-2xl p-4 sm:p-5" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
                 <AiBrief text={briefText} loading={briefLoading} />
               </div>
-            </section>
+            </div>
+            <div className="relative flex flex-row gap-2 lg:flex-col">
+              <button onClick={() => generateBrief(true)} disabled={briefLoading}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-colors disabled:opacity-50 lg:flex-none"
+                style={{ color: "#171536", background: "#E9E7FF" }}>
+                {briefLoading ? "Refreshing brief…" : "↻ Refresh brief"}
+              </button>
+              <button onClick={() => setShowNLCreator(true)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-colors hover:bg-white/10 lg:flex-none"
+                style={{ color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.2)" }}>
+                ✦ Turn idea into task
+              </button>
+              <p className="hidden text-[10px] leading-relaxed lg:block" style={{ color: "rgba(255,255,255,0.42)" }}>
+                AI suggestions are based on the task and project context available in your workspace.
+              </p>
+            </div>
+          </div>
+        </section>
 
-            {/* REQUIRES ACTION */}
+        {/* Immediate decision: one recommended action plus the day’s task rail */}
+        <div className="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+          <div className="min-w-0">
+            {actionFeed.length > 0 ? (
+              <NextActionCard task={actionFeed[0]} urgentCount={urgentCount} />
+            ) : (
+              <section className="h-full rounded-2xl p-5 sm:p-6" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                <Label text="Your next action" className="mb-3" />
+                <h3 className="text-lg font-bold tracking-tight" style={{ color: "var(--text-foreground)" }}>You’re clear for now.</h3>
+                <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>There are no open items in today’s task feed. Review your projects or create the next task.</p>
+                <div className="mt-4 flex gap-2">
+                  <Link href="/projects" className="rounded-lg px-3 py-2 text-xs font-bold" style={{ color: "var(--accent)", background: "var(--accent-muted)" }}>Review projects →</Link>
+                  <button onClick={() => setShowNLCreator(true)} className="rounded-lg px-3 py-2 text-xs font-bold" style={{ color: "var(--text-foreground)", border: "1px solid var(--border)" }}>Create task</button>
+                </div>
+              </section>
+            )}
+          </div>
+          <div className="min-w-0">
+            <YourDayPanel tasks={upcomingToday} />
+            {!upcomingToday.some(t => t.status !== "DONE" && t.status !== "ARCHIVED") && (
+              <div className="flex h-full min-h-[150px] flex-col justify-center rounded-2xl p-5" style={{ background: "var(--bg-card)", border: "1px dashed var(--border-strong)" }}>
+                <p className="text-sm font-bold" style={{ color: "var(--text-foreground)" }}>Your task runway is clear.</p>
+                <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>Add a task and Colliq will help you keep the next step visible.</p>
+                <button onClick={() => setShowNLCreator(true)} className="mt-3 self-start text-xs font-bold" style={{ color: "var(--accent)" }}>+ Create a task</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Compact signal cards — useful context, below actions */}
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <Label text="Workspace pulse" />
+            <Link href="/dashboards" className="text-[11px] font-semibold hover:opacity-70" style={{ color: "var(--accent)" }}>Full analytics →</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <KpiTile label="Active projects" value={d.activeProjects} sub={`${d.totalProjects} total projects`} accent="#818CF8" trend={trendDeltas.projects} icon={FolderKanban} href="/projects" />
+            <KpiTile label="Open tasks" value={d.activeTasks} sub={`${d.totalTasks} total tasks`} accent="#38BDF8" trend={trendDeltas.tasks} icon={ListChecks} href="/tasks?filter=all" />
+            <KpiTile label="Completion rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} completed`} accent="#34D399" trend={trendDeltas.rate} icon={TrendingUp} href="/tasks?filter=all&status=DONE" />
+            <KpiTile label="Overdue" value={d.overdueTasks} sub={d.overdueTasks === 0 ? "Nothing overdue" : "Needs a decision"} accent={d.overdueTasks > 0 ? "#F87171" : "#34D399"} icon={AlertTriangle} href="/tasks?filter=overdue" />
+          </div>
+        </section>
+
+        {/* The working view: action feed beside team and project context */}
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="min-w-0 space-y-6">
             {actionFeed.length > 1 && (
               <section>
-                <Label text="Requires Action" count={actionFeed.length - 1} danger={urgentCount > 1} className="mb-3" />
-                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                <div className="mb-3 flex items-center justify-between">
+                  <Label text="Needs your attention" count={actionFeed.length - 1} danger={urgentCount > 1} />
+                  <Link href="/tasks" className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>All tasks →</Link>
+                </div>
+                <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
                   {actionFeed.slice(1).map((task, i) => <ActionRow key={task.id} task={task} index={i} />)}
                 </div>
               </section>
             )}
 
-            {/* RECENT ACTIVITY */}
-            {d.recentTasks && d.recentTasks.length > 0 && (
-              <section>
-                <Label text="Recent Activity" count={d.recentTasks.length} className="mb-3" />
-                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {(d.recentTasks as TaskWithProject[]).slice(0, 6).map((task, i) => (
-                    <ActivityRow key={task.id} task={task} index={i} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* RISKS */}
             {allRisks.length > 0 && (
               <section>
-                <Label text="Risks" count={allRisks.length} danger={allRisks.some(r => r.level === "critical")} className="mb-3" />
-                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                <div className="mb-3 flex items-center justify-between">
+                  <Label text="Risks & blockers" count={allRisks.length} danger={allRisks.some(r => r.level === "critical")} />
+                  <span className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Based on workspace signals</span>
+                </div>
+                <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
                   {allRisks.slice(0, 4).map((r, i) => (
-                    <Link key={i} href={r.href} style={{
-                      display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 16px",
-                      borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-                      background: r.level === "critical" ? "rgba(239,68,68,0.025)" : undefined,
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = r.level === "critical" ? "rgba(239,68,68,0.025)" : ""; }}
-                    >
-                      <span style={{
-                        width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 5,
-                        background: r.level === "critical" ? "#EF4444" : "#F59E0B",
-                        boxShadow: `0 0 6px ${r.level === "critical" ? "#EF444450" : "#F59E0B50"}`,
-                      }} />
-                      <div className="flex-1 min-w-0">
-                        <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-foreground)", lineHeight: 1.35 }}>{r.title}</p>
-                        <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.detail}</p>
-                      </div>
-                      <span style={{
-                        fontSize: 8, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase",
-                        padding: "2px 7px", borderRadius: 100, flexShrink: 0,
-                        background: r.level === "critical" ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
-                        color: r.level === "critical" ? "#B91C1C" : "#92400E",
-                      }}>
-                        {r.level}
+                    <Link key={i} href={r.href} className="flex items-start gap-3 p-4 transition-colors"
+                      style={{ borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)", background: r.level === "critical" ? "rgba(239,68,68,0.025)" : undefined }}>
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: r.level === "critical" ? "#EF4444" : "#F59E0B" }} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold" style={{ color: "var(--text-foreground)" }}>{r.title}</span>
+                        <span className="mt-1 block truncate text-[11px]" style={{ color: "var(--text-muted)" }}>{r.detail}</span>
                       </span>
+                      <span className="rounded-full px-2 py-1 text-[9px] font-extrabold uppercase" style={{ background: r.level === "critical" ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.12)", color: r.level === "critical" ? "#B91C1C" : "#92400E" }}>{r.level}</span>
                     </Link>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* PROJECT ROADMAP */}
-            {hasHealthData && (
-              <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} />
+            {d.recentTasks && d.recentTasks.length > 0 && (
+              <section>
+                <div className="mb-3 flex items-center justify-between">
+                  <Label text="Latest activity" count={d.recentTasks.length} />
+                  <span className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Across your workspace</span>
+                </div>
+                <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
+                  {(d.recentTasks as TaskWithProject[]).slice(0, 5).map((task, i) => <ActivityRow key={task.id} task={task} index={i} />)}
+                </div>
+              </section>
             )}
 
-            {/* STANDUP GENERATOR */}
-            <StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} />
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <Label text="Work trends" />
+                <Link href="/dashboards" className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>Explore analytics →</Link>
+              </div>
+              <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.5fr)_minmax(260px,1fr)]">
+                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                  <VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} />
+                </div>
+                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                  <StatusDonut data={d.tasksByStatus ?? {}} />
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                  <BurndownChart data={burndownData} />
+                </div>
+                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                  {hasPriorityData ? <PriorityBars data={d.tasksByPriority ?? {}} /> : <StatusDonut data={d.tasksByStatus ?? {}} />}
+                </div>
+              </div>
+            </section>
 
+            {hasHealthData && <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} />}
+            <StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} />
           </div>
 
-          {/* ── RIGHT ── */}
-          <div className="space-y-5">
-
-            {/* WINS TODAY */}
+          <aside className="min-w-0 space-y-5">
             {winsToday.length > 0 && (
-              <div style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 18, padding: "14px 16px" }}>
-                <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "#16A34A", marginBottom: 10 }}>
-                  ✓ Wins Today · {winsToday.length}
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <section className="rounded-2xl p-4" style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.22)" }}>
+                <div className="mb-3 flex items-center justify-between">
+                  <Label text="Wins today" count={winsToday.length} />
+                  <span style={{ color: "#22C55E" }}>✓</span>
+                </div>
+                <div className="space-y-2">
                   {winsToday.slice(0, 5).map(task => (
-                    <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"}
-                      className="hover:opacity-70 transition-opacity"
-                      style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
-                      <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {task.title}
-                      </span>
+                    <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"} className="flex items-start gap-2 hover:opacity-75">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "#22C55E" }} />
+                      <span className="text-xs font-medium" style={{ color: "var(--text-foreground)" }}>{task.title}</span>
                     </Link>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* PROJECTS */}
+            {hasTeamData && <TeamPulse data={d.teamActivity ?? []} />}
+
             <section>
-              <div className="flex items-center justify-between mb-3">
+              <div className="mb-3 flex items-center justify-between">
                 <Label text="Projects" />
-                <Link href="/projects" className="text-[9.5px] font-semibold hover:opacity-60 transition-opacity" style={{ color: "var(--accent)" }}>All →</Link>
+                <Link href="/projects" className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>View all →</Link>
               </div>
-              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 18, padding: "6px 8px", overflow: "hidden" }}>
+              <div className="rounded-2xl p-2" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
                 {projects.length === 0 ? (
-                  <p className="text-[12.5px] px-2 py-3" style={{ color: "var(--text-subtle)" }}>No projects yet.</p>
-                ) : projects.slice(0, 7).map((p) => (
-                  <Link key={p.id} href={`/projects/${p.id}/board`}>
-                    <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer"
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}>
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color, boxShadow: `0 0 6px ${p.color}80` }} />
-                      <span className="flex-1 text-[12.5px] font-medium truncate" style={{ color: "var(--text-foreground)" }}>{p.name}</span>
-                      <span className="text-[10px] tabular-nums shrink-0 font-semibold" style={{ color: "var(--text-subtle)" }}>{p._count?.tasks ?? 0}</span>
-                    </div>
+                  <div className="p-3">
+                    <p className="text-xs font-semibold" style={{ color: "var(--text-foreground)" }}>No projects yet</p>
+                    <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>Create your first project to give your work a home.</p>
+                    <Link href="/projects/new" className="mt-3 inline-block text-xs font-bold" style={{ color: "var(--accent)" }}>Create a project →</Link>
+                  </div>
+                ) : projects.slice(0, 6).map(p => (
+                  <Link key={p.id} href={`/projects/${p.id}/board`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/5">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
+                    <span className="min-w-0 flex-1 truncate text-xs font-semibold" style={{ color: "var(--text-foreground)" }}>{p.name}</span>
+                    <span className="text-[10px] tabular-nums" style={{ color: "var(--text-subtle)" }}>{p._count?.tasks ?? 0}</span>
                   </Link>
                 ))}
               </div>
             </section>
 
-            {/* QUICK WINS */}
             {quickWins.length > 0 && <QuickWinsPanel tasks={quickWins} />}
 
-            <Divider />
-
-            {/* QUICK ACTIONS */}
             <section>
-              <Label text="Quick Actions" className="mb-3" />
+              <Label text="Quick actions" className="mb-3" />
               <div className="space-y-2">
-                <Action glyph="✦" label="New task with AI"    onClick={() => setShowNLCreator(true)} />
-                <Action glyph="⬡" label="Browse all projects" href="/projects" />
-                <Action glyph="◉" label="Clock in / out"      href="/attendance" />
-                <Action glyph="⚡" label="AI assistant"        href="/ai/assistant" />
-                <Action glyph="📊" label="Team workload"       href="/workload" />
+                <Action glyph="✦" label="New task with AI" onClick={() => setShowNLCreator(true)} />
+                <Action glyph="⬡" label="Browse projects" href="/projects" />
+                <Action glyph="◉" label="Clock in / out" href="/attendance" />
+                <Action glyph="⚡" label="AI assistant" href="/ai/assistant" />
+                <Action glyph="◌" label="Team workload" href="/workload" />
               </div>
             </section>
-
-          </div>
+          </aside>
         </div>
       </div>
     </>
