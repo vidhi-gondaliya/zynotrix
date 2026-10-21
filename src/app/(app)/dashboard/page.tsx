@@ -1,4 +1,5 @@
 ﻿"use client";
+import "./dashboard.css";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { isPast, format, differenceInDays } from "date-fns";
 import type { AnalyticsData, Task } from "@/types";
@@ -1449,249 +1450,131 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
         />
       )}
 
-      <div className="mx-auto w-full max-w-[1480px] px-4 pb-12 pt-5 sm:px-6 lg:px-8 lg:pt-7">
-        {/* Page heading: useful, quiet, action-oriented */}
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "var(--text-subtle)" }}>
-              {format(new Date(), "EEEE, MMMM d")} · YOUR WORKSPACE
-            </p>
-            <h1 className="text-3xl font-black tracking-[-0.055em] sm:text-[38px]" style={{ color: "var(--text-foreground)", lineHeight: 1.08 }}>
-              Good {greeting.toLowerCase()}, {firstName}.
-            </h1>
-            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              {urgentCount > 0
-                ? `You have ${urgentCount} items that need attention. Let’s make a plan.`
-                : "Here’s the signal from your projects, team, and priorities today."}
-            </p>
+      <div className="cx-home">
+        <header className="cx-header">
+          <div className="cx-header-copy">
+            <div className="cx-eyebrow"><span className="cx-eyebrow-mark" /> YOUR WORKSPACE <span className="cx-eyebrow-dot">/</span> {format(new Date(), "EEEE · MMMM d")}</div>
+            <h1>Good {greeting.toLowerCase()}, <em>{firstName}.</em></h1>
+            <p>{urgentCount > 0 ? `There are ${urgentCount} things asking for your attention. Let’s sort the signal from the noise.` : "A little more clarity. A little less chasing. Here’s your day, in context."}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href="/projects" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-75"
-              style={{ color: "var(--text-foreground)", border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-              Explore projects
-            </Link>
-            <button onClick={() => setShowNLCreator(true)} className="rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
-              style={{ background: "var(--accent)", boxShadow: "0 8px 22px rgba(99,102,241,0.22)" }}>
-              + Create with AI
-            </button>
+          <div className="cx-header-actions">
+            <Link href="/projects" className="cx-button cx-button-quiet">Explore projects <span>↗</span></Link>
+            <button onClick={() => setShowNLCreator(true)} className="cx-button cx-button-primary"><span>＋</span> Make a task</button>
           </div>
         </header>
 
-        {/* AI-first daily brief — the first destination, not another metric dashboard */}
-        <section className="relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7"
-          style={{ background: "linear-gradient(118deg, #11112D 0%, #211B5B 58%, #312E81 100%)", border: "1px solid rgba(165,180,252,0.2)", boxShadow: "0 16px 45px rgba(31,27,91,0.12)" }}>
-          <div aria-hidden="true" style={{ position: "absolute", right: -35, top: -90, width: 270, height: 270, borderRadius: "50%", background: "radial-gradient(circle, rgba(129,140,248,0.28), transparent 68%)", pointerEvents: "none" }} />
-          <div aria-hidden="true" style={{ position: "absolute", right: "22%", bottom: -145, width: 230, height: 230, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.09)", boxShadow: "0 0 0 24px rgba(255,255,255,0.025), 0 0 0 48px rgba(255,255,255,0.02)", pointerEvents: "none" }} />
-          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-center">
-            <div>
-              <div className="mb-4 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg text-sm" style={{ background: "rgba(196,181,253,0.16)", color: "#DDD6FE", border: "1px solid rgba(196,181,253,0.18)" }}>✦</span>
-                <span className="text-[10px] font-extrabold uppercase tracking-[0.17em]" style={{ color: "#C4B5FD" }}>Colliq intelligence · Daily brief</span>
-                <span className="rounded-full px-2 py-1 text-[9px] font-bold" style={{ background: "rgba(52,211,153,0.12)", color: "#6EE7B7" }}>LIVE CONTEXT</span>
-              </div>
-              <h2 className="mb-2 max-w-2xl text-xl font-bold tracking-[-0.035em] text-white sm:text-2xl">
-                Your work, distilled into what matters next.
-              </h2>
-              <p className="mb-5 max-w-2xl text-[12px] leading-relaxed sm:text-[13px]" style={{ color: "rgba(255,255,255,0.62)" }}>
-                A concise read on priorities, momentum, and possible blockers—grounded in your workspace activity.
-              </p>
-              <div className="max-w-3xl rounded-2xl p-4 sm:p-5" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
-                <AiBrief text={briefText} loading={briefLoading} />
-              </div>
+        <section className="cx-intelligence">
+          <div className="cx-intelligence-art" aria-hidden="true">
+            <div className="cx-orbit cx-orbit-one" /><div className="cx-orbit cx-orbit-two" /><div className="cx-orbit cx-orbit-three" />
+            <span className="cx-art-star cx-art-star-one">✳</span><span className="cx-art-star cx-art-star-two">✦</span>
+            <div className="cx-floating-note cx-floating-note-top"><span className="cx-note-dot" /> THE BIG PICTURE <b>01</b></div>
+            <div className="cx-floating-note cx-floating-note-bottom">LESS STATUS CHASING <span>↗</span></div>
+          </div>
+          <div className="cx-intelligence-main">
+            <div className="cx-intelligence-kicker"><span className="cx-spark">✳</span> COLLIQ INTELLIGENCE <span className="cx-live"><i /> WORKSPACE SIGNAL</span></div>
+            <h2>Make room for<br /><em>the work that matters.</em></h2>
+            <p className="cx-intelligence-description">Your projects have a story. Here’s the part worth paying attention to today.</p>
+            <div className="cx-brief">
+              <div className="cx-brief-label"><span>✳</span> YOUR DAILY BRIEF <span className="cx-brief-divider" /> <span className="cx-brief-context">BASED ON YOUR WORKSPACE</span></div>
+              <AiBrief text={briefText} loading={briefLoading} />
             </div>
-            <div className="relative flex flex-row gap-2 lg:flex-col">
-              <button onClick={() => generateBrief(true)} disabled={briefLoading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-colors disabled:opacity-50 lg:flex-none"
-                style={{ color: "#171536", background: "#E9E7FF" }}>
-                {briefLoading ? "Refreshing brief…" : "↻ Refresh brief"}
-              </button>
-              <button onClick={() => setShowNLCreator(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-colors hover:bg-white/10 lg:flex-none"
-                style={{ color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.2)" }}>
-                ✦ Turn idea into task
-              </button>
-              <p className="hidden text-[10px] leading-relaxed lg:block" style={{ color: "rgba(255,255,255,0.42)" }}>
-                AI suggestions are based on the task and project context available in your workspace.
-              </p>
+            <div className="cx-intelligence-actions">
+              <button onClick={() => generateBrief(true)} disabled={briefLoading} className="cx-brief-refresh">{briefLoading ? "Finding the signal…" : "↻ Refresh the brief"}</button>
+              <button onClick={() => setShowNLCreator(true)} className="cx-brief-create">Turn an idea into a task <span>↗</span></button>
+            </div>
+          </div>
+          <div className="cx-intelligence-side">
+            <div className="cx-side-sticker">A BETTER<br />KIND OF<br /><em>BUSY.</em></div>
+            <div className="cx-side-caption">Less chasing.<br />More forward motion.</div>
+          </div>
+        </section>
+
+        <section className="cx-focus-section">
+          <div className="cx-section-heading">
+            <div><span className="cx-section-index">01 / THE NEXT MOVE</span><h2>Start <em>here.</em></h2></div>
+            <span className="cx-section-aside">SMALL STEPS. REAL MOMENTUM.</span>
+          </div>
+          <div className="cx-focus-grid">
+            <div className="cx-next-card">
+              <div className="cx-card-topline"><span className="cx-card-kicker"><span className="cx-status-pulse" /> YOUR NEXT MOVE</span><span className="cx-card-number">NO. 01</span></div>
+              {actionFeed.length > 0 ? (
+                <>
+                  <h3>{actionFeed[0].title}</h3>
+                  <p className="cx-next-context">{actionFeed[0].project?.name ?? "From your task list"}{actionFeed[0].dueDate ? ` · Due ${format(new Date(actionFeed[0].dueDate), "MMM d")}` : ""}</p>
+                  <p className="cx-next-copy">{actionFeed[0].dueDate && isPast(new Date(actionFeed[0].dueDate)) ? "This one is overdue. Give it a clear next step so it stops holding up the rest." : urgentCount > 0 ? "A high-priority item is waiting. A little focused progress here can unblock the rest." : "A good place to start. Give this one some attention and keep the momentum going."}</p>
+                  <div className="cx-next-bottom"><span className={`cx-priority-pill ${actionFeed[0].priority === "URGENT" || actionFeed[0].priority === "HIGH" ? "is-hot" : ""}`}>{actionFeed[0].priority.replace("_"," ")}</span><Link href={actionFeed[0].project ? `/projects/${actionFeed[0].project.id}/board` : "/tasks"} className="cx-text-link">Open task <span>↗</span></Link></div>
+                </>
+              ) : (
+                <><h3>You’re clear for now.</h3><p className="cx-next-context">A rare little bit of breathing room.</p><p className="cx-next-copy">Review a project, plan the next milestone, or create a task while your runway is clear.</p><div className="cx-next-bottom"><span className="cx-priority-pill is-calm">ALL CLEAR</span><button onClick={() => setShowNLCreator(true)} className="cx-text-link">Create a task <span>↗</span></button></div></>
+              )}
+              <span className="cx-next-watermark" aria-hidden="true">↗</span>
+            </div>
+            <div className="cx-today-card">
+              <div className="cx-card-topline"><span className="cx-card-kicker">ON YOUR PLATE</span><Link href="/tasks" className="cx-small-link">ALL TASKS ↗</Link></div>
+              <h3>Your day, <em>in motion.</em></h3>
+              {upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").length ? (
+                <div className="cx-today-list">
+                  {upcomingToday.filter(t => t.status !== "DONE" && t.status !== "ARCHIVED").slice(0,4).map((task,i) => {
+                    const pri = PRI[task.priority] ?? PRI.MEDIUM;
+                    return <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"} className="cx-today-row"><span className={`cx-today-num cx-today-num-${i+1}`}>0{i+1}</span><span className="cx-today-task"><b>{task.title}</b><small>{task.project?.name ?? "Personal task"}</small></span><span className="cx-today-priority" style={{color:pri.color}}>{pri.label}</span><span className="cx-row-arrow">↗</span></Link>;
+                  })}
+                </div>
+              ) : <div className="cx-today-empty"><span>✳</span><p>Nothing on today’s list yet.<br /><button onClick={() => setShowNLCreator(true)}>Put something in motion ↗</button></p></div>}
             </div>
           </div>
         </section>
 
-        {/* Immediate decision: one recommended action plus the day’s task rail */}
-        <div className="mb-6 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-          <div className="min-w-0">
-            {actionFeed.length > 0 ? (
-              <NextActionCard task={actionFeed[0]} urgentCount={urgentCount} />
-            ) : (
-              <section className="h-full rounded-2xl p-5 sm:p-6" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                <Label text="Your next action" className="mb-3" />
-                <h3 className="text-lg font-bold tracking-tight" style={{ color: "var(--text-foreground)" }}>You’re clear for now.</h3>
-                <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>There are no open items in today’s task feed. Review your projects or create the next task.</p>
-                <div className="mt-4 flex gap-2">
-                  <Link href="/projects" className="rounded-lg px-3 py-2 text-xs font-bold" style={{ color: "var(--accent)", background: "var(--accent-muted)" }}>Review projects →</Link>
-                  <button onClick={() => setShowNLCreator(true)} className="rounded-lg px-3 py-2 text-xs font-bold" style={{ color: "var(--text-foreground)", border: "1px solid var(--border)" }}>Create task</button>
-                </div>
-              </section>
-            )}
+        <section className="cx-pulse-section">
+          <div className="cx-section-heading cx-section-heading-small">
+            <div><span className="cx-section-index">02 / THE BIG PICTURE</span><h2>Workspace <em>pulse.</em></h2></div>
+            <Link href="/dashboards" className="cx-text-link">See all insights <span>↗</span></Link>
           </div>
-          <div className="min-w-0">
-            <YourDayPanel tasks={upcomingToday} />
-            {!upcomingToday.some(t => t.status !== "DONE" && t.status !== "ARCHIVED") && (
-              <div className="flex h-full min-h-[150px] flex-col justify-center rounded-2xl p-5" style={{ background: "var(--bg-card)", border: "1px dashed var(--border-strong)" }}>
-                <p className="text-sm font-bold" style={{ color: "var(--text-foreground)" }}>Your task runway is clear.</p>
-                <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>Add a task and Colliq will help you keep the next step visible.</p>
-                <button onClick={() => setShowNLCreator(true)} className="mt-3 self-start text-xs font-bold" style={{ color: "var(--accent)" }}>+ Create a task</button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Compact signal cards — useful context, below actions */}
-        <section className="mb-8">
-          <div className="mb-3 flex items-center justify-between">
-            <Label text="Workspace pulse" />
-            <Link href="/dashboards" className="text-[11px] font-semibold hover:opacity-70" style={{ color: "var(--accent)" }}>Full analytics →</Link>
-          </div>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <KpiTile label="Active projects" value={d.activeProjects} sub={`${d.totalProjects} total projects`} accent="#818CF8" trend={trendDeltas.projects} icon={FolderKanban} href="/projects" />
-            <KpiTile label="Open tasks" value={d.activeTasks} sub={`${d.totalTasks} total tasks`} accent="#38BDF8" trend={trendDeltas.tasks} icon={ListChecks} href="/tasks?filter=all" />
-            <KpiTile label="Completion rate" value={`${d.completionRate}%`} sub={`${d.completedTasks} completed`} accent="#34D399" trend={trendDeltas.rate} icon={TrendingUp} href="/tasks?filter=all&status=DONE" />
-            <KpiTile label="Overdue" value={d.overdueTasks} sub={d.overdueTasks === 0 ? "Nothing overdue" : "Needs a decision"} accent={d.overdueTasks > 0 ? "#F87171" : "#34D399"} icon={AlertTriangle} href="/tasks?filter=overdue" />
+          <div className="cx-stats-grid">
+            <Link href="/projects" className="cx-stat-card cx-stat-lilac"><span className="cx-stat-label">PROJECTS IN MOTION <span>↗</span></span><strong>{d.activeProjects}<small>/{d.totalProjects}</small></strong><span className="cx-stat-foot"><i /> Active projects</span><span className="cx-stat-shape">▧</span></Link>
+            <Link href="/tasks?filter=all" className="cx-stat-card cx-stat-butter"><span className="cx-stat-label">OPEN THREADS <span>↗</span></span><strong>{d.activeTasks}<small> tasks</small></strong><span className="cx-stat-foot"><i /> {d.totalTasks} across your workspace</span><span className="cx-stat-shape">↗</span></Link>
+            <Link href="/tasks?filter=all&status=DONE" className="cx-stat-card cx-stat-jade"><span className="cx-stat-label">COMPLETION RATE <span>↗</span></span><strong>{d.completionRate}<small>%</small></strong><span className="cx-stat-foot"><i /> {d.completedTasks} finished</span><span className="cx-stat-shape">✓</span></Link>
+            <Link href="/tasks?filter=overdue" className="cx-stat-card cx-stat-peach"><span className="cx-stat-label">NEEDS A LOOK <span>↗</span></span><strong>{d.overdueTasks}<small> overdue</small></strong><span className="cx-stat-foot"><i /> {d.overdueTasks ? "Choose the next step" : "You’re in the clear"}</span><span className="cx-stat-shape">!</span></Link>
           </div>
         </section>
 
-        {/* The working view: action feed beside team and project context */}
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="min-w-0 space-y-6">
-            {actionFeed.length > 1 && (
-              <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <Label text="Needs your attention" count={actionFeed.length - 1} danger={urgentCount > 1} />
-                  <Link href="/tasks" className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>All tasks →</Link>
-                </div>
-                <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {actionFeed.slice(1).map((task, i) => <ActionRow key={task.id} task={task} index={i} />)}
-                </div>
-              </section>
-            )}
+        <section className="cx-signal-grid">
+          <div className="cx-signal-main">
+            <div className="cx-section-heading cx-section-heading-small"><div><span className="cx-section-index">03 / DON’T LET IT SLIP</span><h2>The <em>signal.</em></h2></div><span className="cx-section-aside">{allRisks.length} WORKSPACE ALERTS</span></div>
+            <div className="cx-risks-card">
+              {allRisks.length ? allRisks.slice(0,5).map((risk,i) => <Link href={risk.href} key={i} className={`cx-risk-row ${risk.level === "critical" ? "is-critical" : "is-warning"}`}><span className="cx-risk-mark">{risk.level === "critical" ? "!" : "↗"}</span><span className="cx-risk-content"><b>{risk.title}</b><small>{risk.detail}</small></span><span className="cx-risk-level">{risk.level === "critical" ? "NEEDS ATTENTION" : "KEEP AN EYE"}</span><span className="cx-risk-arrow">↗</span></Link>) : <div className="cx-risk-empty"><span>✳</span><div><b>No red flags on the radar.</b><p>Nothing urgent is surfacing from the current workspace signals.</p></div></div>}
+            </div>
 
-            {allRisks.length > 0 && (
-              <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <Label text="Risks & blockers" count={allRisks.length} danger={allRisks.some(r => r.level === "critical")} />
-                  <span className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Based on workspace signals</span>
-                </div>
-                <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {allRisks.slice(0, 4).map((r, i) => (
-                    <Link key={i} href={r.href} className="flex items-start gap-3 p-4 transition-colors"
-                      style={{ borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)", background: r.level === "critical" ? "rgba(239,68,68,0.025)" : undefined }}>
-                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: r.level === "critical" ? "#EF4444" : "#F59E0B" }} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-xs font-bold" style={{ color: "var(--text-foreground)" }}>{r.title}</span>
-                        <span className="mt-1 block truncate text-[11px]" style={{ color: "var(--text-muted)" }}>{r.detail}</span>
-                      </span>
-                      <span className="rounded-full px-2 py-1 text-[9px] font-extrabold uppercase" style={{ background: r.level === "critical" ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.12)", color: r.level === "critical" ? "#B91C1C" : "#92400E" }}>{r.level}</span>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {d.recentTasks && d.recentTasks.length > 0 && (
-              <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <Label text="Latest activity" count={d.recentTasks.length} />
-                  <span className="text-[10px]" style={{ color: "var(--text-subtle)" }}>Across your workspace</span>
-                </div>
-                <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)", background: "var(--bg-card)" }}>
-                  {(d.recentTasks as TaskWithProject[]).slice(0, 5).map((task, i) => <ActivityRow key={task.id} task={task} index={i} />)}
-                </div>
-              </section>
-            )}
-
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <Label text="Work trends" />
-                <Link href="/dashboards" className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>Explore analytics →</Link>
+            <div className="cx-activity-block">
+              <div className="cx-section-heading cx-section-heading-small"><div><span className="cx-section-index">04 / RECENT MOVEMENT</span><h2>Things are <em>happening.</em></h2></div><span className="cx-section-aside">LATEST ACTIVITY</span></div>
+              <div className="cx-activity-card">
+                {(d.recentTasks ?? []).length ? (d.recentTasks as TaskWithProject[]).slice(0,5).map((task,i) => <ActivityRow key={task.id} task={task} index={i} />) : <div className="cx-activity-empty">Your workspace activity will show up here as your team gets moving.</div>}
               </div>
-              <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.5fr)_minmax(260px,1fr)]">
-                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                  <VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} />
-                </div>
-                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                  <StatusDonut data={d.tasksByStatus ?? {}} />
-                </div>
-              </div>
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                  <BurndownChart data={burndownData} />
-                </div>
-                <div className="rounded-2xl p-4 sm:p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                  {hasPriorityData ? <PriorityBars data={d.tasksByPriority ?? {}} /> : <StatusDonut data={d.tasksByStatus ?? {}} />}
-                </div>
-              </div>
-            </section>
-
-            {hasHealthData && <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} />}
-            <StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} />
+            </div>
           </div>
-
-          <aside className="min-w-0 space-y-5">
-            {winsToday.length > 0 && (
-              <section className="rounded-2xl p-4" style={{ background: "var(--bg-card)", border: "1px solid rgba(34,197,94,0.22)" }}>
-                <div className="mb-3 flex items-center justify-between">
-                  <Label text="Wins today" count={winsToday.length} />
-                  <span style={{ color: "#22C55E" }}>✓</span>
-                </div>
-                <div className="space-y-2">
-                  {winsToday.slice(0, 5).map(task => (
-                    <Link key={task.id} href={task.project ? `/projects/${task.project.id}/board` : "/tasks"} className="flex items-start gap-2 hover:opacity-75">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "#22C55E" }} />
-                      <span className="text-xs font-medium" style={{ color: "var(--text-foreground)" }}>{task.title}</span>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {hasTeamData && <TeamPulse data={d.teamActivity ?? []} />}
-
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <Label text="Projects" />
-                <Link href="/projects" className="text-[10px] font-semibold" style={{ color: "var(--accent)" }}>View all →</Link>
-              </div>
-              <div className="rounded-2xl p-2" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                {projects.length === 0 ? (
-                  <div className="p-3">
-                    <p className="text-xs font-semibold" style={{ color: "var(--text-foreground)" }}>No projects yet</p>
-                    <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>Create your first project to give your work a home.</p>
-                    <Link href="/projects/new" className="mt-3 inline-block text-xs font-bold" style={{ color: "var(--accent)" }}>Create a project →</Link>
-                  </div>
-                ) : projects.slice(0, 6).map(p => (
-                  <Link key={p.id} href={`/projects/${p.id}/board`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/5">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
-                    <span className="min-w-0 flex-1 truncate text-xs font-semibold" style={{ color: "var(--text-foreground)" }}>{p.name}</span>
-                    <span className="text-[10px] tabular-nums" style={{ color: "var(--text-subtle)" }}>{p._count?.tasks ?? 0}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            {quickWins.length > 0 && <QuickWinsPanel tasks={quickWins} />}
-
-            <section>
-              <Label text="Quick actions" className="mb-3" />
-              <div className="space-y-2">
-                <Action glyph="✦" label="New task with AI" onClick={() => setShowNLCreator(true)} />
-                <Action glyph="⬡" label="Browse projects" href="/projects" />
-                <Action glyph="◉" label="Clock in / out" href="/attendance" />
-                <Action glyph="⚡" label="AI assistant" href="/ai/assistant" />
-                <Action glyph="◌" label="Team workload" href="/workload" />
-              </div>
-            </section>
+          <aside className="cx-signal-side">
+            <div className="cx-wins-card"><div className="cx-aside-heading"><span>THE GOOD STUFF</span><b>✳</b></div><h3>Little wins.<br /><em>Big energy.</em></h3>{winsToday.length ? <ul>{winsToday.slice(0,5).map(task => <li key={task.id}><span>✓</span>{task.title}</li>)}</ul> : <p className="cx-aside-empty">Finished work will land here. Every checked-off task counts.</p>}<div className="cx-wins-footer">{winsToday.length} COMPLETED <span>✳</span></div></div>
+            {hasTeamData && <div className="cx-team-card"><div className="cx-aside-heading"><span>PEOPLE IN MOTION</span><b>{d.teamActivity?.length ?? 0}</b></div><TeamPulse data={d.teamActivity ?? []} /></div>}
+            <div className="cx-projects-card"><div className="cx-aside-heading"><span>PROJECT WORLDS</span><Link href="/projects">VIEW ALL ↗</Link></div><h3>Every idea needs<br />a <em>place to grow.</em></h3>{projects.length ? <div className="cx-project-list">{projects.slice(0,6).map((project,i) => <Link key={project.id} href={`/projects/${project.id}/board`} className="cx-project-row"><span className="cx-project-color" style={{background:project.color}} /><span>{project.name}</span><small>{project._count?.tasks ?? 0}</small><b>↗</b></Link>)}</div> : <div className="cx-project-empty"><p>Your next big thing starts with a project.</p><Link href="/projects">Create your first ↗</Link></div>}</div>
+            <div className="cx-quick-card"><div className="cx-aside-heading"><span>SHORTCUTS</span><b>✳</b></div><button onClick={() => setShowNLCreator(true)}><span>✳</span> Make a task with AI <b>↗</b></button><Link href="/attendance"><span>◷</span> Clock in / out <b>↗</b></Link><Link href="/ai/assistant"><span>✧</span> Talk to Colliq <b>↗</b></Link><Link href="/workload"><span>◌</span> Team workload <b>↗</b></Link></div>
           </aside>
-        </div>
+        </section>
+
+        <section className="cx-studio-section">
+          <div className="cx-section-heading"><div><span className="cx-section-index">05 / PATTERNS & MOMENTUM</span><h2>Zoom out. <em>See more.</em></h2></div><p className="cx-section-aside">YOUR WORK, OVER TIME</p></div>
+          <div className="cx-chart-grid">
+            <div className="cx-chart-card cx-chart-wide"><div className="cx-chart-title"><div><span>THE PACE</span><h3>Work velocity</h3></div><span className="cx-chart-index">01</span></div><VelocityChart data={d.taskTrend ?? []} prediction={<VelocityPrediction data={d.taskTrend ?? []} totalTasks={d.totalTasks} />} /></div>
+            <div className="cx-chart-card"><div className="cx-chart-title"><div><span>THE MIX</span><h3>Task status</h3></div><span className="cx-chart-index">02</span></div><StatusDonut data={d.tasksByStatus ?? {}} /></div>
+            <div className="cx-chart-card"><div className="cx-chart-title"><div><span>THE LOAD</span><h3>Priority split</h3></div><span className="cx-chart-index">03</span></div>{hasPriorityData ? <PriorityBars data={d.tasksByPriority ?? {}} /> : <p className="cx-chart-empty">Priority signals will appear as tasks are added.</p>}</div>
+            <div className="cx-chart-card cx-chart-wide"><div className="cx-chart-title"><div><span>THE FINISH LINE</span><h3>Project roadmap</h3></div><span className="cx-chart-index">04</span></div>{hasHealthData ? <ProjectRoadmap health={d.projectHealth ?? []} projects={projects} /> : <BurndownChart data={burndownData} />}</div>
+          </div>
+        </section>
+
+        <section className="cx-standup-section">
+          <div><span className="cx-section-index">06 / SAY IT CLEARLY</span><h2>Standup, <em>sorted.</em></h2><p>Turn your latest work into a crisp update, ready to share with your team.</p></div>
+          <div className="cx-standup-panel"><StandupBlock text={standupText} loading={standupLoading} onGenerate={generateStandup} /></div>
+        </section>
+
+        <footer className="cx-footer"><span><b>COLLIQ</b> / WORK BETTER, TOGETHER.</span><span>BUILT FOR MOMENTUM <i>✳</i></span><Link href="/projects">KEEP IT MOVING ↗</Link></footer>
       </div>
     </>
   );
