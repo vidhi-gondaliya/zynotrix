@@ -100,6 +100,7 @@ export function KanbanCard({
 
   return (
     <div
+      className="cx-kanban-card"
       ref={overlay ? undefined : setNodeRef}
       {...(overlay ? {} : attributes)}
       {...(overlay ? {} : listeners)}

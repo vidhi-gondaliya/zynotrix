@@ -444,14 +444,14 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
   }, [tasks, columns, wipLimits, bannerDismissed]);
 
   if (loading) return (
-    <div className="p-6 animate-fade-in">
+    <div className="cx-project-workspace p-6 animate-fade-in">
       <div className="h-14 skeleton rounded-2xl mb-4" />
       <SkeletonList count={3} />
     </div>
   );
 
   return (
-    <>
+    <div className="cx-project-workspace">
       {/* ── Stats + controls bar ─────────────────────────────────── */}
       <div className="flex items-center gap-3 px-6 py-2 shrink-0 flex-wrap"
         style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-sidebar)" }}>
@@ -816,6 +816,6 @@ export function KanbanBoard({ projectId, defaultOpenTaskId, myTasksOnly }: Kanba
           onDelete={handleCtxDelete}
         />
       )}
-    </>
+    </div>
   );
 }

@@ -29,10 +29,10 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
   const pColor = project?.color ?? "#6366F1";
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="cx-project-shell flex flex-col h-full">
       {/* ── Project sub-header ──────────────────────────────── */}
       <div
-        className="relative flex items-center gap-3 px-4 overflow-hidden shrink-0"
+        className="cx-project-subnav relative flex items-center gap-3 px-4 overflow-hidden shrink-0"
         style={{
           background: project
             ? `linear-gradient(135deg, ${pColor}08 0%, var(--bg-sidebar) 60%)`
