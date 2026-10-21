@@ -1092,3 +1092,40 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .cx-tasks-page .grid-cols-1.lg\:grid-cols-\[320px_1fr\] { grid-template-columns:minmax(0,1fr)!important; }
  .cx-tasks-page .sticky { position:relative; top:auto; }
 }
+
+
+/* Project workspace — editorial paper canvas with cobalt energy */
+.cx-project-shell { background:var(--bg-base); color:var(--text-foreground); min-width:0; }
+.cx-project-subnav { background:var(--bg-base)!important; border-bottom:1px solid var(--border)!important; padding-inline:clamp(14px,2.5vw,36px)!important; min-height:66px!important; }
+.cx-project-subnav .absolute { opacity:.35; }
+.cx-project-subnav .relative.z-10.flex.items-center.gap-2\.5 > div:first-child { border-radius:4px 12px 4px 12px!important; box-shadow:0 4px 14px rgba(49,91,255,.15)!important; }
+.cx-project-subnav .relative.z-10.flex.items-center.gap-2\.5 span:first-child { font-family:var(--font-display),sans-serif; font-size:16px!important; font-weight:600!important; letter-spacing:-.045em!important; color:var(--text-foreground)!important; }
+.cx-project-subnav a { border-radius:4px 12px 4px 12px!important; }
+.cx-project-subnav a[aria-current="page"],.cx-project-subnav a[data-active="true"] { color:var(--accent)!important; background:var(--accent-muted)!important; }
+.cx-project-subnav button { border-radius:4px 12px 4px 12px!important; }
+.cx-project-workspace { background:var(--bg-base); color:var(--text-foreground); min-width:0; }
+.cx-project-workspace > div { scrollbar-color:var(--border-strong) transparent; }
+.cx-project-workspace > div[style*="border-bottom"] { background:var(--bg-base)!important; border-color:var(--border)!important; padding-inline:clamp(14px,2vw,32px)!important; }
+.cx-project-workspace > div[style*="border-bottom"] button { border-radius:4px 10px 4px 10px!important; }
+.cx-project-workspace > div[style*="radial-gradient"] { background-color:var(--bg-base)!important; background-image:radial-gradient(circle,rgba(49,91,255,.09) 1px,transparent 1px)!important; background-size:24px 24px!important; padding-inline:clamp(14px,2vw,32px)!important; align-items:flex-start; }
+.cx-kanban-column { background:var(--bg-card)!important; border:1px solid var(--border)!important; border-radius:4px 18px 4px 18px!important; box-shadow:var(--shadow-xs); min-height:260px; }
+.cx-kanban-column > div:first-child { border-radius:0!important; }
+.cx-kanban-column .text-xs.font-black,.cx-kanban-column .text-sm.font-black { letter-spacing:-.025em; }
+.cx-kanban-card { border-radius:4px 14px 4px 14px!important; border-color:var(--border)!important; box-shadow:var(--shadow-xs)!important; }
+.cx-kanban-card:hover { border-color:rgba(49,91,255,.28)!important; box-shadow:0 8px 22px rgba(25,25,25,.08)!important; }
+.cx-kanban-card .rounded-full { letter-spacing:.06em; }
+.cx-project-workspace input:not([type="checkbox"]),.cx-project-workspace textarea,.cx-project-workspace select { border-radius:4px 12px 4px 12px!important; }
+.cx-task-detail-panel { background:var(--bg-card)!important; border-left:1px solid var(--border-strong)!important; box-shadow:-18px 0 54px rgba(25,25,25,.16)!important; color:var(--text-foreground); }
+.cx-task-detail-panel > div:nth-child(2) { border-color:var(--border)!important; }
+.cx-task-detail-panel .rounded-xl { border-radius:4px 14px 4px 14px; }
+.cx-task-detail-panel .rounded-2xl { border-radius:4px 18px 4px 18px; }
+.cx-task-detail-panel input:not([type="checkbox"]),.cx-task-detail-panel textarea,.cx-task-detail-panel select { background:var(--bg-base); border-color:var(--border); color:var(--text-foreground); border-radius:4px 12px 4px 12px!important; }
+.cx-task-detail-panel button { transition:background .16s ease,border-color .16s ease,color .16s ease; }
+@media(max-width:760px) {
+ .cx-project-subnav { flex-wrap:wrap; padding-block:10px!important; gap:8px!important; }
+ .cx-project-subnav .relative.z-10.flex.items-center.gap-2\.5 { min-width:0; flex:1; }
+ .cx-project-subnav .relative.z-10.ml-auto { margin-left:auto; }
+ .cx-project-workspace > div[style*="radial-gradient"] { padding-inline:12px!important; }
+ .cx-kanban-column { width:min(82vw,300px)!important; }
+ .cx-task-detail-panel { width:100%!important; }
+}
