@@ -61,7 +61,7 @@ export default function MessagesPage() {
   });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="cx-messages-page p-6 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
