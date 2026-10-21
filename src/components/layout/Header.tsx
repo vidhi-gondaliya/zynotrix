@@ -134,7 +134,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
         title="Quick create (⌘K)"
         className="w-8 h-8 rounded-xl text-white flex items-center justify-center transition-all duration-100 active:scale-95 shrink-0"
         style={{
-          background: "linear-gradient(120deg, #315BFF 0%, #2449DE 100%),
+          background: "linear-gradient(120deg, #315BFF 0%, #2449DE 100%)",
           boxShadow: "0 5px 18px rgba(49,91,255,0.28), inset 0 1px 0 rgba(255,255,255,0.18)",
         }}
         onMouseEnter={(e) => {
