@@ -162,7 +162,7 @@ export function KanbanColumn({
   /* ── Full column ─────────────────────────────────────────────────────── */
   return (
     <div
-      className="flex flex-col shrink-0 rounded-2xl overflow-visible"
+      className="cx-kanban-column flex flex-col shrink-0 rounded-2xl overflow-visible"
       style={{
         width: 300,
         background: isOver ? `${accent}08` : groupBg,
