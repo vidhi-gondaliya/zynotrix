@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Plus_Jakarta_Sans, DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Sans, JetBrains_Mono, Space_Grotesk, Instrument_Serif } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import { ThemeInit } from "@/components/layout/ThemeInit";
@@ -18,6 +18,10 @@ const dmSans = DM_Sans({
   weight: ["300", "400", "500", "600"],
   display: "swap",
 });
+
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"], display: "swap" });
+
+const instrumentSerif = Instrument_Serif({ subsets: ["latin"], variable: "--font-editorial", weight: "400", style: ["normal", "italic"], display: "swap" });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -48,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${jakartaSans.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
+      className={`${jakartaSans.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
     >
       <body className="antialiased">
         <ThemeInit />
