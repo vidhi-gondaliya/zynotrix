@@ -76,9 +76,9 @@ export function Header({ onOpenCommand }: HeaderProps) {
             className="text-[14.5px] font-black leading-none truncate"
             style={{
               letterSpacing: "-0.03em",
-              background: "linear-gradient(120deg, var(--text-foreground) 30%, var(--accent) 100%)",
+              background: "none",
               WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              WebkitTextFillColor: "var(--text-foreground)",
               backgroundClip: "text",
             }}
           >
@@ -104,8 +104,8 @@ export function Header({ onOpenCommand }: HeaderProps) {
           maxWidth: "280px",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
-          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.08)";
+          e.currentTarget.style.borderColor = "rgba(49,91,255,0.4)";
+          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(49,91,255,0.09)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = "var(--border)";
@@ -134,8 +134,8 @@ export function Header({ onOpenCommand }: HeaderProps) {
         title="Quick create (⌘K)"
         className="w-8 h-8 rounded-xl text-white flex items-center justify-center transition-all duration-100 active:scale-95 shrink-0"
         style={{
-          background: "linear-gradient(135deg, #6366F1 0%, #A78BFA 100%)",
-          boxShadow: "0 4px 20px rgba(99,102,241,0.40), inset 0 1px 0 rgba(255,255,255,0.20)",
+          background: "linear-gradient(120deg, #315BFF 0%, #2449DE 100%),
+          boxShadow: "0 5px 18px rgba(49,91,255,0.28), inset 0 1px 0 rgba(255,255,255,0.18)",
         }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";

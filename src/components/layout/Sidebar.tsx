@@ -95,7 +95,7 @@ const submenuVariants = {
 
 /* ── Always-dark sidebar palette ───────────────────────────────────────────── */
 const SB = {
-  bg:      "linear-gradient(180deg, #0C0D26 0%, #08091C 100%)",
+  bg:      "linear-gradient(180deg, #20201F 0%, #141414 100%)",
   border:  "rgba(255,255,255,0.07)",
   text:    "#ffffff",
   hover:   "#ffffff",
@@ -144,10 +144,10 @@ function NavLink({
           letterSpacing: active ? "-0.01em" : "-0.005em",
           color: active ? SB.active : SB.text,
           background: active
-            ? "linear-gradient(135deg, rgba(99,102,241,0.92) 0%, rgba(139,92,246,0.88) 100%)"
+            ? "linear-gradient(120deg, #315BFF 0%, #2449DE 100%)"
             : "transparent",
           boxShadow: active
-            ? "0 2px 22px rgba(99,102,241,0.48), inset 0 1px 0 rgba(255,255,255,0.16)"
+            ? "0 5px 18px rgba(49,91,255,0.28), inset 0 1px 0 rgba(255,255,255,0.18)"
             : "none",
           textDecoration: "none",
           position: "relative",
