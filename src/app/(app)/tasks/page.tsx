@@ -606,7 +606,7 @@ function TasksContent() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="cx-tasks-page p-6 space-y-5">
       <NLTaskCreator open={showNL} onClose={() => setShowNL(false)} onCreated={() => setRefreshKey((k) => k + 1)} />
 
       {/* Page header */}
