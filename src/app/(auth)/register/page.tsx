@@ -241,6 +241,14 @@ function RegisterPage() {
             backgroundSize: "48px 48px",
           }} />
 
+        <div className="cx-auth-illustration cx-auth-illustration-register" aria-hidden="true"><svg viewBox="0 0 520 300" fill="none">
+<rect x="34" y="32" width="330" height="220" rx="18" fill="#222" stroke="#FFFDF7" strokeOpacity=".22"/><rect x="34" y="32" width="330" height="43" rx="18" fill="#303030"/><path d="M34 57h330" stroke="#FFFDF7" strokeOpacity=".14"/><circle cx="56" cy="53" r="4" fill="#FF6243"/><circle cx="70" cy="53" r="4" fill="#F4D76B"/><circle cx="84" cy="53" r="4" fill="#176B54"/>
+<rect x="52" y="94" width="92" height="140" rx="10" fill="#315BFF"/><circle cx="98" cy="130" r="19" fill="#FFFDF7" fillOpacity=".18"/><path d="M89 130l7 7 13-15" stroke="#FFFDF7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><rect x="66" y="164" width="64" height="6" rx="3" fill="#FFFDF7"/><rect x="66" y="177" width="48" height="4" rx="2" fill="#FFFDF7" fillOpacity=".55"/>
+<rect x="160" y="94" width="186" height="61" rx="10" fill="#FFFDF7"/><text x="176" y="113" fontSize="9" fill="#716F68" letterSpacing="1.3">TEAM WORKSPACE</text><circle cx="184" cy="135" r="8" fill="#FF6243"/><circle cx="205" cy="135" r="8" fill="#F4D76B"/><circle cx="226" cy="135" r="8" fill="#176B54"/><rect x="245" y="132" width="82" height="6" rx="3" fill="#191919" fillOpacity=".16"/>
+<rect x="160" y="165" width="186" height="69" rx="10" fill="#242424" stroke="#FFFDF7" strokeOpacity=".12"/><text x="176" y="184" fontSize="9" fill="#F4D76B" letterSpacing="1.2">YOUR NEXT MOVE</text><rect x="176" y="197" width="115" height="5" rx="2.5" fill="#FFFDF7" fillOpacity=".78"/><rect x="176" y="209" width="83" height="4" rx="2" fill="#FFFDF7" fillOpacity=".25"/>
+<g transform="translate(320 185) rotate(8)"><rect width="160" height="78" rx="13" fill="#F4D76B"/><circle cx="25" cy="25" r="10" fill="#176B54"/><path d="M20 25l4 4 7-8" stroke="#FFFDF7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="43" y="21" width="95" height="6" rx="3" fill="#191919" fillOpacity=".7"/><rect x="43" y="33" width="70" height="5" rx="2.5" fill="#191919" fillOpacity=".28"/><rect x="18" y="51" width="122" height="6" rx="3" fill="#191919" fillOpacity=".12"/></g>
+<circle cx="408" cy="58" r="38" stroke="#315BFF" strokeOpacity=".8" strokeWidth="1.5"/><circle cx="408" cy="58" r="26" stroke="#315BFF" strokeOpacity=".35" strokeWidth="1.5"/><path d="M408 10v10M408 96v10M360 58h10M446 58h10" stroke="#F4D76B" strokeWidth="2" strokeLinecap="round"/></svg></div>
+
         {/* Content */}
         <div className="relative z-10 p-12 flex flex-col h-full justify-center">
           <div className="max-w-sm space-y-8">
