@@ -101,7 +101,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: "var(--bg-base)" }}>
+    <div className="cx-auth-page cx-auth-login min-h-screen flex" style={{ background: "var(--bg-base)" }}>
 
       {/* ── LEFT: hero panel ── */}
       <div className="hidden lg:flex flex-col justify-between relative overflow-hidden"
@@ -119,10 +119,7 @@ function LoginForm() {
 
         <div className="relative z-10 p-12">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #818CF8, #A78BFA)", boxShadow: "0 0 24px rgba(129,140,248,0.55)" }}>
-              <Zap className="w-5 h-5 text-white" />
-            </div>
+            <span aria-hidden="true" className="cx-auth-brand-mark"><i /><i /><i /><i /></span>
             <div>
               <span className="text-[17px] font-black tracking-tight text-white">COLLIQ</span>
               <p className="text-[10px] font-medium tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>by autonoid.ai</p>
