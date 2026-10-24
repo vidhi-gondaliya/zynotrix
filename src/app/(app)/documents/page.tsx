@@ -506,7 +506,7 @@ export default function DocumentsPage() {
   ];
 
   return (
-    <div className="flex h-full" style={{ height: "calc(100vh - var(--header-h))" }}>
+    <div className="cx-documents-page flex h-full" style={{ height: "calc(100vh - var(--header-h))" }}>
       {/* ── Sidebar ── */}
       <div className="w-72 shrink-0 flex flex-col border-r overflow-hidden"
         style={{ borderColor: "var(--border)", background: "var(--bg-elevated)" }}>
