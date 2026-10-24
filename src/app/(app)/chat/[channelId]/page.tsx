@@ -520,7 +520,7 @@ function ChannelPageContent({ params }: { params: { channelId: string } }) {
 
 export default function ChannelPage() {
   return (
-    <div className="cx-chat-channelId-page">
+    <div className="cx-chat-channel-page">
       <ChannelPageContent />
     </div>
   );
