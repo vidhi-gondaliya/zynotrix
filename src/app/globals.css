@@ -1441,3 +1441,50 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .cx-integrations-page * { transition-duration: .01ms !important; }
 }
+
+
+/* ── Settings — Colliq editorial workspace ───────────────────────────────── */
+.cx-settings-page {
+  --cx-set-paper: #f6f2e9;
+  --cx-set-white: #fffdf8;
+  --cx-set-ink: #191919;
+  --cx-set-blue: #315bff;
+  --cx-set-orange: #ff6243;
+  --cx-set-green: #176b54;
+  --cx-set-muted: #77746d;
+  --cx-set-line: rgba(25,25,25,.14);
+  color: var(--cx-set-ink);
+}
+.cx-settings-page h1,
+.cx-settings-page h2,
+.cx-settings-page h3 { letter-spacing: -.035em; }
+.cx-settings-page input:not([type="checkbox"]):not([type="radio"]),
+.cx-settings-page textarea,
+.cx-settings-page select {
+  background: var(--cx-set-white) !important;
+  color: var(--cx-set-ink) !important;
+  border: 1px solid var(--cx-set-line) !important;
+  border-radius: 4px 14px 4px 14px !important;
+}
+.cx-settings-page input::placeholder,
+.cx-settings-page textarea::placeholder { color: #88847b !important; }
+.cx-settings-page button { transition: background-color .16s ease, color .16s ease, border-color .16s ease, transform .16s ease; }
+.cx-settings-page button:focus-visible,
+.cx-settings-page input:focus-visible,
+.cx-settings-page textarea:focus-visible,
+.cx-settings-page select:focus-visible {
+  outline: 2px solid var(--cx-set-blue);
+  outline-offset: 3px;
+}
+.cx-settings-page [style*="var(--bg-card)"],
+.cx-settings-page [style*="var(--bg-elevated)"] { border-color: var(--cx-set-line) !important; }
+.cx-settings-page .rounded-xl,
+.cx-settings-page .rounded-2xl,
+.cx-settings-page .rounded-3xl { box-shadow: none; }
+.cx-settings-page button[style*="var(--accent)"] { border-radius: 999px !important; }
+.cx-settings-page button[style*="var(--accent)"]:hover { filter: brightness(.94); transform: translateY(-1px); }
+@media (max-width: 780px) {
+  .cx-settings-page { padding: 22px 14px 24px !important; }
+  .cx-settings-page .sticky { top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .cx-settings-page * { transition-duration: .01ms !important; } }
