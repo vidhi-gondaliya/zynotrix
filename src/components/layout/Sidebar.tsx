@@ -337,7 +337,11 @@ export function Sidebar() {
               boxShadow: "0 0 28px rgba(99,102,241,0.7), 0 4px 14px rgba(0,0,0,0.35)",
             }}
           >
-            <Zap style={{ width: 17, height: 17, color: "#fff" }} strokeWidth={2.5} />
+            <span aria-hidden="true" className="cx-brand-glyph">
+              <span />
+              <span />
+              <span />
+            </span>
           </motion.div>
 
           <AnimatePresence initial={false}>
