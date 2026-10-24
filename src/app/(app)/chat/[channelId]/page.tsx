@@ -518,10 +518,10 @@ function ChannelPageContent({ params }: { params: { channelId: string } }) {
 }
 
 
-export default function ChannelPage() {
+export default function ChannelPage({ params }: { params: { channelId: string } }) {
   return (
     <div className="cx-chat-channel-page">
-      <ChannelPageContent />
+      <ChannelPageContent params={params} />
     </div>
   );
 }
