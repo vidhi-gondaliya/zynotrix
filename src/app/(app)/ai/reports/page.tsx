@@ -91,7 +91,7 @@ function ChipGroup<T extends string>({ items, selected, onChange, color }: {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function ReportsPage() {
+function ReportsPageContent() {
   const today   = format(new Date(), "yyyy-MM-dd");
   const weekAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
@@ -413,6 +413,15 @@ code{background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:13px}
           </AnimatePresence>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+export default function ReportsPage() {
+  return (
+    <div className="cx-ai-reports-page">
+      <ReportsPageContent />
     </div>
   );
 }
