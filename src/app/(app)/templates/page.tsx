@@ -84,7 +84,7 @@ export default function TemplatesPage() {
   );
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className="cx-templates-page p-6 space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
