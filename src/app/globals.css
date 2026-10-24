@@ -2027,3 +2027,67 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     animation-duration: .01ms !important;
   }
 }
+
+
+/* ── COLLIQ SIDEBAR + BRAND MARK REFINEMENT ───────────────────────── */
+.cx-sidebar-shell:not(.cx-sidebar-mobile) {
+  background: #171716 !important;
+}
+.cx-sidebar-shell > div > div:first-child {
+  height: 62px !important;
+  padding-inline: 13px !important;
+  border-bottom-color: rgba(255,255,255,.09) !important;
+  background: linear-gradient(105deg, rgba(49,91,255,.08), transparent 70%);
+}
+.cx-brand-glyph {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 3px;
+  padding: 7px;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #4770ff, #2449de);
+  box-shadow: 0 5px 16px rgba(49,91,255,.28), inset 0 1px 0 rgba(255,255,255,.28);
+  transform: rotate(-4deg);
+}
+.cx-brand-glyph span {
+  display: block;
+  border-radius: 2px;
+  background: white;
+}
+.cx-brand-glyph span:first-child { grid-row: span 2; opacity: .98; }
+.cx-brand-glyph span:nth-child(2) { opacity: .78; }
+.cx-brand-glyph span:nth-child(3) { opacity: .55; }
+.cx-sidebar-shell nav a {
+  min-height: 34px;
+  padding-block: 7px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 550;
+}
+.cx-sidebar-shell nav a[style*="linear-gradient"] {
+  background: #315bff !important;
+  box-shadow: 0 4px 12px rgba(49,91,255,.22) !important;
+}
+.cx-sidebar-shell nav > div > button {
+  min-height: 30px;
+  padding-block: 6px !important;
+  margin-top: 4px !important;
+}
+.cx-sidebar-shell nav > div > button span {
+  font-size: 11px !important;
+  font-weight: 650 !important;
+}
+.cx-sidebar-shell [data-tour-id="tour-settings"] a {
+  min-height: 34px;
+  border-radius: 8px !important;
+}
+.cx-sidebar-shell [data-tour-id="tour-settings"] + div,
+.cx-sidebar-shell [data-tour-id="tour-settings"] ~ div {
+  border-radius: 10px;
+}
+@media (max-width: 1023px) {
+  .cx-sidebar-shell > div > div:first-child { height: 62px !important; }
+}
