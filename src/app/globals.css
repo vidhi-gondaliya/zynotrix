@@ -1322,3 +1322,105 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .cx-messages-page * { transition-duration: .01ms !important; }
 }
+
+
+/* ── Goals — Colliq editorial workspace ───────────────────────────────────── */
+.cx-goals-page {
+  --cx-paper: #f6f2e9;
+  --cx-white: #fffdf8;
+  --cx-ink: #191919;
+  --cx-blue: #315bff;
+  --cx-orange: #ff6243;
+  --cx-green: #176b54;
+  --cx-muted: #77746d;
+  --cx-line: rgba(25,25,25,.14);
+  color: var(--cx-ink);
+  padding: clamp(20px, 3vw, 42px) clamp(16px, 3.4vw, 52px) 32px !important;
+  font-family: "DM Sans", sans-serif;
+}
+.cx-goals-page h1,
+.cx-goals-page h2,
+.cx-goals-page h3 {
+  font-family: "Space Grotesk", sans-serif !important;
+  letter-spacing: -.055em;
+}
+.cx-goals-page h1 {
+  font-size: clamp(34px, 4vw, 52px) !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  color: var(--cx-ink) !important;
+  -webkit-text-fill-color: var(--cx-ink) !important;
+}
+.cx-goals-page > div:first-child {
+  max-width: 1580px;
+  margin-inline: auto;
+}
+.cx-goals-page > div:first-child > .flex.items-start.justify-between {
+  align-items: flex-end;
+  padding-bottom: 22px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--cx-line);
+}
+.cx-goals-page button,
+.cx-goals-page input,
+.cx-goals-page select,
+.cx-goals-page textarea {
+  transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
+}
+.cx-goals-page button:focus-visible,
+.cx-goals-page input:focus-visible,
+.cx-goals-page select:focus-visible,
+.cx-goals-page textarea:focus-visible {
+  outline: 3px solid var(--cx-orange);
+  outline-offset: 3px;
+}
+.cx-goals-page input:not([type="checkbox"]),
+.cx-goals-page textarea,
+.cx-goals-page select {
+  background: var(--cx-white) !important;
+  color: var(--cx-ink) !important;
+  border-color: var(--cx-line) !important;
+  border-radius: 4px 14px 4px 14px !important;
+}
+.cx-goals-page input::placeholder,
+.cx-goals-page textarea::placeholder { color: #88847b !important; }
+.cx-goals-page [style*="var(--bg-card)"],
+.cx-goals-page [style*="var(--bg-elevated)"] {
+  border-color: var(--cx-line);
+}
+.cx-goals-page [class*="rounded-2xl"],
+.cx-goals-page [class*="rounded-xl"] { box-shadow: none; }
+.cx-goals-page .grid.grid-cols-4 > div {
+  border-radius: 4px 18px 4px 18px !important;
+  border-color: var(--cx-line) !important;
+  box-shadow: none !important;
+}
+.cx-goals-page .grid.grid-cols-4 > div:nth-child(1) { background: #d9d5ff !important; }
+.cx-goals-page .grid.grid-cols-4 > div:nth-child(2) { background: #ffd0c4 !important; }
+.cx-goals-page .grid.grid-cols-4 > div:nth-child(3) { background: #c6e4d2 !important; }
+.cx-goals-page .grid.grid-cols-4 > div:nth-child(4) { background: #f4d76b !important; }
+.cx-goals-page .grid.grid-cols-4 > div * { color: var(--cx-ink); }
+.cx-goals-page button[style*="var(--accent)"] {
+  background: var(--cx-blue) !important;
+  color: white !important;
+  border-radius: 999px !important;
+}
+.cx-goals-page button[style*="var(--accent)"]:hover {
+  background: var(--cx-ink) !important;
+  transform: translateY(-1px);
+}
+.cx-goals-page .grid.grid-cols-1.md\\:grid-cols-2 > div,
+.cx-goals-page .grid.grid-cols-1.md\\:grid-cols-2.xl\\:grid-cols-3 > div {
+  border-radius: 4px 18px 4px 18px;
+}
+@media (max-width: 780px) {
+  .cx-goals-page { padding: 22px 14px 24px !important; }
+  .cx-goals-page > div:first-child > .flex.items-start.justify-between {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .cx-goals-page .grid.grid-cols-4 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-goals-page * { transition-duration: .01ms !important; }
+}
