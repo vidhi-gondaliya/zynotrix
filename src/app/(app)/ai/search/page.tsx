@@ -13,7 +13,7 @@ const SCOPES = [
   { value: "TASK",     label: "Tasks",    icon: CheckSquare  },
 ];
 
-export default function AISearchPage() {
+function AISearchPageContent() {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("ALL");
   const { ask, text, streaming } = useClaude();
@@ -142,6 +142,15 @@ export default function AISearchPage() {
           </p>
         </motion.div>
       )}
+    </div>
+  );
+}
+
+
+export default function AISearchPage() {
+  return (
+    <div className="cx-ai-search-page">
+      <AISearchPageContent />
     </div>
   );
 }
