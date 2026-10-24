@@ -103,7 +103,7 @@ function AlertCard({ alert, i }: { alert: RiskAlert; i: number }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 type Tab = "health" | "alerts";
 
-export default function AIHealthPage() {
+function AIHealthPageContent() {
   const [tab, setTab]             = useState<Tab>("alerts");
   const [projects, setProjects]   = useState<Project[]>([]);
   const [analyses, setAnalyses]   = useState<Record<string, HealthAnalysis>>({});
@@ -394,6 +394,15 @@ export default function AIHealthPage() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+
+export default function AIHealthPage() {
+  return (
+    <div className="cx-ai-health-page">
+      <AIHealthPageContent />
     </div>
   );
 }
