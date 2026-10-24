@@ -104,7 +104,7 @@ function LoginForm() {
     <div className="cx-auth-page cx-auth-login min-h-screen flex" style={{ background: "var(--bg-base)" }}>
 
       {/* ── LEFT: hero panel ── */}
-      <div className="hidden lg:flex flex-col justify-between relative overflow-hidden"
+      <div className="cx-auth-visual cx-auth-login-visual hidden lg:flex flex-col justify-between relative overflow-hidden"
         style={{ width: "52%", background: "#060610" }}>
         <Orb cx="25%" cy="20%" r="480px" color="rgba(79,82,217,0.40)"   delay={0} />
         <Orb cx="75%" cy="65%" r="380px" color="rgba(167,139,250,0.22)" delay={2} />
@@ -180,7 +180,7 @@ function LoginForm() {
       </div>
 
       {/* ── RIGHT: auth form ── */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="cx-auth-form-panel flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 pointer-events-none"
           style={{ background: "radial-gradient(circle at 80% 20%, rgba(157,107,255,0.07) 0%, transparent 60%)" }} />
 
