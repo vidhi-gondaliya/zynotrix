@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useChat } from "@/store/useChat";
 import { Hash } from "lucide-react";
 
-export default function ChatPage() {
+function ChatPageContent() {
   const router = useRouter();
   const { channels, setChannels } = useChat();
 
@@ -23,6 +23,15 @@ export default function ChatPage() {
         <Hash className="w-12 h-12 mx-auto mb-3 opacity-20" />
         <p className="text-sm">Select a channel to start chatting</p>
       </div>
+    </div>
+  );
+}
+
+
+export default function ChatPage() {
+  return (
+    <div className="cx-chat-page">
+      <ChatPageContent />
     </div>
   );
 }

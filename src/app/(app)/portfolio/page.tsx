@@ -151,7 +151,7 @@ function ProjectCard({ p }: { p: Project }) {
   );
 }
 
-export default function PortfolioPage() {
+function PortfolioPageContent() {
   const [data, setData]       = useState<{ projects: Project[]; summary: Summary } | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState("");
@@ -292,6 +292,15 @@ export default function PortfolioPage() {
           {filtered.map((p) => <ProjectCard key={p.id} p={p} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+
+export default function PortfolioPage() {
+  return (
+    <div className="cx-portfolio-page">
+      <PortfolioPageContent />
     </div>
   );
 }

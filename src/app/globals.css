@@ -1813,3 +1813,128 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .cx-templates-page *, .cx-templates-page *::before, .cx-templates-page *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* ── COLLIQ CONSOLIDATED MODULE REFRESH ────────────────────────────── */
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-chat-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) {
+  --cx-editorial-paper: #f6f2e9;
+  --cx-editorial-card: #fffdf8;
+  --cx-editorial-ink: #191919;
+  --cx-editorial-blue: #315bff;
+  --cx-editorial-orange: #ff6243;
+  color: var(--cx-editorial-ink);
+}
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-chat-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) h1,
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-chat-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) h2 {
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: -.04em;
+}
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) input:not([type="checkbox"]),
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) select,
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) textarea {
+  border-radius: 10px;
+}
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-chat-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) button:focus-visible,
+:where(.cx-dashboard-page,.cx-dashboards-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) a:focus-visible {
+  outline: 2px solid var(--cx-editorial-blue);
+  outline-offset: 3px;
+}
+.cx-dashboard-page { isolation: isolate; }
+.cx-dashboard-page h1 { font-size: clamp(1.8rem, 3vw, 2.7rem); }
+.cx-dashboard-page .cx-footer { border-top: 1px solid rgba(25,25,25,.16); }
+.cx-dashboards-page > div { min-width: 0; }
+.cx-dashboards-page h1 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.cx-dashboards-page [class*="rounded-xl"],
+.cx-dashboards-page [class*="rounded-2xl"] {
+  border-color: rgba(25,25,25,.14);
+}
+.cx-chat-page { min-height: 100%; background: var(--cx-editorial-paper); }
+.cx-chat-page > div { min-height: 360px; }
+.cx-chat-page svg { color: var(--cx-editorial-blue); }
+.cx-import-export-page { --cx-export-accent: var(--cx-editorial-blue); }
+.cx-import-export-page > div:first-child h1 {
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--cx-editorial-ink) !important;
+  font-size: clamp(1.8rem, 3vw, 2.5rem) !important;
+  letter-spacing: -.05em !important;
+}
+.cx-import-export-page [class*="rounded-xl"],
+.cx-import-export-page [class*="rounded-2xl"] {
+  border-color: rgba(25,25,25,.15);
+}
+.cx-portfolio-page h1 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.cx-portfolio-page [class*="rounded-xl"],
+.cx-portfolio-page [class*="rounded-2xl"] {
+  border-color: rgba(25,25,25,.15);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.cx-portfolio-page [class*="rounded-xl"]:hover,
+.cx-portfolio-page [class*="rounded-2xl"]:hover {
+  border-color: rgba(49,91,255,.42);
+}
+.cx-rewards-page h1 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.cx-rewards-page [class*="rounded-xl"],
+.cx-rewards-page [class*="rounded-2xl"] { border-color: rgba(25,25,25,.14); }
+.cx-rewards-page button { transition: transform .16s ease, filter .16s ease; }
+.cx-rewards-page button:hover:not(:disabled) { filter: saturate(.9); }
+@media (max-width: 720px) {
+  .cx-dashboard-page, .cx-dashboards-page, .cx-import-export-page, .cx-portfolio-page, .cx-rewards-page { min-width: 0; }
+  .cx-import-export-page { overflow-wrap: anywhere; }
+  .cx-chat-page > div { min-height: 260px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.cx-dashboard-page,.cx-dashboards-page,.cx-chat-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) *,
+  :where(.cx-dashboard-page,.cx-dashboards-page,.cx-chat-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) *::before,
+  :where(.cx-dashboard-page,.cx-dashboards-page,.cx-chat-page,.cx-import-export-page,.cx-portfolio-page,.cx-rewards-page) *::after {
+    transition-duration: .01ms !important; animation-duration: .01ms !important;
+  }
+}
+
+
+/* ── AI WORKSPACE + CHANNEL CHAT CONSOLIDATION ─────────────────────── */
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) {
+  --cx-ai-paper: #f6f2e9;
+  --cx-ai-card: #fffdf8;
+  --cx-ai-ink: #191919;
+  --cx-ai-blue: #315bff;
+  --cx-ai-orange: #ff6243;
+  color: var(--cx-ai-ink);
+  min-width: 0;
+}
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) h1,
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) h2,
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) h3 {
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: -.035em;
+}
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) input:not([type="checkbox"]),
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) select,
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) textarea {
+  border-radius: 10px;
+}
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) button:focus-visible,
+:where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) a:focus-visible {
+  outline: 2px solid var(--cx-ai-blue);
+  outline-offset: 3px;
+}
+.cx-ai-assistant-page, .cx-ai-search-page { overflow-wrap: anywhere; }
+.cx-ai-assistant-page textarea, .cx-ai-search-page input { background-color: var(--cx-ai-card); }
+.cx-ai-health-page [class*="rounded-xl"], .cx-ai-health-page [class*="rounded-2xl"],
+.cx-ai-reports-page [class*="rounded-xl"], .cx-ai-reports-page [class*="rounded-2xl"],
+.cx-ai-search-page [class*="rounded-xl"], .cx-ai-search-page [class*="rounded-2xl"] {
+  border-color: rgba(25,25,25,.15);
+}
+.cx-chat-channel-page { height: 100%; min-height: 0; }
+.cx-chat-channel-page textarea { background: var(--cx-ai-card); }
+@media (max-width: 720px) {
+  .cx-ai-assistant-page, .cx-ai-health-page, .cx-ai-reports-page, .cx-ai-search-page { width: 100%; }
+  .cx-chat-channel-page { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) *,
+  :where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) *::before,
+  :where(.cx-ai-assistant-page,.cx-ai-health-page,.cx-ai-reports-page,.cx-ai-search-page,.cx-chat-channel-page) *::after {
+    transition-duration: .01ms !important; animation-duration: .01ms !important;
+  }
+}

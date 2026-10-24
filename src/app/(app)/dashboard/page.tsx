@@ -1226,7 +1226,7 @@ function RiskDetector({ projects, tasks }: {
 /*  PAGE                                                                       */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const { data: session } = useSession();
   const { ask }           = useClaude();
 
@@ -1575,5 +1575,14 @@ Context: ${doneTasks.length > 0 ? "Completed: " + doneTasks.map(t => t.title).jo
         <footer className="cx-footer"><span><b>COLLIQ</b> / WORK BETTER, TOGETHER.</span><span>BUILT FOR MOMENTUM <i>✳</i></span><Link href="/projects">KEEP IT MOVING ↗</Link></footer>
       </div>
     </>
+  );
+}
+
+
+export default function DashboardPage() {
+  return (
+    <div className="cx-dashboard-page">
+      <DashboardPageContent />
+    </div>
   );
 }
