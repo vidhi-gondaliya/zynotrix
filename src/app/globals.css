@@ -1590,3 +1590,100 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .cx-goals-page * { transition-duration: .01ms !important; }
 }
+
+
+
+/* ── Automations — Colliq editorial workspace ─────────────────────────────── */
+.cx-automations-page {
+  --cx-auto-paper: #f6f2e9;
+  --cx-auto-white: #fffdf8;
+  --cx-auto-ink: #191919;
+  --cx-auto-blue: #315bff;
+  --cx-auto-orange: #ff6243;
+  --cx-auto-green: #176b54;
+  --cx-auto-muted: #77746d;
+  --cx-auto-line: rgba(25,25,25,.14);
+  color: var(--cx-auto-ink);
+  padding: clamp(20px, 3vw, 42px) clamp(16px, 3.4vw, 52px) 32px !important;
+  font-family: "DM Sans", sans-serif;
+}
+.cx-automations-page h1,
+.cx-automations-page h2,
+.cx-automations-page h3 {
+  font-family: "Space Grotesk", sans-serif !important;
+  letter-spacing: -.055em;
+}
+.cx-automations-page h1 {
+  font-size: clamp(34px, 4vw, 52px) !important;
+  line-height: 1 !important;
+  font-weight: 600 !important;
+  color: var(--cx-auto-ink) !important;
+  -webkit-text-fill-color: var(--cx-auto-ink) !important;
+}
+.cx-automations-page > div:first-child {
+  max-width: 1580px;
+  margin-inline: auto;
+}
+.cx-automations-page > div:first-child > .flex.items-start.justify-between {
+  align-items: flex-end;
+  gap: 18px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--cx-auto-line);
+}
+.cx-automations-page button,
+.cx-automations-page input,
+.cx-automations-page select,
+.cx-automations-page textarea {
+  transition: background-color .18s ease, border-color .18s ease, transform .18s ease, color .18s ease;
+}
+.cx-automations-page button:focus-visible,
+.cx-automations-page input:focus-visible,
+.cx-automations-page select:focus-visible,
+.cx-automations-page textarea:focus-visible {
+  outline: 3px solid var(--cx-auto-orange);
+  outline-offset: 3px;
+}
+.cx-automations-page input:not([type="checkbox"]),
+.cx-automations-page textarea,
+.cx-automations-page select {
+  background: var(--cx-auto-white) !important;
+  color: var(--cx-auto-ink) !important;
+  border: 1px solid var(--cx-auto-line) !important;
+  border-radius: 4px 14px 4px 14px !important;
+}
+.cx-automations-page input::placeholder,
+.cx-automations-page textarea::placeholder { color: #88847b !important; }
+.cx-automations-page [style*="var(--bg-card)"],
+.cx-automations-page [style*="var(--bg-elevated)"] {
+  border-color: var(--cx-auto-line) !important;
+}
+.cx-automations-page [class*="rounded-2xl"],
+.cx-automations-page [class*="rounded-xl"] { box-shadow: none; }
+.cx-automations-page .grid.grid-cols-3 > div {
+  border-radius: 4px 18px 4px 18px !important;
+  box-shadow: none !important;
+}
+.cx-automations-page .grid.grid-cols-3 > div:nth-child(1) { background: #d9d5ff !important; }
+.cx-automations-page .grid.grid-cols-3 > div:nth-child(2) { background: #ffd0c4 !important; }
+.cx-automations-page .grid.grid-cols-3 > div:nth-child(3) { background: #c6e4d2 !important; }
+.cx-automations-page .grid.grid-cols-3 > div * { color: var(--cx-auto-ink) !important; }
+.cx-automations-page button[style*="var(--accent)"] {
+  background: var(--cx-auto-blue) !important;
+  color: white !important;
+  border-radius: 999px !important;
+}
+.cx-automations-page button[style*="var(--accent)"]:hover {
+  background: var(--cx-auto-ink) !important;
+  transform: translateY(-1px);
+}
+@media (max-width: 780px) {
+  .cx-automations-page { padding: 22px 14px 24px !important; }
+  .cx-automations-page > div:first-child > .flex.items-start.justify-between {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .cx-automations-page .grid.grid-cols-3 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-automations-page * { transition-duration: .01ms !important; }
+}
