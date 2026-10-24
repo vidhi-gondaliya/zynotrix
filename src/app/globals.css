@@ -1322,3 +1322,59 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .cx-messages-page * { transition-duration: .01ms !important; }
 }
+
+/* ── Integrations — Colliq editorial workspace ──────────────────────────── */
+.cx-integrations-page {
+  --cx-int-paper: #f6f2e9;
+  --cx-int-white: #fffdf8;
+  --cx-int-ink: #191919;
+  --cx-int-blue: #315bff;
+  --cx-int-orange: #ff6243;
+  --cx-int-green: #176b54;
+  --cx-int-muted: #77746d;
+  --cx-int-line: rgba(25,25,25,.14);
+  color: var(--cx-int-ink);
+}
+.cx-integrations-page h1,
+.cx-integrations-page h2,
+.cx-integrations-page h3 { letter-spacing: -.035em; }
+.cx-integrations-page input:not([type="checkbox"]),
+.cx-integrations-page textarea,
+.cx-integrations-page select {
+  background: var(--cx-int-white) !important;
+  color: var(--cx-int-ink) !important;
+  border: 1px solid var(--cx-int-line) !important;
+  border-radius: 4px 14px 4px 14px !important;
+}
+.cx-integrations-page input::placeholder,
+.cx-integrations-page textarea::placeholder { color: #88847b !important; }
+.cx-integrations-page button { transition: background-color .16s ease, color .16s ease, border-color .16s ease, transform .16s ease; }
+.cx-integrations-page button:focus-visible,
+.cx-integrations-page input:focus-visible,
+.cx-integrations-page textarea:focus-visible,
+.cx-integrations-page select:focus-visible {
+  outline: 2px solid var(--cx-int-blue);
+  outline-offset: 3px;
+}
+.cx-integrations-page [style*="var(--bg-card)"],
+.cx-integrations-page [style*="var(--bg-elevated)"] {
+  border-color: var(--cx-int-line) !important;
+}
+.cx-integrations-page .rounded-xl,
+.cx-integrations-page .rounded-2xl,
+.cx-integrations-page .rounded-3xl { box-shadow: none; }
+.cx-integrations-page button[style*="var(--accent)"] {
+  border-radius: 999px !important;
+}
+.cx-integrations-page button[style*="var(--accent)"]:hover {
+  filter: brightness(.94);
+  transform: translateY(-1px);
+}
+@media (max-width: 780px) {
+  .cx-integrations-page { padding: 22px 14px 24px !important; }
+  .cx-integrations-page > div:first-child { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-integrations-page * { transition-duration: .01ms !important; }
+}
+
