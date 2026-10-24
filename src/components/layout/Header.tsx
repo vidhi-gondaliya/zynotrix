@@ -11,6 +11,10 @@ import { useSidebar } from "./Sidebar";
 
 const PAGE_TITLES: Record<string, { title: string; sub?: string; emoji?: string }> = {
   "/dashboard":             { title: "Dashboard",          sub: "Your command centre",       emoji: "⚡" },
+  "/dashboards":            { title: "Dashboards",          sub: "Your team at a glance",      emoji: "▦" },
+  "/goals":                 { title: "Goals",               sub: "Progress that moves work",   emoji: "◎" },
+  "/portfolio":             { title: "Portfolio",           sub: "Project health & delivery",  emoji: "◫" },
+  "/import-export":         { title: "Import / Export",     sub: "Move your work with ease",   emoji: "⇄" },
   "/projects":              { title: "Projects",           sub: "All your workspaces",        emoji: "📁" },
   "/tasks":                 { title: "My Tasks",           sub: "What needs doing",           emoji: "✓"  },
   "/attendance":            { title: "Attendance",         sub: "Punch in & out",             emoji: "🕐" },
@@ -49,7 +53,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
   return (
     <header
       data-tour-id="tour-header"
-      className="flex items-center gap-3 sticky top-0 z-[var(--z-overlay)]"
+      className="cx-topbar flex items-center gap-3 sticky top-0 z-[var(--z-overlay)]"
       style={{
         height: "var(--header-h)",
         padding: "0 var(--page-x)",

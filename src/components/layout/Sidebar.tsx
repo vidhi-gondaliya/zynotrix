@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, FolderKanban, CheckSquare,
+  LayoutDashboard, FolderKanban, CheckSquare, Target,
   MessageSquare, Calendar, FileText, MessageCircle,
   Bot, Sparkles, Heart, Search,
   ClipboardCheck, BarChart2, Trophy,
@@ -41,6 +41,14 @@ const PINNED: NavItem[] = [
 ];
 
 const SECTIONS = [
+  {
+    key: "planning", label: "Plan & Track", dot: "#F4D76B",
+    items: [
+      { href: "/dashboards", icon: LayoutDashboard, label: "Dashboards" },
+      { href: "/goals",      icon: Target,           label: "Goals"      },
+      { href: "/portfolio",  icon: FolderKanban,     label: "Portfolio"  },
+    ] as NavItem[],
+  },
   {
     key: "collaborate", label: "Collaborate", dot: "#60A5FA",
     items: [
@@ -521,7 +529,7 @@ export function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <aside
-        className="hidden lg:flex flex-col fixed left-0 top-0 h-full z-[var(--z-sidebar)] overflow-hidden"
+        className="cx-sidebar-shell hidden lg:flex flex-col fixed left-0 top-0 h-full z-[var(--z-sidebar)] overflow-hidden"
         style={{
           width: collapsed ? "var(--sidebar-w-collapsed)" : "var(--sidebar-w)",
           background: SB.bg,
@@ -549,7 +557,7 @@ export function Sidebar() {
           <motion.aside
             initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 400, damping: 38 }}
-            className="fixed left-0 top-0 h-full z-[var(--z-modal)] flex flex-col lg:hidden overflow-hidden"
+            className="cx-sidebar-shell cx-sidebar-mobile fixed left-0 top-0 h-full z-[var(--z-modal)] flex flex-col lg:hidden overflow-hidden"
             style={{
               width: "var(--sidebar-w)",
               background: SB.bg,
