@@ -236,7 +236,7 @@ export default function IntegrationsPage() {
   const totalCount     = SECTIONS.flatMap((s) => s.items).length;
 
   return (
-    <div className="p-6 space-y-8 animate-fade-in max-w-3xl">
+    <div className="cx-integrations-page p-6 space-y-8 animate-fade-in max-w-3xl">
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
