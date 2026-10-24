@@ -54,7 +54,7 @@ function downloadSample(type: ExportType, format: ExportFormat) {
   toast.success(`Sample ${type} ${format.toUpperCase()} downloaded`);
 }
 
-export default function ImportExportPage() {
+function ImportExportPageContent() {
   const [projects,   setProjects]   = useState<Project[]>([]);
   const [exporting,  setExporting]  = useState(false);
   const [importing,  setImporting]  = useState(false);
@@ -362,6 +362,15 @@ export default function ImportExportPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+export default function ImportExportPage() {
+  return (
+    <div className="cx-import-export-page">
+      <ImportExportPageContent />
     </div>
   );
 }
