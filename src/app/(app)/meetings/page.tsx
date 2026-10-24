@@ -496,7 +496,7 @@ export default function MeetingsPage() {
     : null;
 
   return (
-    <div className="flex" style={{ height: "calc(100vh - var(--header-h))" }}>
+    <div className="cx-meetings-page flex" style={{ height: "calc(100vh - var(--header-h))" }}>
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}

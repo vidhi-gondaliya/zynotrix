@@ -1687,3 +1687,79 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .cx-automations-page * { transition-duration: .01ms !important; }
 }
+
+
+
+/* ── Meetings — Colliq editorial workspace ────────────────────────────────── */
+.cx-meetings-page {
+  --cx-meet-paper: #f6f2e9;
+  --cx-meet-white: #fffdf8;
+  --cx-meet-ink: #191919;
+  --cx-meet-blue: #315bff;
+  --cx-meet-orange: #ff6243;
+  --cx-meet-green: #176b54;
+  --cx-meet-muted: #77746d;
+  --cx-meet-line: rgba(25,25,25,.14);
+  color: var(--cx-meet-ink);
+  font-family: "DM Sans", sans-serif;
+}
+.cx-meetings-page h1,
+.cx-meetings-page h2,
+.cx-meetings-page h3 {
+  font-family: "Space Grotesk", sans-serif !important;
+  letter-spacing: -.045em;
+}
+.cx-meetings-page h1 {
+  color: var(--cx-meet-ink) !important;
+  -webkit-text-fill-color: var(--cx-meet-ink) !important;
+  font-size: clamp(30px, 3vw, 44px) !important;
+  line-height: 1.05 !important;
+}
+.cx-meetings-page button,
+.cx-meetings-page input,
+.cx-meetings-page select,
+.cx-meetings-page textarea {
+  transition: background-color .18s ease, border-color .18s ease, transform .18s ease, color .18s ease;
+}
+.cx-meetings-page button:focus-visible,
+.cx-meetings-page input:focus-visible,
+.cx-meetings-page select:focus-visible,
+.cx-meetings-page textarea:focus-visible {
+  outline: 3px solid var(--cx-meet-orange);
+  outline-offset: 3px;
+}
+.cx-meetings-page input:not([type="checkbox"]),
+.cx-meetings-page textarea,
+.cx-meetings-page select {
+  background: var(--cx-meet-white) !important;
+  color: var(--cx-meet-ink) !important;
+  border-color: var(--cx-meet-line) !important;
+  border-radius: 4px 12px 4px 12px !important;
+}
+.cx-meetings-page input::placeholder,
+.cx-meetings-page textarea::placeholder { color: #88847b !important; }
+.cx-meetings-page [style*="var(--bg-card)"],
+.cx-meetings-page [style*="var(--bg-elevated)"] {
+  border-color: var(--cx-meet-line) !important;
+  box-shadow: none;
+}
+.cx-meetings-page [class*="rounded-2xl"] { box-shadow: none; }
+.cx-meetings-page .flex.items-center.justify-between.px-6.py-4 {
+  border-bottom: 1px solid var(--cx-meet-line);
+}
+.cx-meetings-page button[style*="var(--accent)"] {
+  background: var(--cx-meet-blue) !important;
+  color: #fff !important;
+  border-radius: 999px !important;
+}
+.cx-meetings-page button[style*="var(--accent)"]:hover {
+  background: var(--cx-meet-ink) !important;
+  transform: translateY(-1px);
+}
+@media (max-width: 780px) {
+  .cx-meetings-page { height: auto !important; min-height: calc(100vh - var(--header-h)); }
+  .cx-meetings-page > .flex-1 { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-meetings-page * { transition-duration: .01ms !important; }
+}
