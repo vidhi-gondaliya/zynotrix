@@ -19,7 +19,7 @@ const STARTER_PROMPTS = [
   "Generate a quick standup summary",
 ];
 
-export default function AIAssistantPage() {
+function AIAssistantPageContent() {
   const { data: session } = useSession();
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -232,6 +232,15 @@ export default function AIAssistantPage() {
         </div>
         <p className="text-[10px] mt-1.5" style={{ color: "var(--text-subtle)" }}>Powered by Claude · Enter to send · Shift+Enter for newline</p>
       </div>
+    </div>
+  );
+}
+
+
+export default function AIAssistantPage() {
+  return (
+    <div className="cx-ai-assistant-page">
+      <AIAssistantPageContent />
     </div>
   );
 }
