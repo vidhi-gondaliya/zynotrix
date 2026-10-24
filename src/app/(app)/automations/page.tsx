@@ -207,7 +207,7 @@ export default function AutomationsPage() {
   const inactive = automations.filter((a) => !a.isActive);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="cx-automations-page p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
