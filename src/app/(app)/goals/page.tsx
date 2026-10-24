@@ -326,7 +326,7 @@ export default function GoalsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="cx-goals-page p-6 max-w-7xl mx-auto">
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
