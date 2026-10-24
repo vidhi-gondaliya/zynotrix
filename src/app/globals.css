@@ -1323,6 +1323,70 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .cx-messages-page * { transition-duration: .01ms !important; }
 }
 
+/* ── Documents — Colliq editorial workspace ──────────────────────────────── */
+.cx-documents-page {
+  --cx-doc-paper: #f6f2e9;
+  --cx-doc-white: #fffdf8;
+  --cx-doc-ink: #191919;
+  --cx-doc-blue: #315bff;
+  --cx-doc-orange: #ff6243;
+  --cx-doc-green: #176b54;
+  --cx-doc-muted: #77746d;
+  --cx-doc-line: rgba(25,25,25,.14);
+  color: var(--cx-doc-ink);
+  background: var(--cx-doc-paper);
+  min-height: 0;
+  overflow: hidden;
+}
+.cx-documents-page h1,
+.cx-documents-page h2,
+.cx-documents-page h3 { letter-spacing: -.035em; }
+.cx-documents-page input:not([type="checkbox"]),
+.cx-documents-page textarea,
+.cx-documents-page select {
+  background: var(--cx-doc-white) !important;
+  color: var(--cx-doc-ink) !important;
+  border: 1px solid var(--cx-doc-line) !important;
+  border-radius: 4px 14px 4px 14px !important;
+}
+.cx-documents-page input::placeholder,
+.cx-documents-page textarea::placeholder { color: #88847b !important; }
+.cx-documents-page button { transition: background-color .16s ease, color .16s ease, border-color .16s ease, transform .16s ease; }
+.cx-documents-page button:focus-visible,
+.cx-documents-page input:focus-visible,
+.cx-documents-page textarea:focus-visible,
+.cx-documents-page select:focus-visible {
+  outline: 2px solid var(--cx-doc-blue);
+  outline-offset: 3px;
+}
+.cx-documents-page [style*="var(--bg-elevated)"] {
+  background: var(--cx-doc-white) !important;
+  border-color: var(--cx-doc-line) !important;
+}
+.cx-documents-page [style*="var(--bg-card)"] { border-color: var(--cx-doc-line) !important; }
+.cx-documents-page button[style*="var(--accent)"] {
+  border-radius: 999px !important;
+}
+.cx-documents-page button[style*="var(--accent)"]:hover {
+  filter: brightness(.94);
+  transform: translateY(-1px);
+}
+.cx-documents-page .border-r,
+.cx-documents-page .border-b { border-color: var(--cx-doc-line) !important; }
+.cx-documents-page .rounded-xl,
+.cx-documents-page .rounded-2xl,
+.cx-documents-page .rounded-3xl { box-shadow: none; }
+@media (max-width: 780px) {
+  .cx-documents-page { height: auto !important; min-height: calc(100vh - var(--header-h)); overflow: auto; flex-direction: column; }
+  .cx-documents-page > .w-72 { width: 100%; max-height: 42vh; border-right: 0 !important; border-bottom: 1px solid var(--cx-doc-line); }
+  .cx-documents-page > .flex-1 { min-height: 55vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-documents-page * { transition-duration: .01ms !important; }
+}
+
+
+
 /* ── Integrations — Colliq editorial workspace ──────────────────────────── */
 .cx-integrations-page {
   --cx-int-paper: #f6f2e9;
@@ -1377,4 +1441,3 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .cx-integrations-page * { transition-duration: .01ms !important; }
 }
-
