@@ -105,7 +105,7 @@ function RegisterPage() {
     <div className="cx-auth-page cx-auth-register min-h-screen flex" style={{ background: "var(--bg-base)" }}>
 
       {/* ── LEFT: form ── */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="cx-auth-form-panel flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: "radial-gradient(ellipse at 20% 60%, rgba(157,107,255,0.06) 0%, transparent 55%)" }} />
 
@@ -214,7 +214,7 @@ function RegisterPage() {
       </div>
 
       {/* ── RIGHT: visual ── */}
-      <div className="hidden lg:flex flex-col relative overflow-hidden"
+      <div className="cx-auth-visual cx-auth-register-visual hidden lg:flex flex-col relative overflow-hidden"
         style={{ width: "48%", background: "#060610" }}>
 
         {/* Orbs */}
