@@ -841,7 +841,7 @@ function AICreatorModal({
 }
 
 // ── Main page ──────────────────────────────────────────────────────────────
-export default function DashboardsPage() {
+function DashboardsPageContent() {
   // Dashboard list & active board
   const [boards, setBoards]           = useState<DashboardRecord[]>([]);
   const [activeId, setActiveId]       = useState<string | null>(null);
@@ -1190,6 +1190,15 @@ export default function DashboardsPage() {
             onAdd={addAIWidget} />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+
+export default function DashboardsPage() {
+  return (
+    <div className="cx-dashboards-page">
+      <DashboardsPageContent />
     </div>
   );
 }
