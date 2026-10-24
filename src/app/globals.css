@@ -1938,3 +1938,92 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     transition-duration: .01ms !important; animation-duration: .01ms !important;
   }
 }
+
+
+/* ── COLLIQ NAVIGATION EDITORIAL REFRESH ───────────────────────────── */
+.cx-sidebar-shell {
+  --cx-nav-ink: #191919;
+  --cx-nav-paper: #f6f2e9;
+  --cx-nav-blue: #315bff;
+  --cx-nav-muted: rgba(255,255,255,.56);
+  box-shadow: 8px 0 30px rgba(25,25,25,.08);
+}
+.cx-sidebar-shell:not(.cx-sidebar-mobile) {
+  background: linear-gradient(180deg, #20201f 0%, #171716 60%, #111110 100%) !important;
+  border-right: 1px solid rgba(255,255,255,.09) !important;
+}
+.cx-sidebar-shell nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.16) transparent;
+  padding: 12px 10px 8px !important;
+  gap: 3px !important;
+}
+.cx-sidebar-shell nav a {
+  min-height: 38px;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  letter-spacing: -.012em !important;
+}
+.cx-sidebar-shell nav a svg { transition: transform .16s ease, color .16s ease; }
+.cx-sidebar-shell nav a:hover svg { transform: translateX(1px); }
+.cx-sidebar-shell nav button {
+  border-radius: 9px !important;
+}
+.cx-sidebar-shell nav button span {
+  letter-spacing: .01em;
+}
+.cx-sidebar-shell a:focus-visible,
+.cx-sidebar-shell button:focus-visible {
+  outline: 2px solid #f4d76b !important;
+  outline-offset: 2px;
+}
+.cx-sidebar-shell [data-tour-id="tour-settings"] a {
+  border: 1px solid rgba(255,255,255,.08);
+}
+.cx-sidebar-shell [data-tour-id="tour-settings"] a:hover {
+  border-color: rgba(255,255,255,.16);
+}
+.cx-sidebar-shell .no-scrollbar::-webkit-scrollbar { width: 4px; }
+.cx-sidebar-shell .no-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 99px; }
+.cx-sidebar-mobile { box-shadow: 18px 0 55px rgba(0,0,0,.24); }
+.cx-topbar {
+  min-width: 0;
+  border-bottom-color: rgba(25,25,25,.12) !important;
+  box-shadow: 0 1px 0 rgba(25,25,25,.025) !important;
+  gap: clamp(8px, 1.1vw, 16px) !important;
+}
+.cx-topbar h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -.035em !important;
+}
+.cx-topbar button:focus-visible,
+.cx-topbar a:focus-visible {
+  outline: 2px solid #315bff !important;
+  outline-offset: 3px;
+}
+.cx-topbar > button[title="Quick create (⌘K)"] {
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  transition: transform .16s ease, background .16s ease !important;
+}
+.cx-topbar > button[title="Quick create (⌘K)"]:hover {
+  transform: translateY(-1px) !important;
+}
+.cx-topbar button[title="Search anything…"] { border-radius: 999px !important; }
+@media (max-width: 1023px) {
+  .cx-topbar { padding-inline: 14px !important; }
+}
+@media (max-width: 640px) {
+  .cx-topbar { gap: 7px !important; }
+  .cx-topbar > button[title="Quick create (⌘K)"] { width: 32px; height: 32px; }
+  .cx-topbar > a { gap: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-sidebar-shell *, .cx-sidebar-shell *::before, .cx-sidebar-shell *::after,
+  .cx-topbar *, .cx-topbar *::before, .cx-topbar *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
