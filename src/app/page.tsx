@@ -148,7 +148,7 @@ function BrandMoment() {
         <Kicker>COLLEAGUE + INTELLIGENCE</Kicker>
         <h2>Meet the colleague<br />who <em>connects the dots.</em></h2>
         <p>Not another layer to manage. A connected place where project work, team activity, client delivery, and contextual assistance can finally speak the same language.</p>
-        <LinkArrow href="/register" primary>Meet Colliq</LinkArrow>
+        <LinkArrow href="https://app.colliq.app/register" primary>Meet Colliq</LinkArrow>
       </Reveal>
     </section>
   );
@@ -356,7 +356,7 @@ function Navigation() {
     <nav className="mk-nav" aria-label="Primary navigation">
       <Link className="mk-logo" href="/" aria-label="Colliq home"><BrandMark /><b>colliq</b><span>WORK, CONNECTED.</span></Link>
       <div className={"mk-nav-links" + (open ? " open" : "")}>{links.map((link) => <a href={link.href} onClick={() => setOpen(false)} key={link.label}>{link.label}</a>)}</div>
-      <div className="mk-nav-actions"><Link className="mk-sign-in" href="/login">Sign in</Link><Link className="mk-nav-cta" href="/register">Get started <ArrowUpRight size={16} /></Link></div>
+      <div className="mk-nav-actions"><Link className="mk-sign-in" href="https://app.colliq.app/login">Sign in</Link><Link className="mk-nav-cta" href="https://app.colliq.app/register">Get started <ArrowUpRight size={16} /></Link></div>
       <button type="button" className="mk-menu-button" onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open}>{open ? <X size={21} /> : <Menu size={21} />}</button>
     </nav>
   );
@@ -372,7 +372,7 @@ function Hero() {
           <motion.p className="mk-eyebrow" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05 }}>THE WORKSPACE WITH A COLLEAGUE BUILT IN</motion.p>
           <h1><motion.span className="mk-headline-line" initial={reduce ? false : { opacity: 0, y: "105%" }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease, delay: 0.1 }}>Great work doesn’t</motion.span><motion.span className="mk-headline-line" initial={reduce ? false : { opacity: 0, y: "105%" }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease, delay: 0.22 }}>happen <em>in tabs.</em></motion.span></h1>
           <div className="mk-hero-bottom"><motion.p initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.55 }}>Colliq brings projects, people, clients, and contextual AI into one connected workspace—so your team can spend less time coordinating and more time making things happen.</motion.p>
-            <motion.div className="mk-hero-actions" initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.7 }}><LinkArrow href="/register" primary>Meet Colliq</LinkArrow><LinkArrow href="#ai">See how it works</LinkArrow></motion.div>
+            <motion.div className="mk-hero-actions" initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.7 }}><LinkArrow href="https://app.colliq.app/register" primary>Meet Colliq</LinkArrow><LinkArrow href="#ai">See how it works</LinkArrow></motion.div>
           </div>
         </div>
         <LivingCanvas />
@@ -389,7 +389,7 @@ function FinalCTA() {
       <Kicker>ONE PLACE. MORE MOMENTUM.</Kicker>
       <h2>Make room for<br /><em>better work.</em></h2>
       <p>Bring projects, people, clients, and AI together. Give your team a smarter place to plan, collaborate, and move work forward.</p>
-      <div className="mk-final-actions"><LinkArrow href="/register" primary>Create your workspace</LinkArrow><LinkArrow href="#top">Back to the canvas</LinkArrow></div>
+      <div className="mk-final-actions"><LinkArrow href="https://app.colliq.app/register" primary>Create your workspace</LinkArrow><LinkArrow href="#top">Back to the canvas</LinkArrow></div>
     </section>
   );
 }
@@ -398,7 +398,7 @@ function Footer() {
   return (
     <footer className="mk-footer">
       <div className="mk-footer-top"><div className="mk-footer-brand"><BrandMark /><b>colliq</b><span>Your smartest colleague.</span></div>
-        <div className="mk-footer-links"><div><small>EXPLORE</small><a href="#platform">Platform</a><a href="#ai">AI colleague</a><a href="#product">Product views</a></div><div><small>FOR TEAMS</small><a href="#teams">Agencies</a><a href="#teams">Software teams</a><a href="#teams">Growing teams</a></div><div><small>ACCOUNT</small><Link href="/login">Sign in</Link><Link href="/register">Create account</Link><Link href="/terms">Terms</Link></div></div>
+        <div className="mk-footer-links"><div><small>EXPLORE</small><a href="#platform">Platform</a><a href="#ai">AI colleague</a><a href="#product">Product views</a></div><div><small>FOR TEAMS</small><a href="#teams">Agencies</a><a href="#teams">Software teams</a><a href="#teams">Growing teams</a></div><div><small>ACCOUNT</small><Link href="https://app.colliq.app/login">Sign in</Link><Link href="https://app.colliq.app/register">Create account</Link><Link href="/terms">Terms</Link></div></div>
       </div>
       <div className="mk-footer-bottom"><span>© {new Date().getFullYear()} COLLIQ</span><span>Illustrative product previews are labelled.</span><span>MADE FOR WORK THAT MATTERS</span></div>
     </footer>
