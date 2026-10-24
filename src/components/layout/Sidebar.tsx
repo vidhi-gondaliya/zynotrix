@@ -338,9 +338,7 @@ export function Sidebar() {
             }}
           >
             <span aria-hidden="true" className="cx-brand-glyph">
-              <span />
-              <span />
-              <span />
+              <i /><i /><i /><i />
             </span>
           </motion.div>
 

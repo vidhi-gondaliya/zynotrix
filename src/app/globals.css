@@ -2091,3 +2091,29 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (max-width: 1023px) {
   .cx-sidebar-shell > div > div:first-child { height: 62px !important; }
 }
+
+/* ── Shared Colliq brand mark: match the landing page ───────────────── */
+.cx-brand-glyph {
+  width: 32px !important;
+  height: 32px !important;
+  display: inline-grid !important;
+  grid-template-columns: repeat(2, 9px);
+  grid-template-rows: repeat(2, 9px);
+  gap: 2px;
+  place-content: center;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+.cx-brand-glyph i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50% 50% 50% 0;
+  background: #315bff;
+}
+.cx-brand-glyph i:nth-child(2) { background: #ff6243; transform: rotate(90deg); }
+.cx-brand-glyph i:nth-child(3) { background: #f4d76b; transform: rotate(270deg); }
+.cx-brand-glyph i:nth-child(4) { background: #176b54; transform: rotate(180deg); }
