@@ -103,7 +103,7 @@ function StatCard({ label, value, icon, color, bg, glow, index }: {
   );
 }
 
-export default function RewardsPage() {
+function RewardsPageContent() {
   const { data: session } = useSession();
   const [tab, setTab]       = useState<Tab>("My Rewards");
   const [data, setData]     = useState<RewardsData | null>(null);
@@ -659,6 +659,15 @@ export default function RewardsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+
+export default function RewardsPage() {
+  return (
+    <div className="cx-rewards-page">
+      <RewardsPageContent />
     </div>
   );
 }
