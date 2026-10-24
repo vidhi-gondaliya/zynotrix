@@ -102,7 +102,7 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: "var(--bg-base)" }}>
+    <div className="cx-auth-page cx-auth-register min-h-screen flex" style={{ background: "var(--bg-base)" }}>
 
       {/* ── LEFT: form ── */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -116,10 +116,7 @@ function RegisterPage() {
 
           {/* Logo */}
           <div className="flex items-center gap-2.5 mb-10">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #9D6BFF, #00CFFF)", boxShadow: "0 0 20px rgba(157,107,255,0.4)" }}>
-              <Zap className="w-4 h-4 text-white" />
-            </div>
+            <span aria-hidden="true" className="cx-auth-brand-mark"><i /><i /><i /><i /></span>
             <div className="flex flex-col">
               <span className="text-[15px] font-black tracking-[-0.04em] leading-none" style={{ color: "var(--text-foreground)" }}>COLLIQ</span>
               <span className="text-[8px] font-semibold tracking-widest uppercase leading-none mt-0.5" style={{ color: "var(--text-subtle)" }}>by autonoid.ai</span>
