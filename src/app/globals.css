@@ -2117,3 +2117,76 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .cx-brand-glyph i:nth-child(2) { background: #ff6243; transform: rotate(90deg); }
 .cx-brand-glyph i:nth-child(3) { background: #f4d76b; transform: rotate(270deg); }
 .cx-brand-glyph i:nth-child(4) { background: #176b54; transform: rotate(180deg); }
+
+
+/* ── COLLIQ AUTH PAGES — MATCH THE PUBLIC BRAND ───────────────────── */
+.cx-auth-page {
+  --cx-auth-paper: #f6f2e9;
+  --cx-auth-card: #fffdf7;
+  --cx-auth-ink: #191919;
+  --cx-auth-blue: #315bff;
+  --cx-auth-orange: #ff6243;
+  --cx-auth-butter: #f4d76b;
+  --cx-auth-jade: #176b54;
+  background: var(--cx-auth-paper) !important;
+  color: var(--cx-auth-ink);
+  font-family: "DM Sans", sans-serif;
+}
+.cx-auth-page h1, .cx-auth-page h2, .cx-auth-page h3 {
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: -.045em;
+}
+.cx-auth-page input:not([type="checkbox"]) {
+  background: var(--cx-auth-card) !important;
+  border: 1px solid rgba(25,25,25,.2) !important;
+  border-radius: 10px !important;
+  color: var(--cx-auth-ink) !important;
+  box-shadow: none !important;
+}
+.cx-auth-page input:focus {
+  border-color: var(--cx-auth-blue) !important;
+  box-shadow: 0 0 0 3px rgba(49,91,255,.12) !important;
+}
+.cx-auth-page button[type="submit"] {
+  background: var(--cx-auth-blue) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  transition: background .18s ease, transform .18s ease;
+}
+.cx-auth-page button[type="submit"]:hover:not(:disabled) {
+  background: var(--cx-auth-ink) !important;
+  transform: translateY(-1px);
+}
+.cx-auth-page a { transition: color .18s ease; }
+.cx-auth-page a:hover { color: var(--cx-auth-blue); }
+.cx-auth-brand-mark {
+  width: 36px; height: 36px; flex: 0 0 auto;
+  display: inline-grid; place-content: center;
+  grid-template-columns: repeat(2, 9px);
+  grid-template-rows: repeat(2, 9px); gap: 2px;
+}
+.cx-auth-brand-mark i {
+  display: block; width: 9px; height: 9px;
+  border-radius: 50% 50% 50% 0; background: var(--cx-auth-blue);
+}
+.cx-auth-brand-mark i:nth-child(2) { background: var(--cx-auth-orange); transform: rotate(90deg); }
+.cx-auth-brand-mark i:nth-child(3) { background: var(--cx-auth-butter); transform: rotate(270deg); }
+.cx-auth-brand-mark i:nth-child(4) { background: var(--cx-auth-jade); transform: rotate(180deg); }
+.cx-auth-login > div:first-child,
+.cx-auth-register > div:first-child {
+  background: var(--cx-auth-paper) !important;
+}
+.cx-auth-login > div:last-child,
+.cx-auth-register > div:last-child {
+  background: var(--cx-auth-ink) !important;
+  border-left: 1px solid rgba(25,25,25,.12);
+}
+.cx-auth-login > div:last-child h2,
+.cx-auth-register > div:last-child h2 { color: var(--cx-auth-paper) !important; }
+.cx-auth-login > div:last-child [style*="rgba(129,140,248"],
+.cx-auth-register > div:last-child [style*="rgba(157,107,255"] { color: var(--cx-auth-butter) !important; }
+@media (max-width: 1023px) {
+  .cx-auth-page > div:last-child { display: none !important; }
+  .cx-auth-page > div:first-child { width: 100%; }
+}
