@@ -293,7 +293,7 @@ function NewChannelModal({ onClose, onCreated }: {
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export default function ChannelPage({ params }: { params: { channelId: string } }) {
+function ChannelPageContent({ params }: { params: { channelId: string } }) {
   const { data: session } = useSession();
   const { channels, messages, setChannels, setMessages, addMessage } = useChat();
   const [input, setInput]           = useState("");
@@ -513,6 +513,15 @@ export default function ChannelPage({ params }: { params: { channelId: string } 
             onMembersUpdated={updateChannelMembers} />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+
+export default function ChannelPage() {
+  return (
+    <div className="cx-chat-channelId-page">
+      <ChannelPageContent />
     </div>
   );
 }
