@@ -18,21 +18,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // 10 failed attempts per email per 15 minutes
-        if (isRateLimited(`login:${(credentials.email as string).toLowerCase()}`, 10, 15 * 60_000)) {
+        const email = String(credentials.email).trim().toLowerCase();
+        if (isRateLimited(`login:${email}`, 10, 15 * 60_000)) {
           throw new Error("Too many login attempts. Please wait 15 minutes.");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.passwordHash) return null;
 
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash
-        );
+        const valid = await bcrypt.compare(String(credentials.password), user.passwordHash);
         if (!valid) return null;
 
         return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role };
@@ -43,50 +37,55 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            authorization: {
-              params: {
-                scope: "openid email profile",
-              },
-            },
+            authorization: { params: { scope: "openid email profile" } },
           }),
         ]
       : []),
   ],
   session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
+  pages: { signIn: "/login", error: "/login" },
   callbacks: {
-    async jwt({ token, user, account, trigger, session: sessionData }) {
-      // Always ensure token.id is set (token.sub is the built-in NextAuth user id)
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id ?? token.sub ?? "";
+        token.role = (user as { role?: string }).role ?? "MEMBER";
+      }
       if (!token.id && token.sub) token.id = token.sub;
 
-      if (user) {
-        token.id   = user.id ?? token.sub ?? "";
-        token.role = (user as { role?: string }).role ?? "MEMBER";
-        // Look up org membership on initial sign-in
-        try {
-          const member = await prisma.organizationMember.findFirst({
-            where: { userId: user.id ?? "" },
-            select: { organizationId: true, role: true },
-          });
-          token.organizationId = member?.organizationId ?? null;
-          token.orgRole        = member?.role ?? null;
-        } catch {
-          token.organizationId = null;
-          token.orgRole        = null;
-        }
-      }
       if (account?.access_token) {
-        token.accessToken  = account.access_token;
+        token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.accessTokenExpiresAt = account.expires_at
-          ? account.expires_at * 1000          // convert seconds → ms
-          : Date.now() + 3600 * 1000;          // default 1 hour
+          ? account.expires_at * 1000
+          : Date.now() + 3600 * 1000;
       }
 
-      // Refresh Google access token when it has expired
+      // Never trust organizationId or orgRole supplied through client session.update().
+      // Resolve membership from the database so removed members and changed roles
+      // do not retain stale authorization claims in their JWT.
+      if (token.id) {
+        try {
+          const [member, currentUser] = await Promise.all([
+            prisma.organizationMember.findFirst({
+              where: { userId: String(token.id) },
+              orderBy: { joinedAt: "asc" },
+              select: { organizationId: true, role: true },
+            }),
+            prisma.user.findUnique({
+              where: { id: String(token.id) },
+              select: { role: true },
+            }),
+          ]);
+          token.organizationId = member?.organizationId ?? null;
+          token.orgRole = member?.role ?? null;
+          if (currentUser) token.role = currentUser.role;
+        } catch {
+          // Fail closed for workspace authorization if membership cannot be verified.
+          token.organizationId = null;
+          token.orgRole = null;
+        }
+      }
+
       if (
         token.refreshToken &&
         token.accessTokenExpiresAt &&
@@ -97,9 +96,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
-              client_id:     process.env.GOOGLE_CLIENT_ID ?? "",
+              client_id: process.env.GOOGLE_CLIENT_ID ?? "",
               client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-              grant_type:    "refresh_token",
+              grant_type: "refresh_token",
               refresh_token: token.refreshToken as string,
             }),
           });
@@ -109,28 +108,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.accessTokenExpiresAt = Date.now() + (refreshed.expires_in ?? 3600) * 1000;
           }
         } catch {
-          // If refresh fails, token remains stale — Google Meet links will regenerate on next sign-in
+          // Keep the previous token; integration actions must handle stale credentials.
         }
-      }
-      // Allow frontend to update org in session after workspace creation
-      if (trigger === "update" && sessionData) {
-        if (sessionData.organizationId !== undefined) token.organizationId = sessionData.organizationId;
-        if (sessionData.orgRole !== undefined)        token.orgRole        = sessionData.orgRole;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        // token.id set by our jwt callback; token.sub is NextAuth's built-in fallback
-        session.user.id             = (token.id ?? token.sub) as string;
-        session.user.role           = token.role as string;
-        session.user.accessToken    = token.accessToken as string | undefined;
+        session.user.id = (token.id ?? token.sub) as string;
+        session.user.role = token.role as string;
+        session.user.accessToken = token.accessToken as string | undefined;
         session.user.organizationId = token.organizationId as string | null | undefined;
-        session.user.orgRole        = token.orgRole as string | null | undefined;
+        session.user.orgRole = token.orgRole as string | null | undefined;
       }
       return session;
     },
   },
-  // Support both NEXTAUTH_SECRET (legacy) and AUTH_SECRET (Auth.js v5 default)
   secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
 });
