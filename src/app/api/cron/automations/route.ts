@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { runAutomations } from "@/lib/automations";
 
-// Vercel Cron calls this daily at 08:00 UTC — no user session available.
-// Secured by CRON_SECRET env var set in Vercel dashboard.
+// Vercel Cron calls this daily at 08:00 UTC. Fail closed if the secret is
+// missing or the request does not present the exact bearer token.
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && secret !== `Bearer ${process.env.CRON_SECRET}`) {
+  const expected = process.env.CRON_SECRET;
+  const supplied = req.headers.get("authorization");
+
+  if (!expected || !supplied || supplied !== `Bearer ${expected}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -21,23 +23,19 @@ export async function GET(req: NextRequest) {
   });
 
   const orgIds: string[] = orgs.map((o: { organizationId: string }) => o.organizationId);
-
   const results: Record<string, unknown> = {};
 
   for (const orgId of orgIds) {
     const orgResults: string[] = [];
 
-    // ── daily_schedule ──────────────────────────────────────────────
     await runAutomations(orgId, "daily_schedule", {});
     orgResults.push("daily_schedule");
 
-    // ── weekly_schedule — Mondays only ──────────────────────────────
     if (dayOfWeek === 1) {
       await runAutomations(orgId, "weekly_schedule", {});
       orgResults.push("weekly_schedule");
     }
 
-    // ── task_overdue ─────────────────────────────────────────────────
     const overdueTasks = await prisma.task.findMany({
       where: {
         project: { organizationId: orgId },
@@ -56,7 +54,6 @@ export async function GET(req: NextRequest) {
     }
     if (overdueTasks.length) orgResults.push(`task_overdue (${overdueTasks.length})`);
 
-    // ── task_due_soon — tasks due within 24 hours ────────────────────
     const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const dueSoonTasks = await prisma.task.findMany({
       where: {
@@ -76,17 +73,9 @@ export async function GET(req: NextRequest) {
     }
     if (dueSoonTasks.length) orgResults.push(`task_due_soon (${dueSoonTasks.length})`);
 
-    // ── project_health_low ───────────────────────────────────────────
     const projects = await prisma.project.findMany({
       where: { organizationId: orgId },
-      select: {
-        id: true,
-        _count: {
-          select: {
-            tasks: true,
-          },
-        },
-      },
+      select: { id: true, _count: { select: { tasks: true } } },
     });
 
     for (const project of projects) {
@@ -97,12 +86,14 @@ export async function GET(req: NextRequest) {
         where: { projectId: project.id, status: "DONE" },
       });
       const overdue = await prisma.task.count({
-        where: { projectId: project.id, dueDate: { lt: now }, status: { notIn: ["DONE", "ARCHIVED"] } },
+        where: {
+          projectId: project.id,
+          dueDate: { lt: now },
+          status: { notIn: ["DONE", "ARCHIVED"] },
+        },
       });
 
-      // Simple health score: penalise overdue tasks
       const healthScore = Math.max(0, Math.round(((done / total) * 100) - (overdue / total) * 50));
-
       await runAutomations(orgId, "project_health_low", {
         projectId: project.id,
         projectHealthScore: healthScore,
@@ -110,7 +101,6 @@ export async function GET(req: NextRequest) {
     }
     orgResults.push("project_health_low (checked)");
 
-    // ── member_overloaded ────────────────────────────────────────────
     const memberTaskCounts = await prisma.task.groupBy({
       by: ["assigneeId"],
       where: {
