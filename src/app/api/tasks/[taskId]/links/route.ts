@@ -84,7 +84,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { taskId: s
     return NextResponse.json({ error: "linkId is required." }, { status: 400 });
   }
   const link = await prisma.taskLink.findFirst({
-    where: { id: linkId, taskId: params.taskId, task: { project: { organizationId: ctx.orgId } },
+    where: { id: linkId, taskId: params.taskId, task: { project: { organizationId: ctx.orgId } } },
   });
   if (!link) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await prisma.taskLink.delete({ where: { id: link.id } });
