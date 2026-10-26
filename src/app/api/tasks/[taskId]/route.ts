@@ -7,6 +7,8 @@ import { notifySlackForTaskEvent } from "@/lib/integrations/slack";
 import { requireOrg, isOrgError } from "@/lib/org";
 import { runAutomations } from "@/lib/automations";
 
+function safeTags(value: string): unknown[] { try { const parsed: unknown = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch { return []; } }
+
 export async function GET(_req: NextRequest, { params }: { params: { taskId: string } }) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
@@ -26,7 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: { taskId: str
   });
 
   if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ ...task, tags: JSON.parse(task.tags) });
+  return NextResponse.json({ ...task, tags: safeTags(task.tags) });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { taskId: string } }) {
@@ -34,12 +36,58 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
   if (isOrgError(ctx)) return ctx;
   const { orgId, userId } = ctx;
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    const parsed: unknown = await req.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return NextResponse.json({ error: "Request body must be a JSON object." }, { status: 400 });
+    }
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON request body." }, { status: 400 });
+  }
+
+  if (body.title !== undefined && (typeof body.title !== "string" || !body.title.trim() || body.title.length > 300)) {
+    return NextResponse.json({ error: "Task title is required and must be at most 300 characters." }, { status: 400 });
+  }
+  if (body.description !== undefined && body.description !== null && (typeof body.description !== "string" || body.description.length > 10000)) {
+    return NextResponse.json({ error: "Task description must be at most 10000 characters." }, { status: 400 });
+  }
+  if (body.status !== undefined && (typeof body.status !== "string" || !["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "DONE", "CANCELLED"].includes(body.status))) {
+    return NextResponse.json({ error: "Invalid task status." }, { status: 400 });
+  }
+  if (body.priority !== undefined && (typeof body.priority !== "string" || !["LOW", "MEDIUM", "HIGH", "URGENT"].includes(body.priority))) {
+    return NextResponse.json({ error: "Invalid task priority." }, { status: 400 });
+  }
+  if (body.dueDate !== undefined && body.dueDate !== null && body.dueDate !== "" && (typeof body.dueDate !== "string" || !Number.isFinite(Date.parse(body.dueDate)))) {
+    return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
+  }
+  if (body.estimatedHours !== undefined && body.estimatedHours !== null && body.estimatedHours !== "") {
+    const hours = typeof body.estimatedHours === "number" ? body.estimatedHours : typeof body.estimatedHours === "string" ? Number(body.estimatedHours) : NaN;
+    if (!Number.isFinite(hours) || hours < 0 || hours > 100000) {
+      return NextResponse.json({ error: "Estimated hours must be a non-negative number." }, { status: 400 });
+    }
+    body.estimatedHours = hours;
+  }
+  if (body.tags !== undefined && (!Array.isArray(body.tags) || body.tags.length > 100 || body.tags.some((tag) => typeof tag !== "string" || tag.length > 100))) {
+    return NextResponse.json({ error: "Tags must be an array of at most 100 strings." }, { status: 400 });
+  }
 
   const existing = await prisma.task.findFirst({
     where: { id: params.taskId, project: { organizationId: orgId } },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (body.assigneeId !== undefined && body.assigneeId !== null && body.assigneeId !== "") {
+    if (typeof body.assigneeId !== "string" || body.assigneeId.length > 128) {
+      return NextResponse.json({ error: "Invalid assignee." }, { status: 400 });
+    }
+    const membership = await prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId: orgId, userId: body.assigneeId } },
+      select: { userId: true },
+    });
+    if (!membership) return NextResponse.json({ error: "Assignee must be a member of this workspace." }, { status: 400 });
+  }
 
   const task = await prisma.task.update({
     where: { id: params.taskId },
@@ -114,11 +162,11 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
   if (body.title !== undefined || body.description !== undefined || body.tags !== undefined) {
     await prisma.searchIndex.upsert({
       where: { sourceId: params.taskId },
-      update: { content: [task.title, task.description ?? "", JSON.parse(task.tags).join(" ")].filter(Boolean).join(" ") },
+      update: { content: [task.title, task.description ?? "", safeTags(task.tags).join(" ")].filter(Boolean).join(" ") },
       create: {
         sourceType: "TASK",
         sourceId: task.id,
-        content: [task.title, task.description ?? "", JSON.parse(task.tags).join(" ")].filter(Boolean).join(" "),
+        content: [task.title, task.description ?? "", safeTags(task.tags).join(" ")].filter(Boolean).join(" "),
         projectId: task.projectId,
         authorId: userId,
         organizationId: orgId,
@@ -126,7 +174,7 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
     });
   }
 
-  return NextResponse.json({ ...task, tags: JSON.parse(task.tags) });
+  return NextResponse.json({ ...task, tags: safeTags(task.tags) });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { taskId: string } }) {
