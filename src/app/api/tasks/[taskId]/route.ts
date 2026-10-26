@@ -53,7 +53,7 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
   if (body.description !== undefined && body.description !== null && (typeof body.description !== "string" || body.description.length > 10000)) {
     return NextResponse.json({ error: "Task description must be at most 10000 characters." }, { status: 400 });
   }
-  if (body.status !== undefined && (typeof body.status !== "string" || !["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "DONE", "CANCELLED"].includes(body.status))) {
+  if (body.status !== undefined && (typeof body.status !== "string" || !["BACKLOG", "TODO", "IN_PROGRESS", "REVIEW", "DONE", "ARCHIVED"].includes(body.status))) {
     return NextResponse.json({ error: "Invalid task status." }, { status: 400 });
   }
   if (body.priority !== undefined && (typeof body.priority !== "string" || !["LOW", "MEDIUM", "HIGH", "URGENT"].includes(body.priority))) {
