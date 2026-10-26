@@ -4,7 +4,7 @@ import { requireOrg, isOrgError } from "@/lib/org";
 import { hasPermission } from "@/lib/permissions";
 import { requireUnderLimit } from "@/lib/plan-gate";
 
-const PROJECT_STATUSES = new Set(["ACTIVE", "COMPLETED", "ON_HOLD", "ARCHIVED"]);
+const PROJECT_STATUSES = new Set(["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"]);
 
 export async function GET() {
   const ctx = await requireOrg();
