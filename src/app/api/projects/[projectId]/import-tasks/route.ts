@@ -150,8 +150,10 @@ export async function POST(
     if (ext === "csv") {
       const text  = await file.text();
       const lines = text.split("\n").filter((l) => l.trim());
+      if (!lines.length) return NextResponse.json({ error: "CSV file is empty" }, { status: 400 });
       if (lines.length > 1001) return NextResponse.json({ error: "Import is limited to 1,000 data rows" }, { status: 413 });
-      const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase().replace(/\s+/g, "_"));
+      const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase().replace(/[\s-]+/g, "_"));
+      if (!headers.includes("title")) return NextResponse.json({ error: "CSV must include a title column" }, { status: 400 });
 
       const parseRow = (line: string): Record<string, string> => {
         const vals = line.match(/("(?:[^"]|"")*"|[^,]*)/g) ?? [];
