@@ -98,7 +98,9 @@ export async function PUT(req: NextRequest, { params }: { params: { taskId: stri
       priority: body.priority,
       assigneeId: body.assigneeId !== undefined ? body.assigneeId || null : undefined,
       dueDate: body.dueDate !== undefined ? (body.dueDate ? new Date(body.dueDate) : null) : undefined,
-      estimatedHours: body.estimatedHours !== undefined ? (body.estimatedHours ? parseFloat(body.estimatedHours) : null) : undefined,
+      estimatedHours: body.estimatedHours !== undefined
+        ? (body.estimatedHours === null || body.estimatedHours === "" ? null : Number(body.estimatedHours))
+        : undefined,
       tags: body.tags !== undefined ? JSON.stringify(body.tags) : undefined,
     },
     include: {
