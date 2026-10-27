@@ -5,92 +5,98 @@ import { createNotification } from "@/lib/notifications";
 import { isRateLimited } from "@/lib/rate-limit";
 import { sendNewMemberNotification } from "@/lib/email";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  // 10 registrations per IP per hour
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (isRateLimited(`register:${ip}`, 10, 60 * 60_000)) {
     return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
 
-  const { name, email, password, inviteToken } = await req.json();
-
-  if (!email || !password) {
-    return NextResponse.json({ error: "Email and password required" }, { status: 400 });
-  }
-  if (password.length < 8) {
-    return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+  let body: { name?: unknown; email?: unknown; password?: unknown; inviteToken?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const normalEmail = email.toLowerCase().trim();
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  const name = typeof body.name === "string" ? body.name.trim().slice(0, 100) : "";
+  const inviteToken = typeof body.inviteToken === "string" ? body.inviteToken.trim() : "";
 
-  const existing = await prisma.user.findUnique({ where: { email: normalEmail } });
-  if (existing) {
-    return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+  if (!email || !password) return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+  if (email.length > 254 || !EMAIL_RE.test(email)) return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+  if (password.length < 12 || password.length > 1024) {
+    return NextResponse.json({ error: "Password must be between 12 and 1024 characters" }, { status: 400 });
   }
-
-  // Validate invite token if provided
-  let invite: { id: string; organizationId: string; role: string; accepted: boolean; expires: Date; email: string } | null = null;
-  if (inviteToken) {
-    invite = await (prisma as any).invitation.findUnique({
-      where: { token: inviteToken },
-      select: { id: true, organizationId: true, role: true, accepted: true, expires: true, email: true },
-    });
-    if (!invite || invite.accepted || new Date(invite.expires) < new Date()) {
-      return NextResponse.json({ error: "Invalid or expired invitation" }, { status: 400 });
-    }
-    if (invite.email !== normalEmail) {
-      return NextResponse.json({ error: "This invitation was sent to a different email address" }, { status: 400 });
-    }
+  if (body.inviteToken !== undefined && (typeof body.inviteToken !== "string" || inviteToken.length < 16 || inviteToken.length > 256)) {
+    return NextResponse.json({ error: "Invalid or expired invitation" }, { status: 400 });
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const now = new Date();
 
-  // First user ever gets OWNER role
-  const userCount = await prisma.user.count();
-  const role = userCount === 0 ? "OWNER" : "MEMBER";
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const invite = inviteToken
+        ? await tx.invitation.findFirst({
+            where: { token: inviteToken, email, accepted: false, expires: { gt: now } },
+            select: { id: true, organizationId: true, role: true },
+          })
+        : null;
+      if (inviteToken && !invite) throw new Error("INVALID_INVITATION");
 
-  const user = await prisma.user.create({
-    data: { name, email: normalEmail, passwordHash, role },
-  });
-
-  if (invite) {
-    // Add to org with invited role
-    await prisma.organizationMember.create({
-      data: { organizationId: invite.organizationId, userId: user.id, role: invite.role },
-    });
-    await (prisma as any).invitation.update({ where: { id: invite.id }, data: { accepted: true } });
-
-    // Notify org owners that a new member has joined
-    try {
-      const org = await prisma.organization.findUnique({
-        where: { id: invite.organizationId },
-        select: { name: true },
+      const userCount = await tx.user.count();
+      const user = await tx.user.create({
+        data: { name: name || null, email, passwordHash, role: !invite && userCount === 0 ? "OWNER" : "MEMBER" },
+        select: { id: true, name: true, email: true },
       });
-      const owners = await prisma.organizationMember.findMany({
-        where: { organizationId: invite.organizationId, role: "OWNER" },
-        include: { user: { select: { email: true, name: true } } },
-      });
-      for (const owner of owners) {
-        await sendNewMemberNotification(
-          owner.user.email,
-          owner.user.name ?? "Owner",
-          user.name ?? "",
-          normalEmail,
-          org?.name ?? "your workspace"
-        );
+
+      if (invite) {
+        const consumed = await tx.invitation.updateMany({
+          where: { id: invite.id, accepted: false, expires: { gt: now }, email },
+          data: { accepted: true },
+        });
+        if (consumed.count !== 1) throw new Error("INVALID_INVITATION");
+
+        await tx.organizationMember.create({
+          data: { organizationId: invite.organizationId, userId: user.id, role: invite.role },
+        });
+        const general = await tx.channel.findFirst({
+          where: { organizationId: invite.organizationId, isGeneral: true },
+          select: { id: true },
+        });
+        if (general) await tx.channelMember.create({ data: { channelId: general.id, userId: user.id } });
       }
-    } catch { /* non-fatal — don't block registration */ }
+      return { user, organizationId: invite?.organizationId ?? null };
+    }, { isolationLevel: "Serializable" });
+
+    await createNotification(result.user.id, "SYSTEM", "Welcome to Colliq! 🎉", "Your workspace is ready.").catch(() => {});
+
+    if (result.organizationId) {
+      try {
+        const org = await prisma.organization.findUnique({ where: { id: result.organizationId }, select: { name: true } });
+        const owners = await prisma.organizationMember.findMany({
+          where: { organizationId: result.organizationId, role: "OWNER" },
+          include: { user: { select: { email: true, name: true } } },
+        });
+        for (const owner of owners) {
+          await sendNewMemberNotification(owner.user.email, owner.user.name ?? "Owner", result.user.name ?? "", result.user.email, org?.name ?? "your workspace");
+        }
+      } catch {
+        // Email notifications are best-effort after the registration transaction commits.
+      }
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_INVITATION") {
+      return NextResponse.json({ error: "Invalid or expired invitation" }, { status: 400 });
+    }
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+    }
+    console.error("[auth/register] registration failed", error);
+    return NextResponse.json({ error: "Unable to complete registration. Please try again." }, { status: 500 });
   }
-
-  // Add user to general channel
-  const general = await prisma.channel.findFirst({ where: { isGeneral: true } });
-  if (general) {
-    await prisma.channelMember.create({
-      data: { channelId: general.id, userId: user.id },
-    }).catch(() => {});
-  }
-
-  await createNotification(user.id, "SYSTEM", "Welcome to Colliq! 🎉", "Your workspace is ready.");
-
-  return NextResponse.json({ success: true });
 }
