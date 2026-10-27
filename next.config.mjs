@@ -4,6 +4,8 @@ const nextConfig = {
     domains: ["lh3.googleusercontent.com", "avatars.githubusercontent.com"],
   },
   experimental: {
+    // Keep production builds within constrained hosting-container process/thread limits.
+    cpus: 1,
     // Tell the bundler to tree-shake barrel packages properly —
     // prevents lucide-react from loading all ~1500 icons on every page
     optimizePackageImports: [
