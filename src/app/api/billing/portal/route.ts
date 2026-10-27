@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { requireOrg, isOrgError } from "@/lib/org";
+import { hasPermissionAsync } from "@/lib/permissions";
 
 /**
  * POST /api/billing/portal
@@ -10,7 +11,10 @@ import { requireOrg, isOrgError } from "@/lib/org";
 export async function POST() {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { orgId } = ctx;
+  const { orgId, orgRole } = ctx;
+  if (!(await hasPermissionAsync(orgRole, orgId, "settings:access"))) {
+    return NextResponse.json({ error: "Only workspace administrators can manage billing." }, { status: 403 });
+  }
 
   const sub = await (prisma as any).subscription.findUnique({
     where: { organizationId: orgId },
