@@ -106,18 +106,46 @@ export async function consumeCredits(orgId: string, amount: number): Promise<boo
   return true;
 }
 
-/** Add credits from a TopUp purchase. */
-export async function addCredits(orgId: string, amount: number, description: string): Promise<void> {
+/**
+ * Add credits from a TopUp purchase.
+ * With sourceId, the ledger insert and balance update are atomic and a unique
+ * source key prevents a payment from being credited more than once.
+ */
+export async function addCredits(
+  orgId: string,
+  amount: number,
+  description: string,
+  sourceId?: string
+): Promise<void> {
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
+    throw new Error("Credit top-up amount must be a positive safe integer");
+  }
+
   await getOrCreateBalance(orgId);
 
-  await (prisma as any).aiCreditBalance.update({
-    where:  { organizationId: orgId },
-    data:   { balance: { increment: amount } },
-  });
-
-  await (prisma as any).aiCreditTransaction.create({
-    data: { organizationId: orgId, type: "TOPUP", amount, description },
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await (tx as any).aiCreditTransaction.create({
+        data: { organizationId: orgId, type: "TOPUP", amount, description, sourceId: sourceId ?? null },
+      });
+      await (tx as any).aiCreditBalance.update({
+        where: { organizationId: orgId },
+        data: { balance: { increment: amount } },
+      });
+    });
+  } catch (error) {
+    // The unique database constraint is the concurrency-safe duplicate guard.
+    if (sourceId && typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
+      const existing = await (prisma as any).aiCreditTransaction.findUnique({
+        where: { sourceId },
+        select: { organizationId: true, type: true, amount: true },
+      });
+      if (existing?.organizationId === orgId && existing.type === "TOPUP" && existing.amount === amount) {
+        return;
+      }
+    }
+    throw error;
+  }
 }
 
 /** Grant the plan's monthly quota on subscription creation or plan change. */
