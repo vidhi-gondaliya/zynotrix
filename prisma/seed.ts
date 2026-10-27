@@ -9,6 +9,14 @@ const daysFromNow = (n: number) => new Date(now.getTime() + n * 86400000);
 const hoursAgo = (n: number) => new Date(now.getTime() - n * 3600000);
 
 async function main() {
+  // This seed creates predictable demo accounts with a shared password.
+  // Never allow it to run against production accidentally.
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error(
+      "Refusing to seed demo data in production. Set ALLOW_DEMO_SEED=true only for an intentional, reviewed operation."
+    );
+  }
+
   console.log("🌱 Seeding demo database...");
 
   const hash = await bcrypt.hash("password123", 12);
