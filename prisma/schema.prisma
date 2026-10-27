@@ -995,6 +995,7 @@ model AiCreditTransaction {
   type           String   // MONTHLY_GRANT | TOPUP | USAGE
   amount         Int      // positive = granted, negative = used
   description    String
+  sourceId       String?  @unique
   createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
@@ -1066,6 +1067,7 @@ model BillingInvoice {
   id              String    @id @default(cuid())
   organizationId  String
   stripeInvoiceId String?   @unique
+  stripeCheckoutSessionId String? @unique
   amount          Int       // cents
   currency        String    @default("usd")
   status          String    // paid | open | void | draft
