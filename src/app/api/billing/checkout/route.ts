@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe, PLANS, getPlan } from "@/lib/stripe";
 import { requireOrg, isOrgError } from "@/lib/org";
+import { hasPermissionAsync } from "@/lib/permissions";
 
 /**
  * POST /api/billing/checkout
@@ -11,9 +12,20 @@ import { requireOrg, isOrgError } from "@/lib/org";
 export async function POST(req: NextRequest) {
   const ctx = await requireOrg();
   if (isOrgError(ctx)) return ctx;
-  const { orgId, userId } = ctx;
+  const { orgId, userId, orgRole } = ctx;
+  if (!(await hasPermissionAsync(orgRole, orgId, "settings:access"))) {
+    return NextResponse.json({ error: "Only workspace administrators can manage billing." }, { status: 403 });
+  }
 
-  const { planId, billingCycle = "monthly" } = await req.json();
+  let body: { planId?: unknown; billingCycle?: unknown };
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const planId = typeof body.planId === "string" ? body.planId : "";
+  const billingCycle = body.billingCycle === undefined ? "monthly" : body.billingCycle;
+  if (!Object.prototype.hasOwnProperty.call(PLANS, planId) || !["monthly", "annual"].includes(String(billingCycle))) {
+    return NextResponse.json({ error: "Invalid plan or billing cycle" }, { status: 400 });
+  }
   const plan = getPlan(planId);
 
   if (plan.id === "FREE") {
