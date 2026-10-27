@@ -142,18 +142,25 @@ export async function POST(req: NextRequest) {
           const storageGb = parseInt(session.metadata?.packStorageGb ?? "0", 10);
 
           if (packType === "AI_CREDITS" && credits > 0) {
-            await addCredits(orgId, credits, `TopUp: ${credits.toLocaleString()} credits (${packId})`);
+            await addCredits(orgId, credits, `TopUp: ${credits.toLocaleString()} credits (${packId})`, session.id);
           }
 
           // Log invoice
           const amountTotal = session.amount_total ?? 0;
-          await (prisma as any).billingInvoice.create({
-            data: {
+          await (prisma as any).billingInvoice.upsert({
+            where: { stripeCheckoutSessionId: session.id },
+            update: {
+              status: "paid",
+              amount: amountTotal,
+              currency: session.currency ?? "usd",
+            },
+            create: {
               organizationId: orgId,
-              amount:         amountTotal,
-              currency:       session.currency ?? "usd",
-              status:         "paid",
-              description:    packType === "AI_CREDITS"
+              stripeCheckoutSessionId: session.id,
+              amount: amountTotal,
+              currency: session.currency ?? "usd",
+              status: "paid",
+              description: packType === "AI_CREDITS"
                 ? `AI Credits TopUp — ${credits.toLocaleString()} credits`
                 : `Storage TopUp — ${storageGb} GB`,
             },
