@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireOrg, isOrgError } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
 import { getBoardColumns } from "@/lib/board-templates";
 import ExcelJS from "exceljs";
@@ -8,16 +8,16 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
 
-  const project = await prisma.project.findUnique({
-    where: { id: params.projectId },
+  const project = await prisma.project.findFirst({
+    where: { id: params.projectId, organizationId: ctx.orgId },
     include: {
       members: { include: { user: { select: { id: true, name: true, email: true } } } },
     },
   });
-  if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   // ── Resolve valid statuses ─────────────────────────────────────────
   const columns    = getBoardColumns(project.boardConfig ?? null);
@@ -62,10 +62,12 @@ export async function POST(
     const form = await req.formData();
     const file = form.get("file") as File | null;
     if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
+    if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "File exceeds 5 MB limit" }, { status: 413 });
 
     const ext = file.name.split(".").pop()?.toLowerCase();
 
     if (ext === "xlsx" || ext === "xls") {
+      if (ext === "xls") return NextResponse.json({ error: "Legacy .xls files are not supported; upload .xlsx or .csv" }, { status: 400 });
       const buf      = Buffer.from(await file.arrayBuffer());
       const workbook = new ExcelJS.Workbook();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91,7 +93,9 @@ export async function POST(
         return String(v).trim();
       };
 
-      sheet.eachRow((row, rowNum) => {
+      if (sheet.rowCount > 1001) return NextResponse.json({ error: "Import is limited to 1,000 data rows" }, { status: 413 });
+      for (let rowNum = 2; rowNum <= sheet.rowCount; rowNum++) {
+        const row = sheet.getRow(rowNum);
         if (rowNum === 1) return;  // header
         const title = getCell(row, "title");
         if (!title || title.toLowerCase().includes("required") || title.toLowerCase().includes("optional")) return; // skip hint row
@@ -118,7 +122,7 @@ export async function POST(
 
           const tags = tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : [];
 
-          (prisma.task.create as Function)({
+          await prisma.task.create({
             data: {
               title:          title.trim(),
               description:    getCell(row, "description") || null,
@@ -133,15 +137,13 @@ export async function POST(
               storyPoints:    storyPoints,
               tags:           JSON.stringify(tags),
             },
-          }).then(() => { results.created++; }).catch((e: unknown) => { results.errors.push(String(e)); results.skipped++; });
+          });
+          results.created++;
         } catch (e) {
           results.errors.push(`Row ${rowNum}: ${String(e)}`);
           results.skipped++;
         }
-      });
-
-      // Wait for all async creates to finish
-      await new Promise((r) => setTimeout(r, 200 * Math.ceil(results.created / 10)));
+      }
       return NextResponse.json(results);
     }
 
@@ -149,6 +151,7 @@ export async function POST(
     if (ext === "csv") {
       const text  = await file.text();
       const lines = text.split("\n").filter((l) => l.trim());
+      if (lines.length > 1001) return NextResponse.json({ error: "Import is limited to 1,000 data rows" }, { status: 413 });
       const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase().replace(/\s+/g, "_"));
 
       const parseRow = (line: string): Record<string, string> => {
