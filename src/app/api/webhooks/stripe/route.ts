@@ -108,6 +108,11 @@ export async function POST(req: NextRequest) {
     claim = { ...existing, status: "PROCESSING" };
   }
 
+  if (!claim) {
+    console.error("[stripe-webhook] event claim missing after claim/reclaim flow", { eventId: event.id });
+    return NextResponse.json({ error: "Unable to claim webhook event" }, { status: 500 });
+  }
+
   try {
     switch (event.type) {
       // ── Checkout completed ──────────────────────────────────────────────────
