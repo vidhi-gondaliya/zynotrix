@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await sendPasswordResetEmail(email, token);
-  } catch (err) {
+  } catch { 
     console.error("[forgot-password] email send failed");
     // Keep the response identical for existing and unknown accounts.
     return NextResponse.json({ ok: true });
