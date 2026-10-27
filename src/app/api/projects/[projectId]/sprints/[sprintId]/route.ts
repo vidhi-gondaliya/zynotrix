@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireOrg, isOrgError } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
 
 type P = { params: { projectId: string; sprintId: string } };
 
 export async function PATCH(req: NextRequest, { params }: P) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const sprintContext = await (prisma as any).sprint.findFirst({
+    where: { id: params.sprintId, projectId: params.projectId, project: { organizationId: ctx.orgId } },
+    select: { id: true, projectId: true },
+  });
+  if (!sprintContext) return NextResponse.json({ error: "Sprint not found" }, { status: 404 });
 
   const body = await req.json();
   const { addTaskId, removeTaskId, status, name, goal, velocity } = body;
@@ -21,8 +26,10 @@ export async function PATCH(req: NextRequest, { params }: P) {
   }
 
   if (removeTaskId) {
-    await (prisma as any).sprintTask.delete({
-      where: { sprintId_taskId: { sprintId: params.sprintId, taskId: removeTaskId } },
+    const task = await prisma.task.findFirst({ where: { id: removeTaskId, projectId: sprintContext.projectId, project: { organizationId: ctx.orgId } }, select: { id: true } });
+    if (!task) return NextResponse.json({ error: "Task not found in this project" }, { status: 404 });
+    await (prisma as any).sprintTask.deleteMany({
+      where: { sprintId: params.sprintId, taskId: removeTaskId },
     });
     return NextResponse.json({ ok: true });
   }
@@ -39,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: P) {
       .reduce((sum: number, st: any) => sum + (st.task?.storyPoints ?? 0), 0);
   }
 
-  const sprint = await (prisma as any).sprint.update({
+  const updatedSprint = await (prisma as any).sprint.update({
     where: { id: params.sprintId },
     data: {
       ...(status && { status }),
@@ -49,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: P) {
     },
   });
 
-  return NextResponse.json(sprint);
+  return NextResponse.json(updatedSprint);
 }
 
 export async function DELETE(_req: NextRequest, { params }: P) {
