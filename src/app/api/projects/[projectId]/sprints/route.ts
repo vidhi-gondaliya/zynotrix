@@ -30,19 +30,25 @@ export async function GET(_req: NextRequest, { params }: { params: { projectId: 
 }
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const project = await prisma.project.findFirst({ where: { id: params.projectId, organizationId: ctx.orgId }, select: { id: true } });
+  if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-  const { name, goal, startDate, endDate } = await req.json();
-  if (!name || !startDate || !endDate) return NextResponse.json({ error: "name, startDate, endDate required" }, { status: 400 });
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }); }
+  const { name, goal, startDate, endDate } = body ?? {};
+  if (typeof name !== "string" || !name.trim() || name.trim().length > 120 || !startDate || !endDate) return NextResponse.json({ error: "Valid name, startDate, and endDate are required" }, { status: 400 });
+  const start = new Date(startDate), end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return NextResponse.json({ error: "Invalid sprint date range" }, { status: 400 });
 
   const sprint = await (prisma as any).sprint.create({
     data: {
       projectId: params.projectId,
-      name,
-      goal: goal ?? null,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      name: name.trim(),
+      goal: typeof goal === "string" ? goal.trim().slice(0, 2000) || null : null,
+      startDate: start,
+      endDate: end,
       status: "PLANNING",
     },
   });
