@@ -65,7 +65,47 @@ export async function POST(req: NextRequest) {
   try {
     event = stripe().webhooks.constructEvent(body, sig, secret);
   } catch (err) {
-    return NextResponse.json({ error: `Webhook signature failed: ${err}` }, { status: 400 });
+    return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
+  }
+
+  // Persist a claim before side effects so Stripe retries cannot grant credits
+  // or quota twice. Stale claims can be reclaimed after a crashed invocation.
+  const eventStore = (prisma as any).stripeWebhookEvent;
+  const staleBefore = new Date(Date.now() - 5 * 60_000);
+  let claim: { id: string; status: string; updatedAt: Date } | null = null;
+  try {
+    claim = await eventStore.create({
+      data: { eventId: event.id, eventType: event.type, status: "PROCESSING" },
+      select: { id: true, status: true, updatedAt: true },
+    });
+  } catch (error) {
+    const isUniqueConflict = typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+    if (!isUniqueConflict) {
+      console.error("[stripe-webhook] unable to claim event", error);
+      return NextResponse.json({ error: "Unable to claim webhook event" }, { status: 500 });
+    }
+    const existing = await eventStore.findUnique({
+      where: { eventId: event.id },
+      select: { id: true, status: true, updatedAt: true },
+    });
+    if (!existing) return NextResponse.json({ error: "Unable to claim webhook event" }, { status: 500 });
+    if (existing.status === "PROCESSED") return NextResponse.json({ received: true, duplicate: true });
+    if (existing.status === "PROCESSING" && existing.updatedAt > staleBefore) {
+      // Non-2xx asks Stripe to retry later rather than acknowledging in-flight work.
+      return NextResponse.json({ error: "Webhook event is already processing" }, { status: 409 });
+    }
+    const reclaimed = await eventStore.updateMany({
+      where: {
+        id: existing.id,
+        status: existing.status,
+        updatedAt: { lte: staleBefore },
+      },
+      data: { status: "PROCESSING", lastError: null },
+    });
+    if (reclaimed.count !== 1) {
+      return NextResponse.json({ error: "Webhook event is already processing" }, { status: 409 });
+    }
+    claim = { ...existing, status: "PROCESSING" };
   }
 
   try {
@@ -195,7 +235,18 @@ export async function POST(req: NextRequest) {
         break;
       }
     }
+    await eventStore.update({
+      where: { id: claim.id },
+      data: { status: "PROCESSED", processedAt: new Date(), lastError: null },
+    });
   } catch (err) {
+    await eventStore.update({
+      where: { id: claim.id },
+      data: {
+        status: "FAILED",
+        lastError: err instanceof Error ? err.message.slice(0, 500) : "Unknown handler error",
+      },
+    }).catch((markError: unknown) => console.error("[stripe-webhook] failed to mark event as failed", markError));
     console.error("Stripe webhook handler error:", err);
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
