@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
       const userCount = await tx.user.count();
       const user = await tx.user.create({
-        data: { name: name || null, email, passwordHash, role: userCount === 0 ? "OWNER" : "MEMBER" },
+        data: { name: name || null, email, passwordHash, role: !invite && userCount === 0 ? "OWNER" : "MEMBER" },
         select: { id: true, name: true, email: true },
       });
 
