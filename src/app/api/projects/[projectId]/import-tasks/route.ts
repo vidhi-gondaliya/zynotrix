@@ -96,9 +96,8 @@ export async function POST(
       if (sheet.rowCount > 1001) return NextResponse.json({ error: "Import is limited to 1,000 data rows" }, { status: 413 });
       for (let rowNum = 2; rowNum <= sheet.rowCount; rowNum++) {
         const row = sheet.getRow(rowNum);
-        if (rowNum === 1) return;  // header
         const title = getCell(row, "title");
-        if (!title || title.toLowerCase().includes("required") || title.toLowerCase().includes("optional")) return; // skip hint row
+        if (!title || title.toLowerCase().includes("required") || title.toLowerCase().includes("optional")) { results.skipped++; continue; } // skip hint row
 
         try {
           const rawStatus   = getCell(row, "status");
@@ -129,7 +128,7 @@ export async function POST(
               status:         status as any,
               priority:       priority as any,
               assigneeId:     assigneeId ?? null,
-              creatorId:      session.user.id,
+              creatorId:      ctx.userId,
               projectId:      params.projectId,
               dueDate:        dueDateRaw   ? new Date(dueDateRaw)   : null,
               startDate:      startDateRaw ? new Date(startDateRaw) : null,
@@ -177,7 +176,7 @@ export async function POST(
               status:    status as any,
               priority:  priority as any,
               assigneeId: assigneeId ?? null,
-              creatorId: session.user.id,
+              creatorId: ctx.userId,
               projectId: params.projectId,
               dueDate:   row.due_date   ? new Date(row.due_date)   : null,
               startDate: row.start_date ? new Date(row.start_date) : null,
