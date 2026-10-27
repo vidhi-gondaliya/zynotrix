@@ -29,6 +29,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
   }
   if (role.length > 80) return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  if (role === "OWNER" && orgRole !== "OWNER") {
+    return NextResponse.json({ error: "Only workspace owners can invite another owner." }, { status: 403 });
+  }
 
   const validRole = SYSTEM_ROLES.includes(role) || !!(await prisma.role.findFirst({
     where: { organizationId: orgId, name: role },
