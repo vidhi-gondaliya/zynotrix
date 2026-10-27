@@ -22,10 +22,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
   const planId = typeof body.planId === "string" ? body.planId : "";
-  const billingCycle = body.billingCycle === undefined ? "monthly" : body.billingCycle;
-  if (!Object.prototype.hasOwnProperty.call(PLANS, planId) || !["monthly", "annual"].includes(String(billingCycle))) {
+  const requestedBillingCycle = body.billingCycle === undefined ? "monthly" : body.billingCycle;
+  if (!Object.prototype.hasOwnProperty.call(PLANS, planId) || (requestedBillingCycle !== "monthly" && requestedBillingCycle !== "annual")) {
     return NextResponse.json({ error: "Invalid plan or billing cycle" }, { status: 400 });
   }
+  const billingCycle: "monthly" | "annual" = requestedBillingCycle;
   const plan = getPlan(planId);
 
   if (plan.id === "FREE") {
