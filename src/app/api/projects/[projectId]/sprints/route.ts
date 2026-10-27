@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireOrg, isOrgError } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(_req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  const project = await prisma.project.findFirst({ where: { id: params.projectId, organizationId: ctx.orgId }, select: { id: true } });
+  if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
   const sprints = await (prisma as any).sprint.findMany({
     where: { projectId: params.projectId },
