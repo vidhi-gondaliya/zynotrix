@@ -1,37 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireOrg, isOrgError } from "@/lib/org";
 
-// GET all dependencies for a task
-export async function GET(_req: NextRequest, { params }: { params: { taskId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const [blocking, blockedBy] = await Promise.all([
-    (prisma as any).taskDependency.findMany({
-      where: { taskId: params.taskId },
-      include: { dependsOn: { select: { id: true, title: true, status: true, priority: true } } },
-    }),
-    (prisma as any).taskDependency.findMany({
-      where: { dependsOnId: params.taskId },
-      include: { task: { select: { id: true, title: true, status: true, priority: true } } },
-    }),
-  ]);
-
-  return NextResponse.json({
-    blockedBy: blocking.map((d: any) => ({ ...d.dependsOn, dependencyId: d.id })),
-    blocking: blockedBy.map((d: any) => ({ ...d.task, dependencyId: d.id })),
+async function workspaceTask(taskId: string, orgId: string) {
+  return prisma.task.findFirst({
+    where: { id: taskId, project: { organizationId: orgId } },
+    select: { id: true },
   });
 }
 
-// POST — add dependency { dependsOnId }
-export async function POST(req: NextRequest, { params }: { params: { taskId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(_req: NextRequest, { params }: { params: { taskId: string } }) {
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  if (!(await workspaceTask(params.taskId, ctx.orgId))) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { dependsOnId } = await req.json();
-  if (!dependsOnId) return NextResponse.json({ error: "dependsOnId required" }, { status: 400 });
-  if (dependsOnId === params.taskId) return NextResponse.json({ error: "Task cannot depend on itself" }, { status: 400 });
+  const [blockedBy, blocking] = await Promise.all([
+    (prisma as any).taskDependency.findMany({
+      where: { taskId: params.taskId, task: { project: { organizationId: ctx.orgId } }, dependsOn: { project: { organizationId: ctx.orgId } } },
+      include: { dependsOn: { select: { id: true, title: true, status: true, priority: true } } },
+    }),
+    (prisma as any).taskDependency.findMany({
+      where: { dependsOnId: params.taskId, task: { project: { organizationId: ctx.orgId } }, dependsOn: { project: { organizationId: ctx.orgId } } },
+      include: { task: { select: { id: true, title: true, status: true, priority: true } } },
+    }),
+  ]);
+  return NextResponse.json({
+    blockedBy: blockedBy.map((item: any) => ({ ...item.dependsOn, dependencyId: item.id })),
+    blocking: blocking.map((item: any) => ({ ...item.task, dependencyId: item.id })),
+  });
+}
+
+export async function POST(req: NextRequest, { params }: { params: { taskId: string } }) {
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  if (!(await workspaceTask(params.taskId, ctx.orgId))) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  let body: unknown;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON request body." }, { status: 400 });
+  }
+  const dependsOnId = body && typeof body === "object" && !Array.isArray(body)
+    ? (body as Record<string, unknown>).dependsOnId : null;
+  if (typeof dependsOnId !== "string" || !dependsOnId) return NextResponse.json({ error: "dependsOnId is required." }, { status: 400 });
+  if (dependsOnId === params.taskId) return NextResponse.json({ error: "Task cannot depend on itself." }, { status: 400 });
+  if (!(await workspaceTask(dependsOnId, ctx.orgId))) return NextResponse.json({ error: "Dependency task not found in this workspace." }, { status: 404 });
 
   const dep = await (prisma as any).taskDependency.upsert({
     where: { taskId_dependsOnId: { taskId: params.taskId, dependsOnId } },
@@ -39,16 +51,25 @@ export async function POST(req: NextRequest, { params }: { params: { taskId: str
     create: { taskId: params.taskId, dependsOnId },
     include: { dependsOn: { select: { id: true, title: true, status: true, priority: true } } },
   });
-
   return NextResponse.json(dep, { status: 201 });
 }
 
-// DELETE — remove dependency { dependencyId }
-export async function DELETE(req: NextRequest, { params: _ }: { params: { taskId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { dependencyId } = await req.json();
-  await (prisma as any).taskDependency.delete({ where: { id: dependencyId } });
+export async function DELETE(req: NextRequest, { params }: { params: { taskId: string } }) {
+  const ctx = await requireOrg();
+  if (isOrgError(ctx)) return ctx;
+  if (!(await workspaceTask(params.taskId, ctx.orgId))) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  let body: unknown;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON request body." }, { status: 400 });
+  }
+  const dependencyId = body && typeof body === "object" && !Array.isArray(body)
+    ? (body as Record<string, unknown>).dependencyId : null;
+  if (typeof dependencyId !== "string" || !dependencyId) return NextResponse.json({ error: "dependencyId is required." }, { status: 400 });
+  const existing = await (prisma as any).taskDependency.findFirst({
+    where: { id: dependencyId, taskId: params.taskId, task: { project: { organizationId: ctx.orgId } }, dependsOn: { project: { organizationId: ctx.orgId } } },
+    select: { id: true },
+  });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await (prisma as any).taskDependency.delete({ where: { id: existing.id } });
   return NextResponse.json({ ok: true });
 }
