@@ -1079,3 +1079,17 @@ model BillingInvoice {
   @@index([organizationId, createdAt])
   @@map("billing_invoices")
 }
+
+model StripeWebhookEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  eventType   String
+  status      String   @default("PROCESSING") // PROCESSING | PROCESSED | FAILED
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  processedAt DateTime?
+
+  @@index([status, updatedAt])
+  @@map("stripe_webhook_events")
+}
