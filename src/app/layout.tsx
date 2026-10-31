@@ -33,7 +33,12 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Colliq — AI Work OS",
   description: "Your team's smartest colleague. One AI-powered workspace to plan, build, communicate and decide together.",
-  metadataBase: new URL("https://zynotrix-task-manager.vercel.app"),
+  metadataBase: new URL("https://colliq.app"),
+  icons: {
+    icon: [{ url: "/colliq-mark.svg", type: "image/svg+xml" }],
+    shortcut: ["/colliq-mark.svg"],
+    apple: [{ url: "/colliq-mark.svg" }],
+  },
   openGraph: {
     title: "Colliq — AI Work OS",
     description: "Your team's smartest colleague. Plan, build, communicate and decide — powered by AI.",
