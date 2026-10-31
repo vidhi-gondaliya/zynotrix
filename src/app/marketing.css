@@ -471,3 +471,28 @@
 @media (prefers-reduced-motion: reduce) {
   .mk-page *, .mk-page *::before, .mk-page *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 }
+
+
+/* Explicit light-header contrast guard for the Colliq marketing page. */
+.mk-page .mk-nav,
+.mk-page .mk-nav a,
+.mk-page .mk-nav .mk-logo b,
+.mk-page .mk-hero-copy h1,
+.mk-page .mk-hero-copy h1 .mk-headline-line {
+  color: var(--ink) !important;
+}
+.mk-page .mk-nav .mk-logo > span:last-child {
+  color: var(--muted) !important;
+}
+.mk-page .mk-nav .mk-nav-cta {
+  color: #fff !important;
+}
+.mk-page .mk-nav .mk-nav-cta:hover {
+  color: #fff !important;
+}
+.mk-page .mk-hero-copy h1 em {
+  color: var(--tangerine) !important;
+}
+.mk-page .mk-menu-button {
+  color: var(--ink) !important;
+}
